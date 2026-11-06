@@ -1,0 +1,674 @@
+@rem Coding Exam 2 (C++): statements and solutions taken verbatim from the exam preparation paper.
+@rem Tests are written for this app (self-contained, they print yes/no like Coding Exam 1).
+
+@task cpp-swap-ints
+@title swap_ints
+@points 10
+@lesson 02_pointers
+@statement
+Description: Swap the values of two integers using pointers.
+
+Prototype:
+void swap_ints(int *a, int *b);
+
+Example:
+
+int x = 5, y = 10;
+swap_ints(&x, &y); // Now x = 10, y = 5
+
+No use of array indexing (arr[i]) in any function—use only pointer arithmetic.
+@includes
+#include <iostream>
+@stub
+void swap_ints(int *a, int *b) {
+    // your code here
+}
+@solution
+void swap_ints(int *a, int *b) {
+    int temp = *a;
+    *a = *b;
+    *b = temp;
+}
+@tests
+int x = 5, y = 10;
+swap_ints(&x, &y);
+std::cout << ((x == 10 && y == 5) ? "yes" : "no") << std::endl;
+@expect
+yes
+@checklist
+- Swaps through the pointers (uses a temporary).
+- Does not swap the pointers themselves.
+- No use of array indexing (arr[i]) in any function—use only pointer arithmetic.
+
+@task cpp-swap-chars
+@title swap_chars
+@points 10
+@lesson 02_pointers
+@statement
+Description: Swap the values of two characters using pointers.
+
+Prototype:
+void swap_chars(char *a, char *b);
+
+Example:
+
+char a = 'A', b = 'B';
+swap_chars(&a, &b); // Now a = 'B', b = 'A'
+
+No use of array indexing (arr[i]) in any function—use only pointer arithmetic.
+@includes
+#include <iostream>
+@stub
+void swap_chars(char *a, char *b) {
+    // your code here
+}
+@solution
+void swap_chars(char *a, char *b) {
+    char temp = *a;
+    *a = *b;
+    *b = temp;
+}
+@tests
+char a = 'A', b = 'B';
+swap_chars(&a, &b);
+std::cout << ((a == 'B' && b == 'A') ? "yes" : "no") << std::endl;
+@expect
+yes
+@checklist
+- Swaps through the pointers (uses a temporary).
+- No use of array indexing (arr[i]) in any function—use only pointer arithmetic.
+
+@task cpp-find-max
+@title find_max
+@points 10
+@lesson 02_pointers
+@statement
+Description: Find the maximum value in an integer array using pointers.
+
+Prototype:
+int find_max(int *arr, int size);
+
+Example:
+
+int arr[5] = {3, 9, 2, 8, 5};
+int max = find_max(arr, 5); // max = 9
+
+No use of array indexing (arr[i]) in any function—use only pointer arithmetic.
+@includes
+#include <iostream>
+@stub
+int find_max(int *arr, int size) {
+    // your code here
+    return 0;
+}
+@solution
+int find_max(int *arr, int size) {
+    int max = *arr;
+    for (int *p = arr + 1; p < arr + size; p++) {
+        if (*p > max) {
+            max = *p;
+        }
+    }
+    return max;
+}
+@tests
+int arr[5] = {3, 9, 2, 8, 5};
+int neg[3] = {-4, -2, -9};
+std::cout << ((find_max(arr, 5) == 9 && find_max(neg, 3) == -2) ? "yes" : "no") << std::endl;
+@expect
+yes
+@checklist
+- Starts with the first element as the maximum.
+- Walks the array with a pointer, no arr[i].
+- No use of array indexing (arr[i]) in any function—use only pointer arithmetic.
+
+@task cpp-reverse-array
+@title reverse_array
+@points 10
+@lesson 02_pointers
+@statement
+Description: Reverse the contents of an integer array in-place using pointers.
+
+Prototype:
+void reverse_array(int *arr, int size);
+
+Example:
+
+int arr[5] = {1, 2, 3, 4, 5};
+reverse_array(arr, 5); // arr = {5, 4, 3, 2, 1}
+
+No use of array indexing (arr[i]) in any function—use only pointer arithmetic.
+@includes
+#include <iostream>
+@stub
+void reverse_array(int *arr, int size) {
+    // your code here
+}
+@solution
+void reverse_array(int *arr, int size) {
+    int *left = arr;
+    int *right = arr + size - 1;
+    while (left < right) {
+        int temp = *left;
+        *left = *right;
+        *right = temp;
+        left++;
+        right--;
+    }
+}
+@tests
+int arr[5] = {1, 2, 3, 4, 5};
+reverse_array(arr, 5);
+bool ok = arr[0] == 5 && arr[1] == 4 && arr[2] == 3 && arr[3] == 2 && arr[4] == 1;
+std::cout << (ok ? "yes" : "no") << std::endl;
+@expect
+yes
+@checklist
+- Swaps elements from both ends moving towards the middle.
+- Uses two pointers, no arr[i].
+- No use of array indexing (arr[i]) in any function—use only pointer arithmetic.
+
+@task cpp-strlen-ptr
+@title strlen_ptr
+@points 10
+@lesson 02_pointers
+@statement
+Description: Implement a function that calculates the length of a string (null-terminated character array) using pointers.
+
+Prototype:
+int strlen_ptr(char *str);
+
+Example:
+
+char str[] = "Hello";
+int length = strlen_ptr(str); // length = 5
+
+No use of array indexing (arr[i]) in any function—use only pointer arithmetic.
+@includes
+#include <iostream>
+@stub
+int strlen_ptr(char *str) {
+    // your code here
+    return 0;
+}
+@solution
+int strlen_ptr(char *str) {
+    char *p = str;
+    while (*p != '\0') {
+        p++;
+    }
+    return p - str;
+}
+@tests
+char str[] = "Hello";
+char empty[] = "";
+std::cout << ((strlen_ptr(str) == 5 && strlen_ptr(empty) == 0) ? "yes" : "no") << std::endl;
+@expect
+yes
+@checklist
+- Walks to the terminating '\0'.
+- Returns the pointer difference or a counter.
+- No use of array indexing (arr[i]) in any function—use only pointer arithmetic.
+
+@task cpp-count-vowels
+@title count_vowels
+@points 10
+@lesson 02_pointers
+@statement
+Description: Count the number of vowels in a string using pointers.
+
+Prototype:
+int count_vowels(char *str);
+
+Example:
+
+char str[] = "OpenAI";
+int vowels = count_vowels(str); // vowels = 3 ('O', 'e', 'A')
+
+Note: the example in the question has a small mistake. “OpenAI” contains four vowels (‘O’, ‘e’, ‘A’, ‘I’), so this function returns 4. If your exam says 3, ask your instructor, but 4 is the correct count.
+
+No use of array indexing (arr[i]) in any function—use only pointer arithmetic.
+@includes
+#include <iostream>
+@stub
+int count_vowels(char *str) {
+    // your code here
+    return 0;
+}
+@solution
+int count_vowels(char *str) {
+    int count = 0;
+    while (*str != '\0') {
+        char c = *str;
+        if (c == 'a' || c == 'e' || c == 'i' || c == 'o' || c == 'u' ||
+            c == 'A' || c == 'E' || c == 'I' || c == 'O' || c == 'U') {
+            count++;
+        }
+        str++;
+    }
+    return count;
+}
+@tests
+char str[] = "OpenAI";
+char none[] = "rhythm";
+std::cout << ((count_vowels(str) == 4 && count_vowels(none) == 0) ? "yes" : "no") << std::endl;
+@expect
+yes
+@checklist
+- Counts both lower-case and upper-case vowels.
+- "OpenAI" has four vowels, so the result is 4.
+- No use of array indexing (arr[i]) in any function—use only pointer arithmetic.
+
+@task cpp-copy-string
+@title copy_string
+@points 10
+@lesson 02_pointers
+@statement
+Description: Copy the contents of one string to another using pointers (you may assume the destination has enough space).
+
+Prototype:
+void copy_string(char *dest, char *src);
+
+Example:
+
+char src[] = "Hello";
+char dest[10];
+copy_string(dest, src); // dest = "Hello"
+
+No use of array indexing (arr[i]) in any function—use only pointer arithmetic.
+@includes
+#include <iostream>
+#include <cstring>
+@stub
+void copy_string(char *dest, char *src) {
+    // your code here
+}
+@solution
+void copy_string(char *dest, char *src) {
+    while (*src != '\0') {
+        *dest = *src;
+        dest++;
+        src++;
+    }
+    *dest = '\0';
+}
+@tests
+char src[] = "Hello";
+char dest[10];
+copy_string(dest, src);
+std::cout << (std::strcmp(dest, "Hello") == 0 ? "yes" : "no") << std::endl;
+@expect
+yes
+@checklist
+- Copies every character and writes the terminating '\0'.
+- No use of array indexing (arr[i]) in any function—use only pointer arithmetic.
+
+@task cpp-concat-strings
+@title concat_strings
+@points 10
+@lesson 02_pointers
+@statement
+Description: Concatenate two strings using pointers (you may assume the destination has enough space).
+
+Prototype:
+void concat_strings(char *dest, char *src);
+
+Example:
+
+char dest[20] = "Hello, ";
+char src[] = "World!";
+concat_strings(dest, src); // dest = "Hello, World!"
+
+No use of array indexing (arr[i]) in any function—use only pointer arithmetic.
+@includes
+#include <iostream>
+#include <cstring>
+@stub
+void concat_strings(char *dest, char *src) {
+    // your code here
+}
+@solution
+void concat_strings(char *dest, char *src) {
+    while (*dest != '\0') {      // move to the end of dest
+        dest++;
+    }
+    while (*src != '\0') {       // append src
+        *dest = *src;
+        dest++;
+        src++;
+    }
+    *dest = '\0';
+}
+@tests
+char dest[20] = "Hello, ";
+char src[] = "World!";
+concat_strings(dest, src);
+std::cout << (std::strcmp(dest, "Hello, World!") == 0 ? "yes" : "no") << std::endl;
+@expect
+yes
+@checklist
+- Moves to the end of dest first.
+- Appends src and writes the terminating '\0'.
+- No use of array indexing (arr[i]) in any function—use only pointer arithmetic.
+
+@task cpp-sum-array
+@title sum_array
+@points 10
+@lesson 02_pointers
+@statement
+Description: Compute the sum of all elements in an integer array using pointers.
+
+Prototype:
+int sum_array(int *arr, int size);
+
+Example:
+
+int arr[4] = {1, 2, 3, 4};
+int sum = sum_array(arr, 4); // sum = 10
+
+No use of array indexing (arr[i]) in any function—use only pointer arithmetic.
+@includes
+#include <iostream>
+@stub
+int sum_array(int *arr, int size) {
+    // your code here
+    return 0;
+}
+@solution
+int sum_array(int *arr, int size) {
+    int sum = 0;
+    for (int *p = arr; p < arr + size; p++) {
+        sum += *p;
+    }
+    return sum;
+}
+@tests
+int arr[4] = {1, 2, 3, 4};
+std::cout << (sum_array(arr, 4) == 10 ? "yes" : "no") << std::endl;
+@expect
+yes
+@checklist
+- Adds every element exactly once, using pointer arithmetic.
+- No use of array indexing (arr[i]) in any function—use only pointer arithmetic.
+
+@task cpp-compare-strings
+@title compare_strings
+@points 10
+@lesson 02_pointers
+@statement
+Description: Compare two strings lexicographically using pointers. Return 0 if they are equal, a negative value if the first string is lexicographically smaller, and a positive value if the first string is larger.
+
+Prototype:
+int compare_strings(char *str1, char *str2);
+
+Example:
+
+char str1[] = "apple";
+char str2[] = "banana";
+int cmp = compare_strings(str1, str2); // cmp < 0 since "apple" < "banana"
+
+No use of array indexing (arr[i]) in any function—use only pointer arithmetic.
+@includes
+#include <iostream>
+@stub
+int compare_strings(char *str1, char *str2) {
+    // your code here
+    return 0;
+}
+@solution
+int compare_strings(char *str1, char *str2) {
+    while (*str1 != '\0' && *str1 == *str2) {
+        str1++;
+        str2++;
+    }
+    return (unsigned char)*str1 - (unsigned char)*str2;
+}
+@tests
+char a[] = "apple", b[] = "banana", c[] = "apple";
+bool ok = compare_strings(a, b) < 0 && compare_strings(b, a) > 0 && compare_strings(a, c) == 0;
+std::cout << (ok ? "yes" : "no") << std::endl;
+@expect
+yes
+@checklist
+- Stops at the first difference or at the end of a string.
+- Returns negative, zero or positive as specified.
+- No use of array indexing (arr[i]) in any function—use only pointer arithmetic.
+
+@task cpp-doubly-linked-list
+@title DoublyLinkedList and DoublyLinkedNode
+@points 40
+@statement
+Implement the linkedlist list code from the lecture notes.
+
+#include <iostream>
+
+class Node {
+public:
+    int data;
+    Node *next;
+    Node(int value) : data(value), next(nullptr) {}
+};
+
+class LinkedList {
+private:
+    Node *head;
+public:
+    LinkedList() : head(nullptr) {}
+
+    ~LinkedList() {
+        while (head != nullptr) {
+            Node *temp = head;
+            head = head->next;
+            delete temp;
+        }
+    }
+
+    void insertAtBeginning(int value) {
+        Node *node = new Node(value);
+        node->next = head;
+        head = node;
+    }
+
+    void insertAtEnd(int value) {
+        Node *node = new Node(value);
+        if (head == nullptr) {
+            head = node;
+            return;
+        }
+        Node *cur = head;
+        while (cur->next != nullptr) {
+            cur = cur->next;
+        }
+        cur->next = node;
+    }
+
+    void print() {
+        for (Node *cur = head; cur != nullptr; cur = cur->next) {
+            std::cout << cur->data << " ";
+        }
+        std::cout << std::endl;
+    }
+};
+
+Create a new classes called DoublyLinkedList and a DoublyLinkedNode. DoublyLinkedNode has both a prevPointer and nextPointer
+
+Implement and InsertAtBeginning, InsertAtEnd, and InsertAtPosition
+
+Note (from the answer key): positions are 0-based. A position of 0 or less inserts at the beginning, and a position at or beyond size inserts at the end.
+@includes
+#include <iostream>
+@stub
+class DoublyLinkedNode {
+public:
+    // your code here: data, prevPointer, nextPointer and a constructor taking the value
+};
+
+class DoublyLinkedList {
+public:
+    // your code here: head, tail and size, a constructor and a destructor that deletes every node
+    void InsertAtBeginning(int value) {
+        // your code here
+    }
+    void InsertAtEnd(int value) {
+        // your code here
+    }
+    void InsertAtPosition(int value, int position) {
+        // your code here
+    }
+    void print() {
+        // your code here: prints 1 <-> 2 <-> 3 <-> 4 <-> null
+    }
+};
+@solution
+class DoublyLinkedNode {
+public:
+    int data;
+    DoublyLinkedNode *prevPointer;
+    DoublyLinkedNode *nextPointer;
+
+    DoublyLinkedNode(int value)
+        : data(value), prevPointer(nullptr), nextPointer(nullptr) {}
+};
+
+class DoublyLinkedList {
+private:
+    DoublyLinkedNode *head;
+    DoublyLinkedNode *tail;
+    int size;
+
+public:
+    DoublyLinkedList() : head(nullptr), tail(nullptr), size(0) {}
+
+    ~DoublyLinkedList() {
+        while (head != nullptr) {
+            DoublyLinkedNode *temp = head;
+            head = head->nextPointer;
+            delete temp;
+        }
+    }
+
+    void InsertAtBeginning(int value) {
+        DoublyLinkedNode *node = new DoublyLinkedNode(value);
+        if (head == nullptr) {            // empty list
+            head = tail = node;
+        } else {
+            node->nextPointer = head;
+            head->prevPointer = node;
+            head = node;
+        }
+        size++;
+    }
+
+    void InsertAtEnd(int value) {
+        DoublyLinkedNode *node = new DoublyLinkedNode(value);
+        if (tail == nullptr) {            // empty list
+            head = tail = node;
+        } else {
+            node->prevPointer = tail;
+            tail->nextPointer = node;
+            tail = node;
+        }
+        size++;
+    }
+
+    void InsertAtPosition(int value, int position) {
+        if (position <= 0) {
+            InsertAtBeginning(value);
+            return;
+        }
+        if (position >= size) {
+            InsertAtEnd(value);
+            return;
+        }
+
+        // Walk to the node currently at 'position'
+        DoublyLinkedNode *cur = head;
+        for (int i = 0; i < position; i++) {
+            cur = cur->nextPointer;
+        }
+
+        // Insert the new node before cur
+        DoublyLinkedNode *node = new DoublyLinkedNode(value);
+        node->prevPointer = cur->prevPointer;
+        node->nextPointer = cur;
+        cur->prevPointer->nextPointer = node;
+        cur->prevPointer = node;
+        size++;
+    }
+
+    void print() {
+        for (DoublyLinkedNode *cur = head; cur != nullptr; cur = cur->nextPointer) {
+            std::cout << cur->data << " <-> ";
+        }
+        std::cout << "null" << std::endl;
+    }
+};
+@tests
+DoublyLinkedList list;
+list.InsertAtEnd(2);
+list.InsertAtBeginning(1);
+list.InsertAtEnd(4);
+list.InsertAtPosition(3, 2);
+list.print();   // 1 <-> 2 <-> 3 <-> 4 <-> null
+@expect
+1 <-> 2 <-> 3 <-> 4 <-> null
+@checklist
+- DoublyLinkedNode holds data, prevPointer and nextPointer.
+- DoublyLinkedList keeps head, tail and size.
+- Inserting into an empty list sets both head and tail.
+- InsertAtPosition handles position <= 0 and position >= size before walking the list.
+- Every pointer is updated in both directions; the destructor frees every node.
+
+@set cpp-exam2-part1
+@title Coding Exam 2, part 1 - pointer functions (original sample main)
+@minutes 60
+@description
+The ten pointer functions of Coding Exam 2 with the sample main() from the paper at the bottom.
+@tasks cpp-swap-ints cpp-swap-chars cpp-find-max cpp-reverse-array cpp-strlen-ptr cpp-count-vowels cpp-copy-string cpp-concat-strings cpp-sum-array cpp-compare-strings
+@main
+int main() {
+    // Test swap_ints
+    int x = 5, y = 10;
+    std::cout << "Before swap: x = " << x << ", y = " << y << std::endl;
+    swap_ints(&x, &y);
+    std::cout << "After swap: x = " << x << ", y = " << y << std::endl;
+
+    // Test strlen_ptr
+    char str[] = "Hello, world!";
+    int length = strlen_ptr(str);
+    std::cout << "Length of \"" << str << "\": " << length << std::endl;
+
+    // Test reverse_array
+    int arr[5] = {1, 2, 3, 4, 5};
+    std::cout << "Original array: ";
+    for(int i = 0; i < 5; i++) {
+        std::cout << *(arr + i) << " ";
+    }
+    std::cout << std::endl;
+
+    reverse_array(arr, 5);
+    std::cout << "Reversed array: ";
+    for(int i = 0; i < 5; i++) {
+        std::cout << *(arr + i) << " ";
+    }
+    std::cout << std::endl;
+
+    return 0;
+}
+
+@set cpp-exam2-part2
+@title Coding Exam 2, part 2 - doubly linked list (original test)
+@minutes 45
+@description
+Part 2 of Coding Exam 2 with the test main() from the paper.
+@tasks cpp-doubly-linked-list
+@main
+int main() {
+    DoublyLinkedList list;
+    list.InsertAtEnd(2);
+    list.InsertAtBeginning(1);
+    list.InsertAtEnd(4);
+    list.InsertAtPosition(3, 2);
+    list.print();   // 1 <-> 2 <-> 3 <-> 4 <-> null
+    return 0;
+}

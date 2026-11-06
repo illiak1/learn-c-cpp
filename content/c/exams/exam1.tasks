@@ -1,0 +1,874 @@
+@rem Coding Exam 1 (C): statements, solutions and tests taken verbatim from the exam preparation paper.
+@rem Tests that depended on the shared array state of the original main() start from the state at that point.
+
+@task c-leap-year
+@title isLeapYear
+@points 10
+@lesson 01_intro
+@statement
+Q1: Check if an inputted year is a Leap Year.
+A leap year is divisible by 4, but not by 100 unless also divisible by 400.
+@includes
+#include <stdio.h>
+#include <stdbool.h>
+@stub
+bool isLeapYear(int year) {
+    // your code here
+    return false;
+}
+@solution
+bool isLeapYear(int year) {
+    if (year % 400 == 0) {
+        return true;
+    }
+    if (year % 100 == 0) {
+        return false;
+    }
+    if (year % 4 == 0) {
+        return true;
+    }
+    return false;
+}
+@tests
+printf("--- Q1: Leap Year Test ---\n");
+if (!isLeapYear(1700)) printf("yes\n"); else printf("no\n");
+if (isLeapYear(1600))  printf("yes\n"); else printf("no\n");
+if (isLeapYear(2016))  printf("yes\n"); else printf("no\n");
+@expect
+--- Q1: Leap Year Test ---
+yes
+yes
+yes
+@checklist
+- Divisible by 400 is a leap year.
+- Divisible by 100 (but not 400) is not a leap year.
+- Otherwise divisible by 4 is a leap year.
+
+@task c-reversed-palindrome
+@title Reversed and isAPalindrome
+@points 20
+@lesson 01_intro
+@statement
+Q2 (helper): Reverse the digits of a number and return the reversed integer.
+E.g., 123 -> 321.
+
+Q2: Check Whether a Number is Palindrome or Not.
+A palindrome reads the same forwards and backwards (e.g., 121).
+@includes
+#include <stdio.h>
+#include <stdbool.h>
+@stub
+int Reversed(int testNumber) {
+    // your code here
+    return 0;
+}
+
+bool isAPalindrome(int testNumber) {
+    // your code here
+    return false;
+}
+@solution
+int Reversed(int testNumber) {
+    int reversed = 0;
+    while (testNumber > 0) {
+        int digit = testNumber % 10;        // take the last digit
+        reversed = reversed * 10 + digit;   // add it to the end of reversed
+        testNumber = testNumber / 10;       // remove the last digit
+    }
+    return reversed;
+}
+
+bool isAPalindrome(int testNumber) {
+    if (Reversed(testNumber) == testNumber) {
+        return true;
+    }
+    return false;
+}
+@tests
+printf("\n--- Q2: Reversed Number Test ---\n");
+if (Reversed(123) == 321)  printf("yes\n"); else printf("no\n");
+if (Reversed(1) == 1)      printf("yes\n"); else printf("no\n");
+if (Reversed(1234) != 321) printf("yes\n"); else printf("no\n");
+
+printf("\n--- Q2: Palindrome Test ---\n");
+if (isAPalindrome(1))    printf("yes\n"); else printf("no\n");
+if (isAPalindrome(121))  printf("yes\n"); else printf("no\n");
+if (!isAPalindrome(1213)) printf("yes\n"); else printf("no\n");
+@expect
+
+--- Q2: Reversed Number Test ---
+yes
+yes
+yes
+
+--- Q2: Palindrome Test ---
+yes
+yes
+yes
+@checklist
+- Reversed builds the number digit by digit: reversed * 10 + digit.
+- isAPalindrome compares the number with its reverse.
+
+@task c-prime
+@title isAPrimeNumber
+@points 10
+@lesson 01_intro
+@statement
+Q3: Check Whether a Number is Prime or Not.
+A prime number is only divisible by itself and 1.
+@includes
+#include <stdio.h>
+#include <stdbool.h>
+@stub
+bool isAPrimeNumber(int numbertoTest) {
+    // your code here
+    return false;
+}
+@solution
+bool isAPrimeNumber(int numbertoTest) {
+    if (numbertoTest <= 1) {
+        return false;
+    }
+    // Only check divisors up to the square root.
+    // "i <= numbertoTest / i" means the same as "i * i <= numbertoTest"
+    // but it never overflows an int (important for 2147483647).
+    for (int i = 2; i <= numbertoTest / i; i++) {
+        if (numbertoTest % i == 0) {
+            return false;
+        }
+    }
+    return true;
+}
+@tests
+printf("\n--- Q3: Prime Number Test ---\n");
+if (isAPrimeNumber(3))          printf("yes\n"); else printf("no\n");
+if (isAPrimeNumber(2147483647)) printf("yes\n"); else printf("no\n");
+if (!isAPrimeNumber(4))         printf("yes\n"); else printf("no\n");
+@expect
+
+--- Q3: Prime Number Test ---
+yes
+yes
+yes
+@checklist
+- Numbers <= 1 are not prime.
+- Only divisors up to the square root are tried.
+- Does not overflow for 2147483647 (i <= n / i instead of i * i <= n).
+
+@task c-binary-to-decimal
+@title convertBinarytoDecimal
+@points 10
+@lesson 01_intro
+@statement
+Q4: Convert Binary Number to Decimal without using the shift operator.
+E.g., 110 -> 6.
+@includes
+#include <stdio.h>
+@stub
+int convertBinarytoDecimal(int binaryNumber) {
+    // your code here
+    return 0;
+}
+@solution
+int convertBinarytoDecimal(int binaryNumber) {
+    int decimal = 0;
+    int power = 1;                          // 1, 2, 4, 8, ...
+    while (binaryNumber > 0) {
+        int digit = binaryNumber % 10;      // last binary digit
+        decimal = decimal + digit * power;
+        power = power * 2;
+        binaryNumber = binaryNumber / 10;
+    }
+    return decimal;
+}
+@tests
+printf("\n--- Q4: Binary to Decimal Test ---\n");
+if (convertBinarytoDecimal(110) == 6) printf("yes\n"); else printf("no\n");
+if (convertBinarytoDecimal(111) == 7) printf("yes\n"); else printf("no\n");
+@expect
+
+--- Q4: Binary to Decimal Test ---
+yes
+yes
+@checklist
+- Reads the binary digits from the right with % 10 and / 10.
+- Multiplies each digit by the matching power of two without using the shift operator.
+
+@task c-right-triangle
+@title drawRightAngledTriangle
+@points 10
+@lesson 01_intro
+@statement
+Q6: Output a right-angled triangle of 'A's using 2 nested for loops:
+A
+AA
+AAA
+AAAA
+@includes
+#include <stdio.h>
+@stub
+void drawRightAngledTriangle() {
+    // your code here
+}
+@solution
+void drawRightAngledTriangle() {
+    for (int row = 1; row <= 4; row++) {
+        for (int col = 1; col <= row; col++) {
+            printf("A");
+        }
+        printf("\n");
+    }
+}
+@tests
+printf("\n--- Q6: Right-Angled Triangle ---\n");
+drawRightAngledTriangle();
+@expect
+
+--- Q6: Right-Angled Triangle ---
+A
+AA
+AAA
+AAAA
+@checklist
+- Uses exactly two nested for loops.
+- Prints a newline after each row.
+
+@task c-isosceles-triangle
+@title drawIsocelesTriangle
+@points 10
+@lesson 01_intro
+@statement
+Q7: Output an isosceles (diamond-like) triangle of 'A's using 2 for loops
+and at most 1 if/else:
+A
+AA
+AAA
+AAAA
+AAA
+AA
+A
+@includes
+#include <stdio.h>
+@stub
+void drawIsocelesTriangle() {
+    // your code here
+}
+@solution
+void drawIsocelesTriangle() {
+    int count;
+    for (int row = 1; row <= 7; row++) {
+        if (row <= 4) {
+            count = row;        // going up: 1,2,3,4
+        } else {
+            count = 8 - row;    // going down: 3,2,1
+        }
+        for (int col = 1; col <= count; col++) {
+            printf("A");
+        }
+        printf("\n");
+    }
+}
+@tests
+printf("\n--- Q7: Isosceles Triangle ---\n");
+drawIsocelesTriangle();
+@expect
+
+--- Q7: Isosceles Triangle ---
+A
+AA
+AAA
+AAAA
+AAA
+AA
+A
+@checklist
+- Uses two for loops and at most one if/else.
+- The row length grows to 4 and then shrinks again.
+
+@task c-isosceles-triangle-2
+@title drawIsocelesTriangle2 (extra)
+@points 10
+@lesson 01_intro
+@statement
+Q19 (EXTRA): Output the same diamond pattern as Q7 using only 2 for loops
+and no conditional statements.
+@includes
+#include <stdio.h>
+#include <stdlib.h>
+@stub
+void drawIsocelesTriangle2() {
+    // your code here
+}
+@solution
+void drawIsocelesTriangle2() {
+    for (int row = 0; row < 7; row++) {
+        // abs(row - 3) is 3,2,1,0,1,2,3 so count is 1,2,3,4,3,2,1
+        int count = 4 - abs(row - 3);
+        for (int col = 0; col < count; col++) {
+            printf("A");
+        }
+        printf("\n");
+    }
+}
+@tests
+printf("\n--- Q19 (EXTRA): Isosceles Triangle 2 ---\n");
+drawIsocelesTriangle2();
+@expect
+
+--- Q19 (EXTRA): Isosceles Triangle 2 ---
+A
+AA
+AAA
+AAAA
+AAA
+AA
+A
+@checklist
+- Uses only two for loops and no conditional statements.
+- The row length can be computed with abs().
+
+@task c-find
+@title find
+@points 10
+@lesson 01_intro
+@statement
+Q8: Find an element in an array and print the index where it was found,
+or -1 if not found.
+@includes
+#include <stdio.h>
+@stub
+int find(int size, int arr[], int toFind) {
+    // your code here
+    return 0;
+}
+@solution
+int find(int size, int arr[], int toFind) {
+    for (int i = 0; i < size; i++) {
+        if (arr[i] == toFind) {
+            return i;
+        }
+    }
+    return -1;
+}
+@tests
+printf("\n--- Q8: Find Element Index Test ---\n");
+int testFindArr[] = {10, 20, 30};
+if (find(3, testFindArr, 20) == 1) printf("yes\n"); else printf("no\n");
+@expect
+
+--- Q8: Find Element Index Test ---
+yes
+@checklist
+- Returns the index of the first match.
+- Returns -1 when the value is not in the array.
+
+@task c-second-largest
+@title find2ndLargest
+@points 10
+@lesson 01_intro
+@statement
+Q9: Find and return the second largest element in an array of positive
+integers; returns -1 if it can't find one.
+@includes
+#include <stdio.h>
+@stub
+int find2ndLargest(int size, int arr[]) {
+    // your code here
+    return 0;
+}
+@solution
+int find2ndLargest(int size, int arr[]) {
+    int largest = -1;
+    int second = -1;
+    for (int i = 0; i < size; i++) {
+        if (arr[i] > largest) {
+            second = largest;       // old largest becomes second
+            largest = arr[i];
+        } else if (arr[i] < largest && arr[i] > second) {
+            second = arr[i];
+        }
+    }
+    return second;
+}
+@tests
+// Array setup (as in the original paper)
+int myArr[10] = {1, 4, 3, 4, 2}; 
+int currentCount = 5;
+printf("\n--- Q9: Second Largest Test ---\n");
+if (find2ndLargest(currentCount, myArr) == 3) printf("yes\n"); else printf("no\n");
+@expect
+
+--- Q9: Second Largest Test ---
+yes
+@checklist
+- Tracks the largest and second largest in one pass.
+- Ignores duplicates of the largest value.
+- Returns -1 when there is no second largest.
+
+@task c-copy-array
+@title copyArraytoArray
+@points 10
+@lesson 01_intro
+@statement
+Q10: Copy all elements from arr1 to arr2. Both arrays are the same size.
+@includes
+#include <stdio.h>
+@stub
+void copyArraytoArray(int size, int arr1[], int arr2[]) {
+    // your code here
+}
+@solution
+void copyArraytoArray(int size, int arr1[], int arr2[]) {
+    for (int i = 0; i < size; i++) {
+        arr2[i] = arr1[i];
+    }
+}
+@tests
+int myArr[10] = {1, 4, 3, 4, 2};
+int currentCount = 5;
+
+printf("\n--- Q10: Copy Array Test ---\n");
+int backupArr[10];
+copyArraytoArray(currentCount, myArr, backupArr);
+if (backupArr[1] == 4) printf("yes\n"); else printf("no\n");
+@expect
+
+--- Q10: Copy Array Test ---
+yes
+@checklist
+- Copies every element from arr1 to arr2.
+
+@task c-insert-element
+@title insertElement
+@points 10
+@lesson 01_intro
+@statement
+Q11: Insert an element at a specified index in the array, shifting elements
+to the right. 'count' tracks the number of elements and cannot exceed 'size'.
+Returns true if an element was inserted, otherwise false.
+@includes
+#include <stdio.h>
+#include <stdbool.h>
+@stub
+bool insertElement(int size, int count, int arr[], int elementToInsert, int insertIndex) {
+    // your code here
+    return false;
+}
+@solution
+bool insertElement(int size, int count, int arr[], int elementToInsert, int insertIndex) {
+    if (count >= size) {                        // array is full
+        return false;
+    }
+    if (insertIndex < 0 || insertIndex > count) {   // bad index
+        return false;
+    }
+    // shift elements right, starting from the end
+    for (int i = count; i > insertIndex; i--) {
+        arr[i] = arr[i - 1];
+    }
+    arr[insertIndex] = elementToInsert;
+    return true;
+}
+@tests
+int myArr[10] = {1, 4, 3, 4, 2};
+int currentCount = 5;
+
+printf("\n--- Q11: Insert Element Test ---\n");
+if (insertElement(10, currentCount, myArr, 99, 2)) {
+	currentCount++;
+	if (myArr[2] == 99) printf("yes\n"); else printf("no\n");
+} else {
+	printf("no\n");
+}
+@expect
+
+--- Q11: Insert Element Test ---
+yes
+@checklist
+- Returns false when the array is full or the index is invalid.
+- Shifts elements to the right starting from the end.
+
+@task c-delete-element
+@title deleteElement
+@points 10
+@lesson 01_intro
+@statement
+Q12: Delete an element at a specified position, shifting higher elements
+to the left by one. 'count' tracks the number of elements and cannot exceed
+'size'. Returns true if an element was deleted, otherwise false.
+@includes
+#include <stdio.h>
+#include <stdbool.h>
+@stub
+bool deleteElement(int size, int count, int arr[], int deleteIndex) {
+    // your code here
+    return false;
+}
+@solution
+bool deleteElement(int size, int count, int arr[], int deleteIndex) {
+    if (deleteIndex < 0 || deleteIndex >= count) {  // bad index
+        return false;
+    }
+    // shift elements left, starting from the deleted position
+    for (int i = deleteIndex; i < count - 1; i++) {
+        arr[i] = arr[i + 1];
+    }
+    return true;
+}
+@tests
+// state of the array after Q11 in the original paper
+int myArr[10] = {1, 4, 99, 3, 4, 2};
+int currentCount = 6;
+
+printf("\n--- Q12: Delete Element Test ---\n");
+if (deleteElement(10, currentCount, myArr, 2)) {
+    currentCount--; 
+    if (myArr[2] == 3) printf("yes\n"); else printf("no\n");
+}
+@expect
+
+--- Q12: Delete Element Test ---
+yes
+@checklist
+- Returns false for an invalid index.
+- Shifts the higher elements one place to the left.
+
+@task c-frequency-count
+@title frequencyCount
+@points 10
+@lesson 01_intro
+@statement
+Q13: Count the frequency of a given element in an array.
+@includes
+#include <stdio.h>
+@stub
+int frequencyCount(int size, int arr[], int value) {
+    // your code here
+    return 0;
+}
+@solution
+int frequencyCount(int size, int arr[], int value) {
+    int count = 0;
+    for (int i = 0; i < size; i++) {
+        if (arr[i] == value) {
+            count++;
+        }
+    }
+    return count;
+}
+@tests
+int myArr[10] = {1, 4, 3, 4, 2};
+int currentCount = 5;
+
+printf("\n--- Q13: Frequency Count Test ---\n");
+if (frequencyCount(currentCount, myArr, 4) == 2) printf("yes\n"); else printf("no\n");
+@expect
+
+--- Q13: Frequency Count Test ---
+yes
+@checklist
+- Counts how many elements equal the value.
+
+@task c-count-duplicates
+@title countDuplicates
+@points 10
+@lesson 01_intro
+@statement
+Q14: Count the total number of duplicate elements in an array.
+(An element is a duplicate if the same value appears earlier in the array.)
+@includes
+#include <stdio.h>
+@stub
+int countDuplicates(int size, int arr[]) {
+    // your code here
+    return 0;
+}
+@solution
+int countDuplicates(int size, int arr[]) {
+    int duplicates = 0;
+    for (int i = 1; i < size; i++) {
+        for (int j = 0; j < i; j++) {
+            if (arr[i] == arr[j]) {
+                duplicates++;
+                break;      // count each element only once
+            }
+        }
+    }
+    return duplicates;
+}
+@tests
+int myArr[10] = {1, 4, 3, 4, 2};
+int currentCount = 5;
+
+printf("\n--- Q14: Count Duplicates Test ---\n");
+if (countDuplicates(currentCount, myArr) == 1) printf("yes\n"); else printf("no\n");
+@expect
+
+--- Q14: Count Duplicates Test ---
+yes
+@checklist
+- An element counts as a duplicate when the same value appears earlier.
+- Each duplicate element is counted only once.
+
+@task c-reverse-array
+@title reverse
+@points 10
+@lesson 01_intro
+@statement
+Q15: Reverse an array in place using only 1 array.
+@includes
+#include <stdio.h>
+@stub
+void reverse(int size, int arr[]) {
+    // your code here
+}
+@solution
+void reverse(int size, int arr[]) {
+    int left = 0;
+    int right = size - 1;
+    while (left < right) {
+        int temp = arr[left];
+        arr[left] = arr[right];
+        arr[right] = temp;
+        left++;
+        right--;
+    }
+}
+@tests
+int myArr[10] = {1, 4, 3, 4, 2};
+int currentCount = 5;
+
+printf("\n--- Q15: Reverse Array Test ---\n");
+reverse(currentCount, myArr);
+if (myArr[0] == 2 && myArr[4] == 1) printf("yes\n"); else printf("no\n");
+@expect
+
+--- Q15: Reverse Array Test ---
+yes
+@checklist
+- Works in place with a single array (swap from both ends).
+
+@task c-rotate-left
+@title rotateLeft
+@points 10
+@lesson 01_intro
+@statement
+Q16: Left rotate an array by one position, moving the first element to the end.
+Returns 0 on success, -1 if the array is empty.
+@includes
+#include <stdio.h>
+@stub
+int rotateLeft(int size, int arr[]) {
+    // your code here
+    return 0;
+}
+@solution
+int rotateLeft(int size, int arr[]) {
+    if (size <= 0) {
+        return -1;
+    }
+    int first = arr[0];                 // save the first element
+    for (int i = 0; i < size - 1; i++) {
+        arr[i] = arr[i + 1];            // shift everything left
+    }
+    arr[size - 1] = first;              // put the first element at the end
+    return 0;
+}
+@tests
+// state of the array after Q15 in the original paper
+int myArr[10] = {2, 4, 3, 4, 1};
+int currentCount = 5;
+
+printf("\n--- Q16: Rotate Left Test ---\n");
+rotateLeft(currentCount, myArr);
+if (myArr[0] == 4 && myArr[4] == 2) printf("yes\n"); else printf("no\n");
+@expect
+
+--- Q16: Rotate Left Test ---
+yes
+@checklist
+- Returns -1 for an empty array, 0 otherwise.
+- Saves the first element before shifting everything left.
+
+@task c-two-movies
+@title twoMovies
+@points 10
+@lesson 01_intro
+@statement
+Q17: Given a flight length and an array of movie lengths, return true if
+there are exactly two movies whose runtimes sum to the flight length.
+Users watch exactly two movies and cannot watch the same movie twice.
+@includes
+#include <stdio.h>
+#include <stdbool.h>
+@stub
+bool twoMovies(int flightLength, int movieLengths[], int size) {
+    // your code here
+    return false;
+}
+@solution
+bool twoMovies(int flightLength, int movieLengths[], int size) {
+    for (int i = 0; i < size; i++) {
+        for (int j = i + 1; j < size; j++) {    // j starts after i: never the same movie
+            if (movieLengths[i] + movieLengths[j] == flightLength) {
+                return true;
+            }
+        }
+    }
+    return false;
+}
+@tests
+// state of the array after Q16 in the original paper
+int myArr[10] = {4, 3, 4, 1, 2};
+int currentCount = 5;
+
+printf("\n--- Q17: Two Movies Test ---\n");
+if (twoMovies(5, myArr, currentCount)) printf("yes\n"); else printf("no\n");
+@expect
+
+--- Q17: Two Movies Test ---
+yes
+@checklist
+- Tries every pair of different movies.
+- Never uses the same movie twice (j starts after i).
+
+@task c-print-array
+@title PrintArray
+@points 10
+@lesson 01_intro
+@statement
+Q19: PrintArray
+Prints the 4x6 array in rows and columns.
+@includes
+#include <stdio.h>
+@stub
+void PrintArray(int array[4][6])
+{
+    // your code here
+}
+@solution
+void PrintArray(int array[4][6])
+{
+    for (int row = 0; row < 4; row++) {
+        for (int col = 0; col < 6; col++) {
+            printf("%d ", array[row][col]);
+        }
+        printf("\n");
+    }
+}
+@tests
+printf("\n--- Q19: Print 2D Array ---\n");
+int array[4][6] = { {0,0,3,1,3,4},
+                    {0,0,2,3,4,3},
+                    {0,0,1,3,3,2},
+                    {0,0,1,1,1,1} };
+PrintArray(array);
+@expect
+
+--- Q19: Print 2D Array ---
+0 0 3 1 3 4 
+0 0 2 3 4 3 
+0 0 1 3 3 2 
+0 0 1 1 1 1 
+@checklist
+- Prints the 4x6 array row by row, with a newline after every row.
+
+@set c-exam1-full
+@title Coding Exam 1 - full paper (original main)
+@minutes 120
+@description
+All functions of Coding Exam 1 in the original order. The tests at the bottom are the original main() of the paper.
+@tasks c-leap-year c-reversed-palindrome c-prime c-binary-to-decimal c-right-triangle c-isosceles-triangle c-isosceles-triangle-2 c-find c-second-largest c-copy-array c-insert-element c-delete-element c-frequency-count c-count-duplicates c-reverse-array c-rotate-left c-two-movies c-print-array
+@main
+int main() {
+    
+    printf("--- Q1: Leap Year Test ---\n");
+    if (!isLeapYear(1700)) printf("yes\n"); else printf("no\n");
+    if (isLeapYear(1600))  printf("yes\n"); else printf("no\n");
+    if (isLeapYear(2016))  printf("yes\n"); else printf("no\n");
+
+    printf("\n--- Q2: Reversed Number Test ---\n");
+    if (Reversed(123) == 321)  printf("yes\n"); else printf("no\n");
+    if (Reversed(1) == 1)      printf("yes\n"); else printf("no\n");
+    if (Reversed(1234) != 321) printf("yes\n"); else printf("no\n");
+
+    printf("\n--- Q2: Palindrome Test ---\n");
+    if (isAPalindrome(1))    printf("yes\n"); else printf("no\n");
+    if (isAPalindrome(121))  printf("yes\n"); else printf("no\n");
+    if (!isAPalindrome(1213)) printf("yes\n"); else printf("no\n");
+
+    printf("\n--- Q3: Prime Number Test ---\n");
+    if (isAPrimeNumber(3))          printf("yes\n"); else printf("no\n");
+    if (isAPrimeNumber(2147483647)) printf("yes\n"); else printf("no\n");
+    if (!isAPrimeNumber(4))         printf("yes\n"); else printf("no\n");
+
+    printf("\n--- Q4: Binary to Decimal Test ---\n");
+    if (convertBinarytoDecimal(110) == 6) printf("yes\n"); else printf("no\n");
+    if (convertBinarytoDecimal(111) == 7) printf("yes\n"); else printf("no\n");
+
+    printf("\n--- Q6: Right-Angled Triangle ---\n");
+    drawRightAngledTriangle();
+
+    printf("\n--- Q7: Isosceles Triangle ---\n");
+    drawIsocelesTriangle();
+
+    printf("\n--- Q19 (EXTRA): Isosceles Triangle 2 ---\n");
+    drawIsocelesTriangle2();
+
+    printf("\n--- Q8: Find Element Index Test ---\n");
+    int testFindArr[] = {10, 20, 30};
+    if (find(3, testFindArr, 20) == 1) printf("yes\n"); else printf("no\n");
+
+
+    // Array setup for Q9 to Q17 tests
+    int myArr[10] = {1, 4, 3, 4, 2}; 
+    int currentCount = 5;
+
+    printf("\n--- Q9: Second Largest Test ---\n");
+    if (find2ndLargest(currentCount, myArr) == 3) printf("yes\n"); else printf("no\n");
+
+    printf("\n--- Q10: Copy Array Test ---\n");
+    int backupArr[10];
+    copyArraytoArray(currentCount, myArr, backupArr);
+    if (backupArr[1] == 4) printf("yes\n"); else printf("no\n");
+
+    printf("\n--- Q13: Frequency Count Test ---\n");
+    if (frequencyCount(currentCount, myArr, 4) == 2) printf("yes\n"); else printf("no\n");
+
+    printf("\n--- Q14: Count Duplicates Test ---\n");
+    if (countDuplicates(currentCount, myArr) == 1) printf("yes\n"); else printf("no\n");
+
+    printf("\n--- Q11: Insert Element Test ---\n");
+    if (insertElement(10, currentCount, myArr, 99, 2)) {
+    	currentCount++;
+    	if (myArr[2] == 99) printf("yes\n"); else printf("no\n");
+    } else {
+    	printf("no\n");
+    }
+
+    printf("\n--- Q12: Delete Element Test ---\n");
+    if (deleteElement(10, currentCount, myArr, 2)) {
+        currentCount--; 
+        if (myArr[2] == 3) printf("yes\n"); else printf("no\n");
+    }
+
+    printf("\n--- Q15: Reverse Array Test ---\n");
+    reverse(currentCount, myArr);
+    if (myArr[0] == 2 && myArr[4] == 1) printf("yes\n"); else printf("no\n");
+
+    printf("\n--- Q16: Rotate Left Test ---\n");
+    rotateLeft(currentCount, myArr);
+    if (myArr[0] == 4 && myArr[4] == 2) printf("yes\n"); else printf("no\n");
+
+    printf("\n--- Q17: Two Movies Test ---\n");
+    if (twoMovies(5, myArr, currentCount)) printf("yes\n"); else printf("no\n");
+
+    printf("\n--- Q19: Print 2D Array ---\n");
+    int array[4][6] = { {0,0,3,1,3,4},
+                        {0,0,2,3,4,3},
+                        {0,0,1,3,3,2},
+                        {0,0,1,1,1,1} };
+    PrintArray(array);
+
+    return 0;
+}
