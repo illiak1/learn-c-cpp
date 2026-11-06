@@ -278,6 +278,7 @@ int App::run() {
     SetWindowMinSize(960, 600);
     SetTargetFPS(60);
     SetExitKey(KEY_NULL);
+    Context::get().ignoreMouse = !options_.screenshot.empty();
 
     Theme& th = Theme::get();
     th.init((platform::resourceRoot() / "assets").string());

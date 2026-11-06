@@ -70,6 +70,7 @@ public:
     uint32_t focus = 0;       // widget with keyboard focus
     int cursor = MOUSE_CURSOR_DEFAULT;
     int screenW = 0, screenH = 0;
+    bool ignoreMouse = false;  // screenshot mode: pretend the pointer is far away
 
     std::unordered_map<uint32_t, InputState> inputs;
     std::vector<uint32_t> inputOrder;      // inputs drawn this frame (for Tab navigation)

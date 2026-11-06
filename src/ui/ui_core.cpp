@@ -17,7 +17,7 @@ Context& Context::get() {
 
 // Snapshots the input state for the new frame.
 void Context::beginFrame() {
-    mouse = GetMousePosition();
+    mouse = ignoreMouse ? Vector2{-1000.0f, -1000.0f} : GetMousePosition();
     down = IsMouseButtonDown(MOUSE_BUTTON_LEFT);
     pressed = IsMouseButtonPressed(MOUSE_BUTTON_LEFT);
     released = IsMouseButtonReleased(MOUSE_BUTTON_LEFT);
