@@ -61,6 +61,8 @@ Options parseArgs(int argc, char** argv) {
             else if (n == "stats") o.page = Page::Stats;
         } else if (a.rfind("--lesson=", 0) == 0) {
             o.lesson = a.substr(9);
+        } else if (a.rfind("--size=", 0) == 0) {
+            std::sscanf(a.c_str() + 7, "%dx%d", &o.width, &o.height);
         } else if (a.rfind("--question=", 0) == 0) {
             o.question = std::atoi(a.c_str() + 11);
         } else if (a.rfind("--section=", 0) == 0) {
@@ -272,7 +274,7 @@ void App::frame() {
 
 int App::run() {
     SetConfigFlags(FLAG_WINDOW_RESIZABLE | FLAG_VSYNC_HINT | FLAG_MSAA_4X_HINT);
-    InitWindow(1280, 720, "Exam Trainer - C and C++");
+    InitWindow(options_.width, options_.height, "Exam Trainer - C and C++");
     SetWindowMinSize(960, 600);
     SetTargetFPS(60);
     SetExitKey(KEY_NULL);

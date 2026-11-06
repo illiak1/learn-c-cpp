@@ -33,8 +33,10 @@ public:
             fillRound(num, 14.0f, p.accentSoft);
             drawCentered(Face::Bold, size::kH2, std::to_string(++index), num, p.accent);
             drawText(Face::Bold, size::kH3, l.title, r.x + 90.0f, r.y + 22.0f, p.text);
-            drawParagraph(Face::Regular, 15, l.summary, r.x + 90.0f, r.y + 50.0f, r.width - 90.0f - 150.0f, p.textMuted);
+            drawParagraph(Face::Regular, 15, l.summary, r.x + 90.0f, r.y + 50.0f, r.width - 90.0f - 190.0f, p.textMuted);
             const int read = app.progress().sectionsRead(app.trackKey(), l.id);
+            progressBar(Rect{r.x + 90.0f, r.y + r.height - 22.0f, r.width - 190.0f, 6.0f},
+                        l.sections.empty() ? 0.0f : static_cast<float>(read) / static_cast<float>(l.sections.size()), p.accent);
             const std::string count = std::to_string(read) + " / " + std::to_string(l.sections.size()) + " read";
             badge(count, r.x + r.width - badgeWidth(count) - 56.0f, r.y + 41.0f, p.textMuted, p.surfaceAlt);
             drawIcon(Icon::ChevronRight, r.x + r.width - 30.0f, r.y + 52.0f, 18.0f, p.textMuted);
@@ -62,6 +64,12 @@ public:
         int sel = std::clamp(app.lessonSection(), 0, sections - 1);
 
         if (button("Lessons", Rect{col.x, col.y, 112.0f, 34.0f}, ButtonStyle::Ghost, Icon::ChevronLeft)) app.go(Page::Lessons);
+        std::vector<std::string> topicIds;
+        for (const auto& e : app.content().exercises)
+            if (e.lesson == lesson->id) topicIds.push_back(e.id);
+        if (!topicIds.empty() &&
+            button("Practice this topic (" + std::to_string(topicIds.size()) + ")", Rect{col.x + col.w - 260.0f, col.y, 260.0f, 36.0f}, ButtonStyle::Secondary, Icon::Pencil))
+            app.startSession(lesson->title, topicIds);
         col.space(46.0f);
         pageHeader(col, app, lesson->title);
 

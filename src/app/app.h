@@ -59,6 +59,7 @@ struct Options {
     std::string lesson;      // --lesson=ID (with --page=lesson)
     int section = 0;         // --section=N
     int question = 0;        // --question=N (start index of the sample session)
+    int width = 1280, height = 720;  // --size=WxH (window size, for screenshots)
     std::string screenshot;  // when set: save a PNG after a few frames and exit
 };
 

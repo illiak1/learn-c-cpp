@@ -152,7 +152,13 @@ private:
         } else {
             drawFeedback(col, ex);
             if (!ex.code.empty() && button("Copy to IDE", Rect{col.x, col.y, 150.0f, 40.0f}, ButtonStyle::Secondary, Icon::Copy)) copyToIde(ex, cpp);
-            if (button("Try again", Rect{col.x + col.w - 320.0f, col.y, 140.0f, 42.0f}, ButtonStyle::Secondary, Icon::Refresh)) {
+            float rx = col.x + col.w - 320.0f;
+            if (!a.result.correct && !ex.lesson.empty() && app.content().findLesson(ex.lesson)) {
+                rx -= 190.0f;
+                if (button("Review lesson", Rect{rx, col.y, 180.0f, 42.0f}, ButtonStyle::Ghost, Icon::Book)) app.openLesson(ex.lesson, 0);
+                rx += 190.0f;
+            }
+            if (button("Try again", Rect{rx, col.y, 140.0f, 42.0f}, ButtonStyle::Secondary, Icon::Refresh)) {
                 loadQuestion(ex);
             }
             const bool last = s.pos + 1 >= s.ids.size();

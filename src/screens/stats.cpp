@@ -141,23 +141,25 @@ private:
         col.space(16.0f);
     }
 
-    // Reading and mastery per lesson.
+    // Reading and mastery per lesson (two bars on a second line so narrow windows still fit).
     void drawByLesson(Column& col, const logic::Stats& st) {
         const Palette& p = Theme::get().colors();
         if (st.byLesson.empty()) return;
-        Rect r = col.take(60.0f + static_cast<float>(st.byLesson.size()) * 56.0f);
+        Rect r = col.take(60.0f + static_cast<float>(st.byLesson.size()) * 66.0f);
         card(r);
         drawText(Face::Bold, size::kH3, "Topics", r.x + 22.0f, r.y + 18.0f, p.text);
         float y = r.y + 58.0f;
+        const float half = (r.width - 44.0f - 28.0f) / 2.0f;
         for (const logic::LessonStat& l : st.byLesson) {
-            drawText(Face::Bold, 15, ellipsize(Face::Bold, 15, l.title, 230.0f), r.x + 22.0f, y, p.text);
+            drawText(Face::Bold, 15, ellipsize(Face::Bold, 15, l.title, r.width - 44.0f), r.x + 22.0f, y, p.text);
             const float rf = l.sections ? static_cast<float>(l.sectionsRead) / static_cast<float>(l.sections) : 0.0f;
             const float mf = l.exercises ? static_cast<float>(l.mastered) / static_cast<float>(l.exercises) : 0.0f;
-            drawText(Face::Regular, 13, "Read " + std::to_string(l.sectionsRead) + "/" + std::to_string(l.sections), r.x + 270.0f, y + 1.0f, p.textMuted);
-            progressBar(Rect{r.x + 370.0f, y + 6.0f, 150.0f, 9.0f}, rf, p.accent);
-            drawText(Face::Regular, 13, "Mastered " + std::to_string(l.mastered) + "/" + std::to_string(l.exercises), r.x + 540.0f, y + 1.0f, p.textMuted);
-            progressBar(Rect{r.x + 660.0f, y + 6.0f, r.width - 690.0f, 9.0f}, mf, p.success);
-            y += 56.0f;
+            const float x0 = r.x + 22.0f, x1 = x0 + half + 28.0f, y2 = y + 28.0f;
+            drawText(Face::Regular, 13, "Read " + std::to_string(l.sectionsRead) + "/" + std::to_string(l.sections), x0, y2 - 2.0f, p.textMuted);
+            progressBar(Rect{x0 + 100.0f, y2 + 3.0f, half - 100.0f, 9.0f}, rf, p.accent);
+            drawText(Face::Regular, 13, "Mastered " + std::to_string(l.mastered) + "/" + std::to_string(l.exercises), x1, y2 - 2.0f, p.textMuted);
+            progressBar(Rect{x1 + 126.0f, y2 + 3.0f, half - 126.0f, 9.0f}, mf, p.success);
+            y += 66.0f;
         }
         col.space(16.0f);
     }

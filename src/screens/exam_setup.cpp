@@ -88,6 +88,24 @@ public:
                 app.startExam(logic::makeSetExam(s));
             Context::get().popId();
         }
+
+        // Single functions
+        col.space(6.0f);
+        drawText(Face::Bold, size::kH2, "Practice one function", col.x, col.y, p.text);
+        col.space(40.0f);
+        for (const content::Task& t : tc.tasks) {
+            Rect r = col.take(54.0f);
+            card(r, false);
+            Context::get().pushId(t.id);
+            bool done = false;
+            const bool known = app.progress().taskResult(app.trackKey(), t.id, done);
+            if (known) drawIcon(done ? Icon::Check : Icon::Cross, r.x + 26.0f, r.y + 27.0f, 16.0f, done ? p.success : p.danger);
+            drawText(Face::Bold, 16, ellipsize(Face::Bold, 16, t.title, r.width - 330.0f), r.x + (known ? 50.0f : 22.0f), r.y + 8.0f, p.text);
+            drawText(Face::Regular, 13, std::to_string(t.points) + " points", r.x + (known ? 50.0f : 22.0f), r.y + 30.0f, p.textMuted);
+            if (button("Practice", Rect{r.x + r.width - 134.0f, r.y + 6.0f, 114.0f, 42.0f}, ButtonStyle::Secondary, Icon::Timer))
+                app.startExam(logic::makeTaskListExam(t.title, {t.id}));
+            Context::get().popId();
+        }
         end(col);
     }
 
