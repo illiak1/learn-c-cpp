@@ -1,0 +1,51 @@
+@lesson 04_exam_tips
+@title Before the exam
+@summary How the coding exam is marked, how to write safely, and a checklist to run before you submit.
+@order 4
+
+@section 4.1 How the exam works
+@points
+- The exam is one source file with about 5 functions to write. The tests are in main() at the bottom of the file.
+- You write and test the code in Visual Studio (or your usual IDE). This app never compiles your code.
+- Each function is marked on its own: a function that returns a wrong result fails only that function.
+- Read each task carefully: the function name, the parameters and the return type must match the description exactly.
+@note
+A compile error, an infinite loop or a crash gives 0 for the whole exam. A wrong result fails only that function. Everything below is about keeping the file building, finishing and never crashing.
+
+@section 4.2 While you write
+@points
+- Copy the signatures first and compile at once: an empty file that builds is a better starting point than a perfect function in a file that does not.
+- Give every non-void function a return statement before you do anything else (return 0; or return false; as a placeholder).
+- Write one function, compile, run the tests, then move on.
+- If a function is not finished, make it compile and terminate (return a default value) instead of leaving half a loop in it.
+- Do not edit the tests at the bottom. Read them: they show exactly how your function is called.
+- Use the examples in the task as your first test: run them by hand in main().
+- Remember the rules of the task (for example "use only 2 for loops" or "no shift operator"): the mark depends on them.
+
+@section 4.3 The ways to lose everything
+@mistakes
+- A missing return in a function that must return a value, or a missing semicolon or brace: compile error, 0 for the exam.
+- A loop that never ends: i-- instead of i++, a while loop whose condition never changes, forgetting to update the loop variable.
+- Reading or writing outside an array: arr[n] when the last index is n-1, or a negative index. Check the loop bounds twice.
+- Using a variable before giving it a value, or dividing by zero.
+- Passing a variable where the function needs its address (scanf("%d", age) instead of &age).
+- Forgetting the terminating '\0' when you build a string by hand.
+- Calling a function before it is declared: put the function above main() or write a prototype.
+
+@section 4.4 Checklist before you submit
+@points
+- The file compiles with no errors (warnings are worth reading, too).
+- Every loop has a clear exit: say out loud when it stops.
+- Every function returns a value on every path (for example after an if/else chain).
+- You tested the empty case and the one-element case, not only the example from the task.
+- Indexes stay between 0 and size - 1.
+- You did not change the tests, the function names or the signatures.
+- The program runs from start to finish and all tests print yes.
+
+@section 4.5 C and Visual Studio notes
+@points
+- Visual Studio warns about scanf and prefers scanf_s. With scanf_s, %c and %s need an extra argument giving the buffer size.
+- Add #include <stdbool.h> to use bool, true and false in C.
+- abs() needs #include <stdlib.h>.
+- A string is a char array that ends with '\0'; the array must hold the characters PLUS the terminator.
+- int / int is integer division: 7 / 2 is 3.

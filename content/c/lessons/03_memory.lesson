@@ -1,0 +1,274 @@
+@lesson 03_memory
+@title Memory management
+@summary Scope and lifetime, stack and heap, malloc and free, leaks, dynamic arrays, globals and function pointers.
+@order 3
+
+@section 3.1 Scope, lifetime and dangling pointers
+@points
+- A local variable gets memory when declared and loses it when it goes out of scope (end of its { } block or function).
+- After that the memory may be reused; its old value is not guaranteed.
+- A pointer to a variable that no longer exists is a DANGLING POINTER. Using it is undefined behavior.
+@code c wrong Dangling pointer in a block (do not run)
+#include <stdio.h>
+
+int main() {
+    int *p;
+    if (1) {
+        int x = 5;
+        p = &x;
+    }                            // x goes out of scope here
+    printf("%d\n", *p);          // undefined behavior: p is dangling
+    return 0;
+}
+@code c wrong Returning the address of a local variable (do not run)
+int* getPtrToFive() {
+    int x = 5;
+    return &x;                   // x is destroyed when the function returns
+}
+@text
+Task: write a function that returns a pointer to memory holding 5. The memory must outlive the function, so allocate it with malloc (see 3.2 and 3.4).
+
+@section 3.2 Stack and heap
+@points
+- int x;  is allocated on the STACK and freed automatically at the end of its scope.
+- malloc(sizeof(int))  is allocated on the HEAP and stays until you call free.
+- malloc returns a pointer to the new memory (or NULL when it fails); sizeof tells it how many bytes to reserve.
+- Forms: malloc(sizeof(int)) is one uninitialised int; calloc(1, sizeof(int)) is one int set to 0; malloc(n * sizeof(int)) is an array of n ints.
+- In C a void* converts to any pointer type automatically, so no cast is needed (C++ requires one).
+@code c
+#include <stdio.h>
+#include <stdlib.h>
+
+int main() {
+    int *a = malloc(sizeof(int));        // one int, uninitialised
+    *a = 5;
+    int *b = calloc(1, sizeof(int));     // one int, set to 0
+    int *c = malloc(3 * sizeof(int));    // array of 3 ints
+    c[0] = 1;
+    c[1] = 2;
+    c[2] = 3;
+    printf("%d %d %d%d%d\n", *a, *b, c[0], c[1], c[2]);
+    free(a);
+    free(b);
+    free(c);
+    return 0;
+}
+@output
+5 0 123
+
+@section 3.3 malloc and free
+@points
+- Needs #include <stdlib.h>.
+- malloc(bytes) allocates raw memory and returns a pointer, or NULL on failure. Always check for NULL.
+- Use sizeof to get the right size: malloc(n * sizeof(int)).
+- free(ptr) releases it. One free per successful malloc.
+- Do not use memory after free (undefined behavior); set the pointer to NULL afterwards.
+- Every successful malloc (or calloc) needs exactly one free.
+@code c
+#include <stdio.h>
+#include <stdlib.h>
+
+int main() {
+    // single integer
+    int *ptr = (int*)malloc(sizeof(int));
+    if (ptr == NULL) {
+        printf("Memory allocation failed!\n");
+        return 1;
+    }
+    *ptr = 42;
+    printf("Value: %d\n", *ptr);
+    free(ptr);
+    ptr = NULL;             // good practice after free
+
+    // dynamic array
+    int size = 5;
+    int *arr = (int*)malloc(size * sizeof(int));
+    if (arr == NULL) {
+        printf("Memory allocation failed!\n");
+        return 1;
+    }
+    for (int i = 0; i < size; i++) {
+        arr[i] = i * 10;
+    }
+    printf("Array elements: ");
+    for (int i = 0; i < size; i++) {
+        printf("%d ", arr[i]);
+    }
+    printf("\n");
+    free(arr);
+    arr = NULL;
+    return 0;
+}
+@output 
+Value: 42
+Array elements: 0 10 20 30 40
+
+@section 3.4 Memory leaks and common mistakes
+@points
+- A memory leak happens when memory is allocated but never freed, or the last pointer to it is lost.
+- Calling getPtrToFive() (which uses malloc) in a loop without free allocates a new block every time and overwrites p, so 3 iterations leave 3 blocks and p points only to the last.
+- A single free(p) AFTER the loop frees only the last block (2 blocks still leak).
+- Fix: free inside the loop, in every iteration.
+@code c Correct version (free inside the loop)
+#include <stdio.h>
+#include <stdlib.h>
+
+int* getPtrToFive() {
+    int *x = malloc(sizeof(int));     // lives on the heap, survives after the function returns
+    *x = 5;
+    return x;
+}
+
+int main() {
+    int *p;
+    for (int i = 0; i < 3; ++i) {
+        p = getPtrToFive();
+        printf("%d\n", *p);
+        free(p);          // without this line, 3 blocks leak
+    }
+    return 0;
+}
+@output
+5
+5
+5
+@code c wrong Using memory after free (undefined behavior)
+int *x = getPtrToFive();
+free(x);
+printf("%d\n", *x);     // memory already freed
+@code c wrong Freeing twice (undefined behavior)
+int *x = getPtrToFive();
+free(x);
+free(x);                // double free
+@code c wrong Freeing memory that malloc did not allocate (undefined behavior)
+int x = 5;
+int *xPtr = &x;
+free(xPtr);             // x lives on the stack
+@mistakes
+- Using memory after free: print first, free afterwards.
+- Double free: free once, or set the pointer to NULL after the first free (free(NULL) is safe).
+- Freeing a stack variable: do not free it; the stack frees itself.
+- Forgetting to free (leak), or forgetting the NULL check after malloc.
+- Asking for the wrong size: malloc(n) gives n bytes, not n ints; write malloc(n * sizeof(int)).
+
+@section 3.5 Dynamic arrays and 2D arrays
+@points
+- A stack array needs a size known at compile time (C99 also allows variable-length arrays, but they live on the stack and cannot be returned).
+- With malloc the size can be decided at run time: int *arr = malloc(numItems * sizeof(int));
+- Free it with free(arr).
+- int **arr2D = malloc(rows * sizeof(int*)); creates an array of row pointers; a loop then gives each row its own array: arr2D[row] = malloc(cols * sizeof(int));
+- Free in reverse order: free each row first, then free(arr2D). Freeing arr2D first would lose the row pointers (leak).
+@code c
+#include <stdio.h>
+#include <stdlib.h>
+
+int main() {
+    // 1D: the size could come from scanf; a variable is enough here
+    int numItems = 4;
+    int *arr = malloc(numItems * sizeof(int));
+    if (arr == NULL) {
+        return 1;
+    }
+    for (int i = 0; i < numItems; ++i) {
+        arr[i] = (i + 1) * 10;
+    }
+    for (int i = 0; i < numItems; ++i) {
+        printf("%d ", arr[i]);
+    }
+    printf("\n");
+    free(arr);
+
+    // 2D: an array of row pointers, then one array per row
+    int rows = 3;
+    int cols = 4;
+    int **arr2D = malloc(rows * sizeof(int*));
+    for (int row = 0; row < rows; row++) {
+        arr2D[row] = malloc(cols * sizeof(int));
+    }
+
+    int counter = 1;
+    for (int row = 0; row < rows; row++) {
+        for (int col = 0; col < cols; col++) {
+            arr2D[row][col] = counter++;
+        }
+    }
+
+    printf("2D Array:\n");
+    for (int row = 0; row < rows; row++) {
+        for (int col = 0; col < cols; col++) {
+            printf("%d ", arr2D[row][col]);
+        }
+        printf("\n");
+    }
+
+    // deallocate in reverse order
+    for (int row = 0; row < rows; row++) {
+        free(arr2D[row]);
+    }
+    free(arr2D);
+    return 0;
+}
+@output
+10 20 30 40
+2D Array:
+1 2 3 4
+5 6 7 8
+9 10 11 12
+
+@section 3.6 Global variables and shadowing
+@points
+- A variable declared outside every function is global and can be used everywhere.
+- A local variable with the same name HIDES (shadows) the global one inside its scope: assignments change only the local variable and the global stays unchanged.
+- Prefer parameters and return values over globals.
+@code c
+#include <stdio.h>
+
+int glVar = 10;                 // global: accessible everywhere
+
+void setGlobal() {
+    glVar = 20;                 // changes the global
+}
+
+void shadow() {
+    int glVar = 99;             // new LOCAL variable hides the global one
+    glVar = 100;                // changes only the local
+}
+
+int main() {
+    printf("%d\n", glVar);      // 10
+    setGlobal();
+    printf("%d\n", glVar);      // 20
+    shadow();
+    printf("%d\n", glVar);      // still 20
+    glVar = 33;
+    printf("%d\n", glVar);      // 33
+    return 0;
+}
+@output
+10
+20
+20
+33
+
+@section 3.7 Function pointers
+@points
+- You can store the address of a function in a function pointer and call the function through it.
+- The pointer type must match the function's return type and parameter types: int (*functionPtr)(int, int);
+- Only assignment and calling are allowed; no pointer arithmetic.
+@code c
+#include <stdio.h>
+
+int Add(int num1, int num2) {
+    return num1 + num2;
+}
+
+int main() {
+    // must have the same return type and parameter types as the function
+    int (*functionPtr)(int, int);
+    functionPtr = Add;
+    int result = functionPtr(20, 10);
+    printf("%d\n", result);
+    return 0;
+}
+@output
+30
