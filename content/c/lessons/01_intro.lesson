@@ -1,0 +1,627 @@
+@lesson 01_intro
+@title Intro to C
+@summary Variables, input, operators, control flow, arrays, strings and functions.
+@order 1
+
+@section 1.1 First program
+@points
+- C is a procedural, compiled language; execution starts in main().
+- Every statement ends with ';'. Code blocks use { }.
+- #include <stdio.h> provides printf and scanf.
+- main returns 0 to signal success.
+@code c
+#include <stdio.h>  // gives us input/output functions
+
+int main() {
+    printf("Hello, World!\n");
+    return 0;  // 0 means "everything worked correctly"
+}
+@output 
+Hello, World!
+
+@section 1.2 Variables and data types
+@points
+- Every variable must be declared with a type before use.
+- Types: int, short, long (integers); float, double (decimals); char (one character, single quotes).
+- A variable declared without a value (int var;) is NOT initialised: it contains whatever was in memory. Never read it before assigning.
+- Format specifiers for printf: %d int, %ld long, %f float/double, %.2f two decimal places, %c char, %s string.
+@code c
+#include <stdio.h>
+
+int main() {
+    int age = 25;           // whole numbers (typically 4 bytes)
+    short small = 100;      // smaller integer
+    long big = 1000000L;    // larger integer
+    float price = 19.99f;   // single precision (4 bytes)
+    double pi = 3.14159;    // double precision (8 bytes)
+    char grade = 'A';       // single character in single quotes
+
+    printf("Age: %d\n", age);
+    printf("Small: %d\n", small);
+    printf("Big: %ld\n", big);
+    printf("Price: %.2f\n", price);   // .2 shows 2 decimal places
+    printf("Grade: %c\n", grade);
+    printf("Pi: %f\n", pi);
+    return 0;
+}
+@output 
+Age: 25
+Small: 100
+Big: 1000000
+Price: 19.99
+Grade: A
+Pi: 3.141590
+@mistakes
+- Using an uninitialised variable.
+- Wrong format specifier (e.g. %d for a double).
+
+@section 1.3 Constants
+@points
+- const makes a variable unchangeable; assigning to it is a compile error.
+@code c
+#include <stdio.h>
+
+int main() {
+    const double TAX_RATE = 0.08;
+    const int MAX_SCORE = 100;
+
+    // TAX_RATE = 0.10;  // compile error: cannot assign to a const variable
+
+    printf("Tax rate: %.2f\n", TAX_RATE);
+    printf("Max score: %d\n", MAX_SCORE);
+    return 0;
+}
+@output 
+Tax rate: 0.08
+Max score: 100
+
+@section 1.4 Input with scanf
+@points
+- scanf reads from the keyboard. Pass the ADDRESS of the variable (&).
+- A space before %c (" %c") skips whitespace/newlines left in the input.
+- scanf returns the number of values successfully read (check it for robust code).
+@code c
+#include <stdio.h>
+
+int main() {
+    int age;
+    float salary;
+    char initial;
+
+    printf("Enter your age: ");
+    scanf("%d", &age);          // & = "address of"; scanf needs it
+
+    printf("Enter your salary: ");
+    scanf("%f", &salary);
+
+    printf("Enter your initial: ");
+    scanf(" %c", &initial);     // the space before %c skips whitespace
+
+    printf("\nYou entered:\n");
+    printf("Age: %d\n", age);
+    printf("Salary: %.2f\n", salary);
+    printf("Initial: %c\n", initial);
+    return 0;
+}
+@output Example session (the user types 25, 1500.50 and Z)
+Enter your age: 25
+Enter your salary: 1500.50
+Enter your initial: Z
+
+You entered:
+Age: 25
+Salary: 1500.50
+Initial: Z
+@text
+Environment notes:
+@points
+- Some online consoles (e.g. cpp.shell) show prompts only at the end. Fix: end the prompt with "\n", or call fflush(stdout) after printf.
+- Visual Studio warns about scanf and prefers scanf_s. With scanf_s, %c and %s need an extra argument giving the buffer size:
+@code c
+scanf_s("%d", &age);              // numbers: same as scanf
+scanf_s(" %c", &initial, 1);      // char: size 1 is required
+@text
+Check the return value:
+@code c
+if (scanf_s("%d", &age) != 1) { printf("Invalid input\n"); return 1; }
+@mistakes
+- scanf("%d", age);   <- missing &
+- Forgetting the space in " %c" (reads the leftover newline).
+
+@section 1.5 Arithmetic operators
+@points
+- + - * / %   ( % is the remainder, integers only ).
+- int / int is integer division: the fraction is thrown away (10 / 3 = 3).
+- ++ and -- add or subtract 1.  += -= *= /= are compound assignments.
+@code c
+#include <stdio.h>
+
+int main() {
+    int a = 10, b = 3;
+
+    printf("a = %d, b = %d\n", a, b);
+    printf("Addition: %d\n", a + b);
+    printf("Subtraction: %d\n", a - b);
+    printf("Multiplication: %d\n", a * b);
+    printf("Division: %d\n", a / b);      // integer division (truncates)
+    printf("Remainder: %d\n", a % b);     // modulo operator
+
+    float x = 10.0f, y = 3.0f;
+    printf("Float division: %.2f\n", x / y);
+
+    int count = 5;
+    count++;                              // count becomes 6
+    printf("Count after increment: %d\n", count);
+    count--;                              // count becomes 5
+    printf("Count after decrement: %d\n", count);
+
+    int num = 10;
+    num += 5;                             // num = num + 5
+    printf("num after += 5: %d\n", num);
+    num *= 2;                             // num = num * 2
+    printf("num after *= 2: %d\n", num);
+    return 0;
+}
+@output 
+a = 10, b = 3
+Addition: 13
+Subtraction: 7
+Multiplication: 30
+Division: 3
+Remainder: 1
+Float division: 3.33
+Count after increment: 6
+Count after decrement: 5
+num after += 5: 15
+num after *= 2: 30
+
+@section 1.6 Type conversion
+@points
+- Mixed int/float expressions are converted to float automatically.
+- Cast with (type): (float)7 / 2 gives 3.5, but (float)(7 / 2) gives 3.0.
+- Converting float to int truncates (does not round).
+@code c
+#include <stdio.h>
+
+int main() {
+    int integer = 5;
+    float floating = 2.5f;
+
+    float result1 = integer + floating;   // automatic: int becomes float
+    printf("5 + 2.5 = %.2f\n", result1);
+
+    int result2 = 7 / 2;                  // integer division truncates
+    printf("7 / 2 = %d (truncated)\n", result2);
+
+    float result3 = (float)7 / 2;         // explicit cast
+    printf("(float)7 / 2 = %.2f\n", result3);
+
+    int result4 = (int)3.9;               // float to int truncates
+    printf("(int)3.9 = %d\n", result4);
+    return 0;
+}
+@output 
+5 + 2.5 = 7.50
+7 / 2 = 3 (truncated)
+(float)7 / 2 = 3.50
+(int)3.9 = 3
+
+@section 1.7 if / else if / else and logical operators
+@points
+- Conditions are checked top to bottom; the first true branch runs.
+- Comparison: == != < > <= >=     Logical: && (and)  || (or)  ! (not)
+- == compares, = assigns.
+@code c
+#include <stdio.h>
+
+int main() {
+    int score = 73;
+    if (score >= 90) {
+        printf("Grade: A - Excellent!\n");
+    } else if (score >= 80) {
+        printf("Grade: B - Good!\n");
+    } else if (score >= 70) {
+        printf("Grade: C - Satisfactory\n");
+    } else if (score >= 60) {
+        printf("Grade: D - Needs improvement\n");
+    } else {
+        printf("Grade: F - Failed\n");
+    }
+
+    // logical operators: && (and), || (or), ! (not)
+    int age = 10;
+    if (age >= 18 && age <= 65) {
+        printf("You are of working age.\n");
+    } else {
+        printf("You are not of working age.\n");
+    }
+    return 0;
+}
+@output 
+Grade: C - Satisfactory
+You are not of working age.
+@mistakes
+- if (x = 5) assigns instead of comparing.
+- Semicolon right after the if condition.
+
+@section 1.8 switch
+@points
+- switch compares one variable with several constant values.
+- Without break, execution falls through to the next case (used on purpose above to treat 'A' and 'a' alike).
+- default runs when no case matches.
+@code c
+#include <stdio.h>
+
+int main() {
+    char grade;
+    printf("Enter your grade (A, B, C, D, F): ");
+    scanf(" %c", &grade);
+
+    switch (grade) {
+        case 'A':
+        case 'a':
+            printf("Excellent performance!\n");
+            break;
+        case 'B':
+        case 'b':
+            printf("Good job!\n");
+            break;
+        case 'C':
+        case 'c':
+            printf("Satisfactory\n");
+            break;
+        case 'D':
+        case 'd':
+            printf("You can do better\n");
+            break;
+        case 'F':
+        case 'f':
+            printf("Needs improvement\n");
+            break;
+        default:
+            printf("Invalid grade entered\n");
+    }
+    return 0;
+}
+@output Output (user types: b)
+Enter your grade (A, B, C, D, F): Good job!
+
+@section 1.9 while, do-while, break
+@points
+- while checks the condition BEFORE each iteration.
+- do-while runs the body at least once, then checks the condition.
+- break leaves the loop immediately.
+@code c
+#include <stdio.h>
+
+int main() {
+    // while: checks the condition first
+    int count = 1;
+    printf("While loop:\n");
+    while (count <= 5) {
+        printf("Count: %d\n", count);
+        count++;
+    }
+
+    // do-while: body runs at least once
+    int number = 3;
+    printf("\nDo-while loop:\n");
+    do {
+        printf("number: %d\n", number);
+        number--;
+    } while (number != 0);
+
+    // infinite loop with break
+    printf("\nLoop with break:\n");
+    int i = 1;
+    while (1) {
+        printf("%d ", i);
+        if (i == 5) {
+            break;          // exit the loop
+        }
+        i++;
+    }
+    printf("\n");
+    return 0;
+}
+@output 
+While loop:
+Count: 1
+Count: 2
+Count: 3
+Count: 4
+Count: 5
+
+Do-while loop:
+number: 3
+number: 2
+number: 1
+
+Loop with break:
+1 2 3 4 5
+
+@section 1.10 for loop, continue, nested loops
+@points
+- for (init; condition; step) combines setup, test and update.
+- continue skips the rest of the current iteration.
+- Nested loops: the inner loop runs completely for each outer iteration.
+@code c
+#include <stdio.h>
+
+int main() {
+    printf("Counting 1 to 10:\n");
+    for (int i = 1; i <= 10; i++) {
+        printf("%d ", i);
+    }
+    printf("\n");
+
+    printf("\nCounting down:\n");
+    for (int i = 10; i >= 1; i--) {
+        printf("%d ", i);
+    }
+    printf("\n");
+
+    printf("\nOdd numbers only:\n");
+    for (int i = 1; i <= 10; i++) {
+        if (i % 2 == 0) {
+            continue;       // skip the rest of this iteration
+        }
+        printf("%d ", i);
+    }
+    printf("\n");
+
+    printf("\nMultiplication table (5x5):\n");
+    for (int row = 1; row <= 5; row++) {
+        for (int col = 1; col <= 5; col++) {
+            printf("%3d ", row * col);
+        }
+        printf("\n");
+    }
+    return 0;
+}
+@output 
+Counting 1 to 10:
+1 2 3 4 5 6 7 8 9 10
+
+Counting down:
+10 9 8 7 6 5 4 3 2 1
+
+Odd numbers only:
+1 3 5 7 9
+
+Multiplication table (5x5):
+  1   2   3   4   5
+  2   4   6   8  10
+  3   6   9  12  15
+  4   8  12  16  20
+  5  10  15  20  25
+@mistakes
+- Off-by-one: i <= n instead of i < n when indexing arrays.
+
+@section 1.11 Arrays
+@points
+- An array stores several values of the same type in contiguous memory.
+- Indexes start at 0; the last valid index of an array of size n is n-1.
+- Partial initialisation fills the rest with 0.
+- Number of elements: sizeof(arr) / sizeof(arr[0])  (works only where arr is a real array, not inside a function that received it).
+@code c
+#include <stdio.h>
+
+int main() {
+    int numbers[5] = {10, 20, 30, 40, 50};
+
+    printf("First element: %d\n", numbers[0]);
+    printf("Third element: %d\n", numbers[2]);
+    printf("Fifth element: %d\n", numbers[4]);
+
+    numbers[1] = 25;
+    printf("Modified second element: %d\n", numbers[1]);
+
+    int sum = 0;
+    for (int i = 0; i < 5; i++) {
+        sum += numbers[i];
+    }
+    printf("Sum: %d\n", sum);
+
+    int scores[10] = {85, 92, 78};      // remaining elements are 0
+    printf("scores[2] = %d, scores[3] = %d\n", scores[2], scores[3]);
+
+    int values[] = {45, 12, 89, 34, 67, 23};            // size is deduced
+    int size = sizeof(values) / sizeof(values[0]);      // number of elements
+    int max = values[0];
+    for (int i = 1; i < size; i++) {
+        if (values[i] > max) {
+            max = values[i];
+        }
+    }
+    printf("size = %d, maximum = %d\n", size, max);
+    return 0;
+}
+@output 
+First element: 10
+Third element: 30
+Fifth element: 50
+Modified second element: 25
+Sum: 155
+scores[2] = 78, scores[3] = 0
+size = 6, maximum = 89
+@mistakes
+- Reading or writing arr[n] (out of bounds) is undefined behavior.
+
+@section 1.12 Two-dimensional arrays
+@points
+- type name[rows][cols]; access with name[row][col].
+- Use nested loops to process every element.
+@code c
+#include <stdio.h>
+
+int main() {
+    int matrix[3][4] = {
+        {1, 2, 3, 4},
+        {5, 6, 7, 8},
+        {9, 10, 11, 12}
+    };
+
+    for (int row = 0; row < 3; row++) {
+        for (int col = 0; col < 4; col++) {
+            printf("%3d ", matrix[row][col]);
+        }
+        printf("\n");
+    }
+
+    int grades[4][3] = {
+        {85, 90, 78},
+        {88, 92, 84},
+        {95, 87, 91},
+        {76, 82, 79}
+    };
+
+    printf("\nStudent\tExam1\tExam2\tExam3\tAverage\n");
+    for (int student = 0; student < 4; student++) {
+        int total = 0;
+        printf("%d\t", student + 1);
+        for (int exam = 0; exam < 3; exam++) {
+            printf("%d\t", grades[student][exam]);
+            total += grades[student][exam];
+        }
+        printf("%.1f\n", total / 3.0);
+    }
+    return 0;
+}
+@output 
+  1   2   3   4
+  5   6   7   8
+  9  10  11  12
+
+Student     Exam1   Exam2   Exam3   Average
+1   85      90      78      84.3
+2   88      92      84      88.0
+3   95      87      91      91.0
+4   76      82      79      79.0
+
+@section 1.13 Strings
+@points
+- C has no string type. A string is a char array that ends with the null terminator '\0' (value 0).
+- A string literal ("Alice") gets '\0' added automatically. char name[20] = "Alice"  holds 'A','l','i','c','e','\0' and unused space.
+- If you build the array by hand, you must add '\0' yourself; without it printf("%s") keeps reading past the end of the array.
+- There is no stored length. The length is the number of characters before '\0'.
+- The array must be big enough for the characters PLUS the '\0'.
+@code c
+#include <stdio.h>
+
+int main() {
+    char name[20] = "Alice";   // compiler adds '\0' after the 'e'
+    char city[30] = {'N', 'e', 'w', ' ', 'Y', 'o', 'r', 'k', '\0'};  // '\0' added by hand
+
+    int len = 0;
+    while (name[len] != '\0') {
+        len++;
+    }
+
+    printf("%s has length %d\n", name, len);
+    printf("%s\n", city);
+    printf("name[5] is the terminator, its value is %d\n", name[5]);
+    return 0;
+}
+@output 
+Alice has length 5
+New York
+name[5] is the terminator, its value is 0
+
+@section 1.14 Functions
+@points
+- A function has a return type, a name, parameters and a body.
+- void means "returns nothing".
+- A function must be declared (or defined) before it is called; otherwise write a prototype first, e.g.  int add(int a, int b);
+@code c
+#include <stdio.h>
+
+int add(int a, int b) {
+    return a + b;
+}
+
+void printGreeting() {
+    printf("Hello! Welcome to C programming.\n");
+}
+
+double calculateAverage(int arr[], int size) {
+    int sum = 0;
+    for (int i = 0; i < size; i++) {
+        sum += arr[i];
+    }
+    return (double)sum / size;
+}
+
+int main() {
+    int sum = add(5, 3);
+    printf("5 + 3 = %d\n", sum);
+
+    printGreeting();
+
+    int scores[] = {85, 90, 78, 92, 88};
+    int size = sizeof(scores) / sizeof(scores[0]);
+    printf("Average score: %.2f\n", calculateAverage(scores, size));
+
+    printf("10 + 20 = %d\n", add(10, 20));
+    return 0;
+}
+@output 
+5 + 3 = 8
+Hello! Welcome to C programming.
+Average score: 86.60
+10 + 20 = 30
+
+@section 1.15 Passing arrays to functions
+@points
+- The function does NOT get a copy of the array; it works on the caller's original. Changes are visible after the call.
+- The function does not know the array's size, so pass the size as a separate parameter.
+@code c
+#include <stdio.h>
+
+void doubleAll(int arr[], int size) {
+    for (int i = 0; i < size; i++) {
+        arr[i] = arr[i] * 2;    // changes the caller's array
+    }
+}
+
+int main() {
+    int numbers[] = {1, 2, 3, 4, 5};
+    int size = sizeof(numbers) / sizeof(numbers[0]);   // only works here, where numbers is a real array
+
+    printf("Before: ");
+    for (int i = 0; i < size; i++) printf("%d ", numbers[i]);
+    printf("\n");
+
+    doubleAll(numbers, size);
+
+    printf("After:  ");
+    for (int i = 0; i < size; i++) printf("%d ", numbers[i]);
+    printf("\n");
+    return 0;
+}
+@output 
+Before: 1 2 3 4 5
+After:  2 4 6 8 10
+
+@section 1.16 Pass by value
+@points
+- Ordinary variables (int, double, char, ...) are passed by value: the function receives a copy, so changing the parameter does not change the caller's variable.
+@code c
+#include <stdio.h>
+
+void tryToChange(int x) {
+    x = 999;                    // only changes the local copy
+    printf("Inside function: x = %d\n", x);
+}
+
+int main() {
+    int value = 5;
+    printf("Before call: value = %d\n", value);
+    tryToChange(value);
+    printf("After call:  value = %d\n", value);
+    return 0;
+}
+@output 
+Before call: value = 5
+Inside function: x = 999
+After call:  value = 5

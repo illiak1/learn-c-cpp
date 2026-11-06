@@ -1,0 +1,328 @@
+@lesson 02_pointers
+@title Pointers
+@summary Addresses, & and *, pointer arithmetic, arrays, nullptr, pass by pointer and by reference.
+@order 2
+
+@section 2.1 Memory model and addresses
+@points
+- Memory is divided into slots; each slot has a unique address.
+- A variable lives at an address and stores a value there.
+- Changing a variable means changing the content of its memory.
+@text
+Simplified diagram (one variable per slot; real ints occupy 4 bytes and real addresses are much larger, the idea is the same):
+@code text
+Addr   Content        Addr   Content        Addr   Content        Addr   Content
+1000   i: 37          1001   j: 46          1002   k: 58          1003   m: 74
+1004   a[0]: 'a'      1005   a[1]: 'b'      1006   a[2]: 'c'      1007   a[3]: '\0'
+1008   ptr: 1001
+@text
+After  i = 40;  and  a[2] = 'z';
+@code text
+1000   i: 40          1001   j: 46          1002   k: 58          1003   m: 74
+1004   a[0]: 'a'      1005   a[1]: 'b'      1006   a[2]: 'z'      1007   a[3]: '\0'
+1008   ptr: 1001
+@text
+ptr holds 1001, which is the address of j: "ptr points to j".
+
+@section 2.2 Declaring pointers, & and *
+@points
+- A pointer is a variable that stores the address of another variable.
+- int* ptr;    declares a pointer to int.
+- &x           address-of operator: gives the address of x.
+- *ptr         dereference operator: the variable ptr points to.
+- ptr itself holds an address, NOT the value of i.
+- Type rule: &i has type int*, *ptr has type int.
+@code cpp
+#include <iostream>
+using namespace std;
+
+int main() {
+    int i = 5;
+    int* ptr;           // declare a pointer to int
+    ptr = &i;           // store the address of i in ptr
+    cout << "i = " << i << endl;
+    cout << "*ptr = " << *ptr << endl;
+    cout << "ptr == &i: " << (ptr == &i) << endl;   // 1 (true): ptr holds the address of i
+
+    *ptr = 10;          // change i through the pointer
+    cout << "i = " << i << endl;
+    return 0;
+}
+@output 
+i = 5
+*ptr = 5
+ptr == &i: 1
+i = 10
+@code text Example of the two operators on the diagram (ptr = &j; then *ptr = 99;)
+ptr = &j;    ptr now holds the address of j
+*ptr = 99;   j becomes 99
+@mistakes
+- Using an uninitialised pointer (it points to a random address).
+- Writing *ptr = 5 when ptr was never assigned an address.
+
+@section 2.3 Pass by pointer
+@points
+- Passing a value copies it; the function cannot change the original.
+- Passing &variable gives the function the address, so it can change the original through *parameter.
+@code cpp
+#include <iostream>
+using namespace std;
+
+void byValue(int j)     { j = 5; }
+void byPointer(int *p)  { *p = 5; }
+
+int main() {
+    int a = 3;
+    byValue(a);
+    cout << "after byValue:   a = " << a << endl;
+    byPointer(&a);
+    cout << "after byPointer: a = " << a << endl;
+    return 0;
+}
+@output 
+after byValue:   a = 3
+after byPointer: a = 5
+
+@section 2.4 Tracing pointer code
+@code cpp
+int i = 5, j = 10;
+int* ptr;
+ptr = &i;
+*ptr = 3;
+ptr = &j;
+*ptr = -2;
+@code text State after each line (verified by running the code)
+Line                i   j   ptr           *ptr
+------------------  --  --  ------------  ----
+int i = 5, j = 10;  5   10  -             -
+int* ptr;           5   10  (undefined)   -
+ptr = &i;           5   10  address of i  5
+*ptr = 3;           3   10  address of i  3
+ptr = &j;           3   10  address of j  10
+*ptr = -2;          3   -2  address of j  -2
+@text
+Types: i, j are int;  ptr is int*;  *ptr is int.
+
+@section 2.5 Pointer to pointer (double indirection)
+@points
+- A pointer can itself have an address; int** pptr holds the address of an int*.
+- *pptr is the int* (that is ptr); **pptr is the int (that is i or j).
+@code cpp
+int i = 5, j = 10;
+int *ptr;
+int **pptr;
+ptr = &i;
+pptr = &ptr;
+*ptr = 3;
+**pptr = 7;
+ptr = &j;
+**pptr = 9;
+*pptr = &i;
+*ptr = -2;
+@code text State after each line (verified by running the code)
+Line          i   j   ptr points to  pptr points to
+------------  --  --  -------------  --------------
+ptr = &i;     5   10  i              -
+pptr = &ptr;  5   10  i              ptr
+*ptr = 3;     3   10  i              ptr
+**pptr = 7;   7   10  i              ptr
+ptr = &j;     7   10  j              ptr
+**pptr = 9;   7   9   j              ptr
+*pptr = &i;   7   9   i              ptr      (changing *pptr changes ptr)
+*ptr = -2;    -2  9   i              ptr
+@text
+Types: ptr is int*;  pptr is int**;  *pptr is int*;  **pptr is int.
+@text
+Exercise: trace this code line by line.
+@code cpp
+int i = 2, j = 8;
+int* ptr;
+int** pptr;
+ptr = &i;
+pptr = &ptr;
+*ptr = 7;
+**pptr = 12;
+ptr = &j;
+**pptr = 34;
+*pptr = &i;
+*ptr = -25;
+@text
+Answer (final state): i = -25, j = 34, ptr points to i, pptr points to ptr. Step by step: i=7, i=12, ptr now points to j, j=34, ptr points to i again, i=-25.
+
+@section 2.6 Pointer arithmetic
+@points
+- ptr + 1 is the NEXT element of the pointed-to type; ptr - 1 is the previous one.
+- The address moves by n * sizeof(type) bytes, not by n bytes: int* moves by sizeof(int) per step, double* by sizeof(double).
+- ptr * 2 and ptr / 2 are invalid. (ptr1 - ptr2 is valid: it gives the number of elements between them.)
+- a[i] is the same as *(a + i).
+@code cpp
+#include <iostream>
+using namespace std;
+
+int main() {
+    int    ia[3] = {10, 20, 30};
+    double da[3] = {1.5, 2.5, 3.5};
+    int*    ip = ia;
+    double* dp = da;
+
+    // The address difference (in bytes) shows how far "+ 1" moves the pointer.
+    cout << "int step:    " << (char*)(ip + 1) - (char*)ip << " bytes (sizeof(int) = " << sizeof(int) << ")" << endl;
+    cout << "double step: " << (char*)(dp + 1) - (char*)dp << " bytes (sizeof(double) = " << sizeof(double) << ")" << endl;
+
+    cout << *(ip + 2) << " " << ip[2] << endl;     // a[i] is the same as *(a + i)
+    cout << *(dp + 1) << " " << dp[1] << endl;
+    return 0;
+}
+@output 
+int step:    4 bytes (sizeof(int) = 4)
+double step: 8 bytes (sizeof(double) = 8)
+30 30
+2.5 2.5
+@text
+(Sizes shown are typical: int = 4 bytes, double = 8 bytes.)
+
+@section 2.7 Pointers and arrays
+@points
+- The name of an array converts to a pointer to its first element: a is the same as &a[0].
+- These are equivalent:
+ptr = &(a[2]);
+ptr = &(*(a + 2));
+ptr = a + 2;
+- a is a fixed address (you cannot do a = something); ptr is a variable and can be changed (ptr++, ptr += 2, ...).
+@code cpp
+float a[4];
+float* ptr;
+ptr = &(a[2]);
+*ptr = 3.14;
+ptr++;
+*ptr = 9.0;
+ptr = ptr - 3;
+*ptr = 6.0;
+ptr += 2;
+*ptr = 7.0;
+@code text State after each line ("?" = not set, verified by running the code)
+Line            a[0]  a[1]  a[2]  a[3]  ptr points to  *ptr
+--------------  ----  ----  ----  ----  -------------  ----
+ptr = &(a[2]);  ?     ?     ?     ?     a[2]           ?
+*ptr = 3.14;    ?     ?     3.14  ?     a[2]           3.14
+ptr++;          ?     ?     3.14  ?     a[3]           ?
+*ptr = 9.0;     ?     ?     3.14  9.0   a[3]           9.0
+ptr = ptr - 3;  ?     ?     3.14  9.0   a[0]           ?
+*ptr = 6.0;     6.0   ?     3.14  9.0   a[0]           6.0
+ptr += 2;       6.0   ?     3.14  9.0   a[2]           3.14
+*ptr = 7.0;     6.0   ?     7.0   9.0   a[2]           7.0
+@mistakes
+- Moving a pointer before the first or after the last element and dereferencing it (undefined behavior).
+
+@section 2.8 Exercises with solutions
+@text
+Exercise 1. Print the 5 integers of  int arr[] = {4,6,7,8,9};  using pointer arithmetic (int* ptr = arr; int len = 5;).
+@text
+Exercise 2. Write  int sum(int* ptr, int numValues)  that uses pointer arithmetic to return the sum of numValues values.
+@text
+Exercise 3. Add the elements of  {4,6,7,8,9,0}  until a 0 is reached. Fill in the for loop:  for (int *p = a; ....; ....)
+@code cpp
+#include <iostream>
+using namespace std;
+
+int sum(int* ptr, int numValues) {
+    int total = 0;
+    for (int k = 0; k < numValues; k++) {
+        total += *(ptr + k);
+    }
+    return total;
+}
+
+int main() {
+    // Exercise 1: print the array using pointer arithmetic
+    int arr[] = {4, 6, 7, 8, 9};
+    int* ptr = arr;
+    int len = 5;
+    for (int k = 0; k < len; k++) {
+        cout << *(ptr + k) << " ";
+    }
+    cout << endl;
+
+    // Exercise 2: sum()
+    cout << "sum = " << sum(arr, 5) << endl;
+
+    // Exercise 3: add elements until a 0 is reached
+    int a[] = {4, 6, 7, 8, 9, 0};
+    int total = 0;
+    for (int *p = a; *p != 0; p++) {
+        total += *p;
+    }
+    cout << "sum until 0 = " << total << endl;
+    return 0;
+}
+@output 
+4 6 7 8 9
+sum = 34
+sum until 0 = 34
+
+@section 2.9 nullptr
+@points
+- An uninitialised pointer contains a random address.
+- nullptr means "points to nothing". Set pointers to nullptr when they have no target, and test before dereferencing.
+- Dereferencing nullptr crashes the program or is undefined behavior.
+- (C uses NULL instead of nullptr.)
+@code cpp
+#include <iostream>
+using namespace std;
+
+int main() {
+    int* ptr = nullptr;                 // points to nothing
+    if (ptr == nullptr) {
+        cout << "ptr points to nothing" << endl;
+    }
+    int x = 7;
+    ptr = &x;
+    if (ptr != nullptr) {
+        cout << "ptr now points to " << *ptr << endl;
+    }
+    return 0;
+}
+@output 
+ptr points to nothing
+ptr now points to 7
+
+@section 2.10 Pass by pointer vs pass by reference
+@points
+- Both let a function modify the caller's variable.
+- Reference: cleaner syntax, no & at the call, no * in the body.
+- Pointer: the caller writes &x, the body uses *p, and a pointer may be nullptr.
+- Use a reference when null is not meaningful. A reference parameter that is not modified should be const (const int& x).
+- A pointer can be null; a reference cannot.
+@code cpp
+#include <iostream>
+using namespace std;
+
+void swapPtr(int* x, int* y) {
+    int z = *x; *x = *y; *y = z;
+}
+void swapRef(int& x, int& y) {
+    int z = x; x = y; y = z;
+}
+
+int main() {
+    int a = 45, b = 35;
+    cout << "Before:               a=" << a << " b=" << b << endl;
+    swapPtr(&a, &b);
+    cout << "After swapPtr(&a,&b): a=" << a << " b=" << b << endl;
+    swapRef(a, b);
+    cout << "After swapRef(a,b):   a=" << a << " b=" << b << endl;
+    return 0;
+}
+@output 
+Before:               a=45 b=35
+After swapPtr(&a,&b): a=35 b=45
+After swapRef(a,b):   a=45 b=35
+
+@section 2.11 Summary
+@points
+- A pointer stores the address of another entity.
+- & gets an address; * follows an address (dereference).
+- Pointers and arrays are closely related; ptr + n moves n elements.
+- Pass by pointer and pass by reference both allow modification.
+- Use nullptr for "no target".
+- Pros: efficiency, flexibility.  Cons: error-prone, hard to debug.
