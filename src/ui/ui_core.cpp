@@ -22,6 +22,7 @@ void Context::beginFrame() {
     pressed = IsMouseButtonPressed(MOUSE_BUTTON_LEFT);
     released = IsMouseButtonReleased(MOUSE_BUTTON_LEFT);
     wheel = GetMouseWheelMove();
+    wheelX = GetMouseWheelMoveV().x;
     dt = std::min(GetFrameTime(), 0.05f);
     now = GetTime();
     screenW = GetScreenWidth();

@@ -1,5 +1,5 @@
 // ui.h - small immediate-mode UI toolkit: context, text layout, buttons, cards, tabs,
-// progress bars and scroll views.
+// progress bars, scroll views, text inputs and the code box.
 #pragma once
 
 #include <cstdint>
@@ -63,6 +63,7 @@ public:
     Vector2 mouse{};
     bool down = false, pressed = false, released = false;
     float wheel = 0.0f;
+    float wheelX = 0.0f;
     float dt = 0.016f;
     double now = 0.0;
     uint32_t active = 0;      // widget held by the mouse
@@ -150,5 +151,31 @@ struct ScrollState {
 Rect scrollBegin(ScrollState& s, Rect viewport);
 // Ends it; contentEndY is the y where content stopped drawing.
 void scrollEnd(ScrollState& s, Rect viewport, float contentEndY);
+
+// ---- Text input (textinput.cpp) -------------------------------------------------------------
+struct TextInputOpts {
+    bool multiline = false;
+    bool mono = false;
+    bool readOnly = false;
+    const char* placeholder = "";
+    int fontPx = size::kBody;
+};
+// Editable text field. Returns true when Enter is pressed (single line) or the text changed (multiline).
+bool textInput(const std::string& id, Rect r, std::string& text, const TextInputOpts& opts = {});
+
+// ---- Code box (codebox.cpp) -----------------------------------------------------------------
+struct CodeBoxOpts {
+    bool lineNumbers = true;
+    bool cpp = false;            // keyword set (C vs C++)
+    bool copyButton = false;     // small "copy" icon in the corner
+    int fontPx = size::kCode;
+    int highlightLine = -1;      // 0-based line drawn with a tinted background
+    bool clickableLines = false; // lines react to hover/click (find-the-bug)
+    int selectedLine = -1;       // persistent selection (find-the-bug)
+};
+// Height needed to show all lines.
+float codeBoxHeight(const std::string& code, const CodeBoxOpts& opts = {});
+// Draws a read-only code block with syntax colours; returns the 0-based line clicked this frame, or -1.
+int codeBox(const std::string& id, Rect r, const std::string& code, const CodeBoxOpts& opts = {});
 
 }  // namespace ui

@@ -1,11 +1,13 @@
 // main.cpp - entry point: opens the window and runs the main loop.
+#include <string>
+
 #include "platform/paths.h"
 #include "raylib.h"
 #include "ui/theme.h"
 #include "ui/ui.h"
 
 // Draws a gallery of the UI toolkit widgets (temporary until the app shell exists).
-static void drawGallery(ui::ScrollState& scroll, int& trackTab) {
+static void drawGallery(ui::ScrollState& scroll, int& trackTab, std::string& line, std::string& area) {
     using namespace ui;
     const Palette& c = Theme::get().colors();
     Context& cx = Context::get();
@@ -50,6 +52,16 @@ static void drawGallery(ui::ScrollState& scroll, int& trackTab) {
                   "Paragraphs wrap to the card width. This text is long enough to need several lines so that the "
                   "wrapping and the line height can be checked by eye.\nA hard line break starts a new paragraph.",
                   long_.x + 20, long_.y + 18, long_.width - 40, c.text);
+    static const std::string sample =
+        "#include <stdio.h>\n\n/* sums an array */\nint sum(int n, int a[]) {\n    int total = 0;\n"
+        "    for (int i = 0; i < n; i++) {\n        total += a[i];   // add each element\n    }\n"
+        "    printf(\"total = %d\\n\", total);\n    return total;\n}";
+    Rect cb = col.take(codeBoxHeight(sample));
+    codeBox("sample", cb, sample, CodeBoxOpts{true, false, true});
+    Rect in1 = col.take(40);
+    textInput("line", Rect{in1.x, in1.y, 360, 40}, line, TextInputOpts{false, false, false, "Type a short answer..."});
+    Rect in2 = col.take(110);
+    textInput("area", in2, area, TextInputOpts{true, true, false, "Multi-line input (Enter adds a line)", 15});
     for (int i = 0; i < 12; ++i) {
         Rect r = col.take(46);
         card(r, false);
@@ -69,6 +81,7 @@ int main() {
     theme.init((platform::resourceRoot() / "assets").string());
     ui::ScrollState scroll;
     int trackTab = 0;
+    std::string line, area;
 
     while (!WindowShouldClose()) {
         if (IsKeyPressed(KEY_D)) theme.toggleMode();
@@ -76,7 +89,7 @@ int main() {
         cx.beginFrame();
         BeginDrawing();
         ClearBackground(theme.colors().bg);
-        drawGallery(scroll, trackTab);
+        drawGallery(scroll, trackTab, line, area);
         cx.endFrame();
         EndDrawing();
     }
