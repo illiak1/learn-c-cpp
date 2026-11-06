@@ -1,0 +1,43 @@
+@rem Exercises for lesson 04_exam_tips (C track). Format: docs/CONTENT_FORMAT.md
+
+@exercise c-exam-choice-compile
+@type choice
+@lesson 04_exam_tips
+@difficulty 1
+@prompt
+Four of your five functions are correct, but the file has a compile error. What is the result?
+@choices
+- 80 percent
+- 4 out of 5 functions are marked
+* 0 for the whole exam
+- Only the broken function gets 0
+@explain
+A compile error, an infinite loop or a crash gives 0 for the whole exam.
+
+@exercise c-exam-choice-wrong
+@type choice
+@lesson 04_exam_tips
+@difficulty 1
+@prompt
+One function compiles and finishes but returns a wrong result. What happens?
+@choices
+* Only that function fails
+- The whole exam gets 0
+- The file is not marked
+- All functions after it fail
+@explain
+A wrong result fails only that function.
+
+@exercise c-exam-choice-unfinished
+@type choice
+@lesson 04_exam_tips
+@difficulty 1
+@prompt
+You cannot finish a function in time. What is the safest thing to do?
+@choices
+- Leave the half-written loop in the file
+- Delete the function from the file
+* Make it compile and terminate with a placeholder return value
+- Comment out the tests at the bottom
+@explain
+A function that compiles and ends can at worst fail by itself. Half a loop can break the build or never end, and then the whole exam is 0.

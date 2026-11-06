@@ -1,0 +1,182 @@
+@rem Exercises for lesson 06_linked_lists (C++ track). Format: docs/CONTENT_FORMAT.md
+
+@exercise cpp-list-theory-empty
+@type theory
+@lesson 06_linked_lists
+@difficulty 1
+@prompt
+What does the head pointer of an empty linked list hold?
+@answer
+nullptr | null | NULL | a null pointer
+@explain
+An empty list has head == nullptr, and the last node's next pointer is nullptr, too.
+
+@exercise cpp-list-theory-doubly
+@type theory
+@lesson 06_linked_lists
+@difficulty 1
+@prompt
+A doubly linked node has two pointers besides its data. Name them.
+@answer
+prev and next | previous and next | prevPointer and nextPointer | prev, next | next and prev | next and previous
+@explain
+prevPointer links to the node before, nextPointer to the node after.
+
+@exercise cpp-list-choice-doublepointer
+@type choice
+@lesson 06_linked_lists
+@difficulty 2
+@prompt
+Why does a function-based InsertAtEnd take a Node** parameter?
+@choices
+- Because a Node* cannot be passed to a function
+* So that it can change the caller's head pointer when the list is empty
+- Because Node** makes the function faster
+- Because it must return two nodes
+@explain
+Parameters are copies. To change the caller's head pointer the function needs the address of that pointer, which is a Node**.
+
+@exercise cpp-list-choice-index
+@type choice
+@lesson 06_linked_lists
+@difficulty 1
+@prompt
+Which operation is slower in a singly linked list than in an array?
+@choices
+- Inserting at the beginning
+* Reading the element at index 500
+- Deleting the first node
+- Checking whether the list is empty
+@explain
+There is no direct access by index: you must walk from the head, node by node.
+
+@exercise cpp-list-predict-build
+@type predict
+@lesson 06_linked_lists
+@difficulty 2
+@prompt
+What does this program print?
+@code
+#include <iostream>
+using namespace std;
+
+struct Node {
+    int data;
+    Node* next;
+};
+
+int main() {
+    Node* head = nullptr;
+    for (int i = 1; i <= 3; i++) {
+        Node* n = new Node{i, head};
+        head = n;
+    }
+    for (Node* p = head; p != nullptr; p = p->next) {
+        cout << p->data << " ";
+    }
+    cout << endl;
+    while (head != nullptr) {
+        Node* t = head;
+        head = head->next;
+        delete t;
+    }
+    return 0;
+}
+@answer
+3 2 1
+@explain
+Every new node is put in front of the old head, so the list ends up in reverse order: 3, 2, 1.
+
+@exercise cpp-list-fill-delete-first
+@type fill
+@lesson 06_linked_lists
+@difficulty 2
+@prompt
+Complete the function that removes the first node of the list.
+@code
+struct Node {
+    int data;
+    Node* next;
+};
+
+void deleteFirst(Node** ptrToHeadPtr) {
+    Node* temp = *ptrToHeadPtr;
+    *ptrToHeadPtr = temp->___;
+    delete ___;
+}
+@answer
+next
+temp
+@explain
+Move the head to the second node first, then delete the old first node (saved in temp).
+
+@exercise cpp-list-fill-insert-beginning
+@type fill
+@lesson 06_linked_lists
+@difficulty 2
+@prompt
+Complete InsertAtBeginning.
+@code
+struct Node {
+    int data;
+    Node* next;
+};
+
+void insertAtBeginning(Node** head, int value) {
+    Node* node = new Node;
+    node->data = value;
+    node->next = ___;
+    *head = ___;
+}
+@answer
+*head
+node
+@explain
+The new node points to the old first node and then becomes the new head.
+
+@exercise cpp-list-fill-walk
+@type fill
+@lesson 06_linked_lists
+@difficulty 2
+@prompt
+Complete the loop that walks to the last node.
+@code
+struct Node {
+    int data;
+    Node* next;
+};
+
+Node* lastNode(Node* head) {
+    Node* cur = head;
+    while (cur->___ != nullptr) {
+        cur = cur->next;
+    }
+    return cur;
+}
+@answer
+next
+@explain
+The last node is the one whose next pointer is nullptr. (The function assumes the list is not empty.)
+
+@exercise cpp-list-bug-delete-list
+@type bug
+@lesson 06_linked_lists
+@difficulty 3
+@prompt
+This function should delete every node. Click the line that is a bug (either of the two lines involved is accepted).
+@code
+struct Node {
+    int data;
+    Node* next;
+};
+
+void deleteList(Node* head) {
+    Node* cur = head;
+    while (cur != nullptr) {
+        delete cur;
+        cur = cur->next;
+    }
+}
+@bugline 9 10
+@explain
+After delete cur the node no longer exists, so cur->next reads freed memory. Save the next pointer first, then delete the node.

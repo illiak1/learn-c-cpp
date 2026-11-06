@@ -90,3 +90,158 @@ for (int k = 0; k < 5; k++) {
 @match loose
 @explain
 The valid indexes are 0 to 4. With k <= 5 the loop also reads arr[5], one element past the end (undefined behavior).
+
+@exercise cpp-ptr-theory-step
+@type theory
+@lesson 02_pointers
+@difficulty 2
+@prompt
+On a typical system, by how many bytes does p + 1 move an int pointer p? Write the number.
+@answer
+4 | 4 bytes | sizeof(int)
+@explain
+ptr + 1 moves n * sizeof(type) bytes: 4 bytes for a 4-byte int.
+
+@exercise cpp-ptr-theory-nullptr
+@type theory
+@lesson 02_pointers
+@difficulty 1
+@prompt
+Which keyword means "this pointer points to nothing" in C++?
+@answer
+nullptr
+@explain
+Set pointers to nullptr when they have no target and test them before dereferencing.
+
+@exercise cpp-ptr-choice-null
+@type choice
+@lesson 02_pointers
+@difficulty 2
+@prompt
+Which of these can be null: a pointer parameter or a reference parameter?
+@choices
+* Only the pointer
+- Only the reference
+- Both
+- Neither
+@explain
+A pointer may hold nullptr; a reference must always refer to an existing object.
+
+@exercise cpp-ptr-predict-trace
+@type predict
+@lesson 02_pointers
+@difficulty 3
+@prompt
+Trace this code line by line (it is the exercise from the pointer-to-pointer section). What does the last line print?
+@code
+int i = 2, j = 8;
+int* ptr;
+int** pptr;
+ptr = &i;
+pptr = &ptr;
+*ptr = 7;
+**pptr = 12;
+ptr = &j;
+**pptr = 34;
+*pptr = &i;
+*ptr = -25;
+cout << i << " " << j << endl;
+@answer
+-25 34
+@hint
+Write down which variable ptr points to after every line.
+@explain
+i=7, then i=12 (through pptr), ptr now points to j, j=34, *pptr = &i makes ptr point to i again, and *ptr = -25 sets i. Final state: i = -25, j = 34.
+
+@exercise cpp-ptr-predict-array
+@type predict
+@lesson 02_pointers
+@difficulty 2
+@prompt
+What does this code print?
+@code
+int a[4] = {10, 20, 30, 40};
+int* p = a + 1;
+p++;
+*p = *p + 5;
+cout << a[1] << " " << a[2] << " " << *(a + 2) << endl;
+@answer
+20 35 35
+@explain
+p starts at a[1] and p++ moves it to a[2]. That element becomes 35. a[2] and *(a + 2) are the same element.
+
+@exercise cpp-ptr-fill-until-zero
+@type fill
+@lesson 02_pointers
+@difficulty 2
+@prompt
+Add the elements of {4, 6, 7, 8, 9, 0} until a 0 is reached. Fill in the for loop: for (int *p = a; ....; ....)
+@code
+int a[] = {4, 6, 7, 8, 9, 0};
+int total = 0;
+for (int *p = a; ___; ___) {
+    total += *p;
+}
+@answer
+*p != 0 | *p
+p++ | ++p | p = p + 1 | p += 1
+@explain
+The loop continues while *p is not 0 and moves to the next element with p++.
+
+@exercise cpp-ptr-fill-print
+@type fill
+@lesson 02_pointers
+@difficulty 1
+@prompt
+Print the 5 integers of arr using pointer arithmetic.
+@code
+int arr[] = {4, 6, 7, 8, 9};
+int* ptr = arr;
+int len = 5;
+for (int k = 0; k < len; k++) {
+    cout << ___ << " ";
+}
+@answer
+*(ptr + k) | ptr[k]
+@explain
+*(ptr + k) is the element k places after the one ptr points to.
+
+@exercise cpp-ptr-fill-swap
+@type fill
+@lesson 02_pointers
+@difficulty 2
+@prompt
+Complete the swap function that takes two pointers.
+@code
+void swapPtr(int* x, int* y) {
+    int z = ___;
+    *x = *y;
+    *y = ___;
+}
+@answer
+*x
+z
+@explain
+Save the value x points to in z, copy *y into *x, then store the saved value in *y.
+
+@exercise cpp-ptr-bug-address
+@type bug
+@lesson 02_pointers
+@difficulty 1
+@prompt
+The program should print 5 through a pointer. Click the buggy line, then type the corrected line.
+@code
+#include <iostream>
+using namespace std;
+
+int main() {
+    int i = 5;
+    int* ptr = i;
+    cout << *ptr << endl;
+    return 0;
+}
+@bugline 6
+@answer
+int* ptr = &i;
+@explain
+A pointer must hold an address: use &i.

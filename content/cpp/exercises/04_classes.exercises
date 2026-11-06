@@ -1,0 +1,303 @@
+@rem Exercises for lesson 04_classes (C++ track). Format: docs/CONTENT_FORMAT.md
+
+@exercise cpp-class-theory-method
+@type theory
+@lesson 04_classes
+@difficulty 1
+@prompt
+What is a function that belongs to a class called?
+@answer
+method | a method | member function | a member function
+@explain
+A method is called on an object (vec.print()) and works on that object's fields.
+
+@exercise cpp-class-theory-default-access
+@type theory
+@lesson 04_classes
+@difficulty 1
+@prompt
+What is the default access of the members of a class (not a struct)? Write public or private.
+@answer
+private
+@explain
+In a class the members are private by default; in a struct they are public by default.
+
+@exercise cpp-class-choice-copy-ctor
+@type choice
+@lesson 04_classes
+@difficulty 2
+@prompt
+Which is the correct declaration of the copy constructor of class Point?
+@choices
+- Point(Point o);
+* Point(const Point& o);
+- Point(const Point o);
+- Point& Point(const Point& o);
+@explain
+The copy constructor takes a const reference to another object of the same class. Taking the parameter by value would need a copy to make the copy.
+
+@exercise cpp-class-choice-static
+@type choice
+@lesson 04_classes
+@difficulty 2
+@prompt
+What can a static method NOT use?
+@choices
+- Its parameters
+- Other static members
+* this and the non-static members
+- Local variables
+@explain
+A static member belongs to the class itself, not to an object, so there is no this.
+
+@exercise cpp-class-choice-shallow
+@type choice
+@lesson 04_classes
+@difficulty 2
+@prompt
+A class has a char* name field and no copy constructor. What does  MITStudent b = a;  do to the pointer?
+@choices
+- It makes b.name point to a new copy of the text
+* It copies the address, so a.name and b.name point to the same text
+- It sets b.name to nullptr
+- It does not compile
+@explain
+The default copy constructor copies every field. For a pointer field that copies the address (a shallow copy), so changing one object changes the other.
+
+@exercise cpp-class-predict-ctors
+@type predict
+@lesson 04_classes
+@difficulty 2
+@prompt
+What does this program print?
+@code
+#include <iostream>
+using namespace std;
+
+class Point {
+public:
+    double x, y;
+    Point() : x(0), y(0) { cout << "default" << endl; }
+    Point(double nx, double ny) : x(nx), y(ny) { cout << "two" << endl; }
+};
+
+int main() {
+    Point p;
+    Point q(1, 2);
+    cout << p.x << "," << q.y << endl;
+    return 0;
+}
+@answer
+default
+two
+0,2
+@explain
+Each constructor prints its message when the object is created; then p.x is 0 and q.y is 2.
+
+@exercise cpp-class-predict-destructor
+@type predict
+@lesson 04_classes
+@difficulty 2
+@prompt
+What does this program print?
+@code
+#include <iostream>
+using namespace std;
+
+class T {
+public:
+    T() { cout << "A "; }
+    ~T() { cout << "B "; }
+};
+
+int main() {
+    {
+        T t;
+        cout << "in ";
+    }
+    cout << "out" << endl;
+    return 0;
+}
+@answer
+A in B out
+@explain
+t is created (A), the block prints "in ", t goes out of scope at the closing brace and its destructor prints B, then "out".
+
+@exercise cpp-class-predict-shallow
+@type predict
+@lesson 04_classes
+@difficulty 3
+@prompt
+What does this program print?
+@code
+#include <iostream>
+using namespace std;
+
+class MITStudent {
+public:
+    int studentID;
+    char* name;
+    MITStudent() : studentID(0), name(nullptr) { }
+};
+
+int main() {
+    MITStudent student1;
+    student1.studentID = 98;
+    char n[] = "foo";
+    student1.name = n;
+
+    MITStudent student2 = student1;
+    student2.name[0] = 'b';
+    cout << student1.name << endl;
+    return 0;
+}
+@answer
+boo
+@explain
+The default copy copies the pointer, not the text. student2.name and student1.name point to the same array, so student1 changes too.
+
+@exercise cpp-class-predict-alias
+@type predict
+@lesson 04_classes
+@difficulty 2
+@prompt
+What does this program print?
+@code
+#include <iostream>
+using namespace std;
+
+class Point {
+public:
+    double x, y;
+    Point() : x(0.0), y(0.0) { }
+};
+
+int main() {
+    Point* q = new Point();
+    Point* alias = q;
+    alias->x = 10;
+    q->y = 20;
+    cout << q->x << " " << q->y << endl;
+    delete q;
+    return 0;
+}
+@answer
+10 20
+@explain
+alias and q point to the same object, so a change through one is visible through the other.
+
+@exercise cpp-class-fill-init-list
+@type fill
+@lesson 04_classes
+@difficulty 1
+@prompt
+Complete the constructor with an initialization list.
+@code
+class Point {
+public:
+    double x, y;
+    Point(double nx, double ny) : x(___), y(___) { }
+};
+@answer
+nx
+ny
+@explain
+The initialization list sets the fields before the constructor body runs.
+
+@exercise cpp-class-fill-copy-ctor
+@type fill
+@lesson 04_classes
+@difficulty 3
+@prompt
+Complete the copy constructor so that it makes a deep copy of the name.
+@code
+class MITStudent {
+public:
+    int studentID;
+    char* name;
+
+    MITStudent(int id, const char* n) : studentID(id) {
+        name = new char[strlen(n) + 1];
+        strcpy(name, n);
+    }
+    MITStudent(const MITStudent& o) : studentID(o.studentID) {
+        name = new char[strlen(o.name) + 1];
+        strcpy(name, ___);
+    }
+    ~MITStudent() { delete[] name; }
+};
+@answer
+o.name
+@explain
+The copy constructor allocates its own array and copies the text from the other object's name.
+
+@exercise cpp-class-fill-static
+@type fill
+@lesson 04_classes
+@difficulty 2
+@prompt
+A static data member must be defined once outside the class. Fill in the class name.
+@code
+class Maths {
+public:
+    static float PI;
+};
+
+float ___::PI = 3.14f;
+@answer
+Maths
+@explain
+ClassName::member tells the compiler which class the definition belongs to.
+
+@exercise cpp-class-bug-semicolon
+@type bug
+@lesson 04_classes
+@difficulty 1
+@prompt
+This code does not compile. Click the buggy line, then type the corrected line.
+@code
+#include <iostream>
+using namespace std;
+
+class Point {
+public:
+    double x, y;
+}
+
+int main() {
+    Point p;
+    p.x = 1.0;
+    cout << p.x << endl;
+    return 0;
+}
+@bugline 7
+@answer
+};
+@explain
+A class definition ends with a semicolon after the closing brace.
+
+@exercise cpp-class-bug-private
+@type bug
+@lesson 04_classes
+@difficulty 2
+@prompt
+This code does not compile. Click the line that causes the error.
+@code
+#include <iostream>
+using namespace std;
+
+class Point {
+private:
+    double x;
+public:
+    Point(double nx) : x(nx) { }
+};
+
+int main() {
+    Point p(2.0);
+    cout << p.x << endl;
+    return 0;
+}
+@bugline 13
+@explain
+x is private, so it cannot be read from outside the class. Add a public getter or make the field public.

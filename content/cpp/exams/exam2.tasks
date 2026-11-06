@@ -437,6 +437,7 @@ yes
 @task cpp-doubly-linked-list
 @title DoublyLinkedList and DoublyLinkedNode
 @points 40
+@lesson 06_linked_lists
 @statement
 Implement the linkedlist list code from the lecture notes.
 

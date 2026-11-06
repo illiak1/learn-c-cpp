@@ -1,0 +1,134 @@
+@rem Exercises for lesson 01_basics (C++ track). Format: docs/CONTENT_FORMAT.md
+
+@exercise cpp-basics-theory-header
+@type theory
+@lesson 01_basics
+@difficulty 1
+@prompt
+Which header do you include to use cout and cin?
+@answer
+<iostream> | iostream | #include <iostream>
+@explain
+cout and cin are declared in <iostream>.
+
+@exercise cpp-basics-choice-cin
+@type choice
+@lesson 01_basics
+@difficulty 1
+@prompt
+Which statement reads an integer from the keyboard into the variable age?
+@choices
+* cin >> age;
+- cin << age;
+- cin >> &age;
+- cout >> age;
+@explain
+cin >> variable reads into the variable itself; unlike scanf it needs no & and no format string.
+
+@exercise cpp-basics-predict-bool
+@type predict
+@lesson 01_basics
+@difficulty 1
+@prompt
+What does this code print?
+@code
+cout << (3 > 2) << " " << (3 < 2) << endl;
+@answer
+1 0
+@explain
+cout prints a true comparison as 1 and a false one as 0.
+
+@exercise cpp-basics-predict-reference
+@type predict
+@lesson 01_basics
+@difficulty 2
+@prompt
+What does this program print?
+@code
+#include <iostream>
+using namespace std;
+
+void addOne(int &x) {
+    x = x + 1;
+}
+
+int main() {
+    int a = 5;
+    addOne(a);
+    addOne(a);
+    cout << a << endl;
+    return 0;
+}
+@answer
+7
+@explain
+x is a reference to the caller's variable, so both calls change a: 5 + 1 + 1 = 7.
+
+@exercise cpp-basics-predict-value-vs-ref
+@type predict
+@lesson 01_basics
+@difficulty 2
+@prompt
+What does this program print?
+@code
+#include <iostream>
+using namespace std;
+
+void f(int x) { x = 100; }
+void g(int &x) { x = 200; }
+
+int main() {
+    int a = 1, b = 1;
+    f(a);
+    g(b);
+    cout << a << " " << b << endl;
+    return 0;
+}
+@answer
+1 200
+@explain
+f works on a copy, so a stays 1. g receives a reference to b and changes it.
+
+@exercise cpp-basics-fill-swap-ref
+@type fill
+@lesson 01_basics
+@difficulty 2
+@prompt
+Make swapInts swap the caller's variables by taking references.
+@code
+void swapInts(int ___ a, int ___ b) {
+    int temp = a;
+    a = b;
+    b = temp;
+}
+@answer
+&
+&
+@explain
+A & after the type makes the parameter a reference to the caller's variable.
+
+@exercise cpp-basics-bug-by-value
+@type bug
+@lesson 01_basics
+@difficulty 2
+@prompt
+This program should print 6, but it prints 5. Click the buggy line, then type the corrected line.
+@code
+#include <iostream>
+using namespace std;
+
+void addOne(int x) {
+    x = x + 1;
+}
+
+int main() {
+    int a = 5;
+    addOne(a);
+    cout << a << endl;
+    return 0;
+}
+@bugline 4
+@answer
+void addOne(int &x) {
+@explain
+x is a copy of a. Taking the parameter by reference (int &x) lets the function change the caller's variable.

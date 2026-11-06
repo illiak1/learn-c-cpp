@@ -1,0 +1,161 @@
+@rem Exercises for lesson 05_operators (C++ track). Format: docs/CONTENT_FORMAT.md
+
+@exercise cpp-op-theory-friend
+@type theory
+@lesson 05_operators
+@difficulty 2
+@prompt
+operator<< for cout cannot be a member of your class. Which keyword lets such a free function access the private fields?
+@answer
+friend
+@explain
+A friend declaration inside the class gives the free function access to the private members.
+
+@exercise cpp-op-choice-postfix
+@type choice
+@lesson 05_operators
+@difficulty 2
+@prompt
+Which declaration is the POSTFIX increment (c++) of class Clock?
+@choices
+- Clock& operator++();
+* Clock operator++(int);
+- Clock operator++(Clock);
+- void operator++(c);
+@explain
+The unnamed int parameter only tells the compiler that this is the postfix version; the prefix version takes no parameter.
+
+@exercise cpp-op-choice-overload
+@type choice
+@lesson 05_operators
+@difficulty 1
+@prompt
+Can two functions in the same scope differ only in their return type?
+@choices
+- Yes, the compiler looks at the return type
+* No, the parameter lists must differ
+- Yes, but only for member functions
+- Yes, if one is const
+@explain
+Overload resolution uses the number and types of parameters, not the return type.
+
+@exercise cpp-op-predict-plus
+@type predict
+@lesson 05_operators
+@difficulty 2
+@prompt
+What does this program print?
+@code
+#include <iostream>
+using namespace std;
+
+class Counter {
+public:
+    int n;
+    Counter(int v) : n(v) { }
+    Counter operator+(const Counter& o) const { return Counter(n + o.n); }
+};
+
+int main() {
+    Counter a(3), b(4);
+    Counter c = a + b;
+    cout << c.n << " " << a.n << endl;
+    return 0;
+}
+@answer
+7 3
+@explain
+a + b is a.operator+(b): it builds a NEW Counter with 3 + 4. The operands are unchanged.
+
+@exercise cpp-op-predict-prefix-postfix
+@type predict
+@lesson 05_operators
+@difficulty 3
+@prompt
+What does this program print?
+@code
+#include <iostream>
+using namespace std;
+
+class Num {
+public:
+    int v;
+    Num(int x) : v(x) { }
+    Num& operator++() { ++v; return *this; }
+    Num operator++(int) { Num old = *this; ++v; return old; }
+};
+
+int main() {
+    Num a(5);
+    Num b = a++;
+    Num c = ++a;
+    cout << a.v << " " << b.v << " " << c.v << endl;
+    return 0;
+}
+@answer
+7 5 7
+@explain
+a++ returns the OLD value: b is 5 and a becomes 6. ++a increments first: a becomes 7 and c gets 7.
+
+@exercise cpp-op-fill-operator-plus
+@type fill
+@lesson 05_operators
+@difficulty 2
+@prompt
+Name the member function that makes a + b work for Vec objects.
+@code
+class Vec {
+public:
+    int x, y;
+    Vec(int a, int b) : x(a), y(b) { }
+    Vec ___(const Vec& o) const {
+        return Vec(x + o.x, y + o.y);
+    }
+};
+@answer
+operator+
+@explain
+a + b is translated to a.operator+(b).
+
+@exercise cpp-op-fill-prefix-return
+@type fill
+@lesson 05_operators
+@difficulty 2
+@prompt
+Complete the prefix increment. It should return a reference to the object itself.
+@code
+class Num {
+public:
+    int v;
+    Num(int x) : v(x) { }
+    Num& operator++() {
+        ++v;
+        return ___;
+    }
+};
+@answer
+*this
+@explain
+this is a pointer to the current object, so *this is the object; returning a reference to it is the usual convention.
+
+@exercise cpp-op-fill-postfix-param
+@type fill
+@lesson 05_operators
+@difficulty 2
+@prompt
+Complete the declaration of the postfix increment.
+@code
+class Num {
+public:
+    int v;
+    Num(int x) : v(x) { }
+    Num operator++(___) {
+        Num old = *this;
+        ++v;
+        return old;
+    }
+};
+@answer
+int
+@explain
+The int parameter is unused; it only distinguishes the postfix form from the prefix form.

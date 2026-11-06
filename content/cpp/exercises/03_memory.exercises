@@ -1,0 +1,243 @@
+@rem Exercises for lesson 03_memory (C++ track). Format: docs/CONTENT_FORMAT.md
+
+@exercise cpp-mem-theory-delete-array
+@type theory
+@lesson 03_memory
+@difficulty 1
+@prompt
+Which statement frees an array that was created with  int* arr = new int[10];  ? Write it for the variable arr.
+@answer
+delete[] arr; | delete [] arr; | delete[] arr | delete [] arr
+@explain
+Memory from new[] must be released with delete[]; plain delete would be undefined behavior.
+
+@exercise cpp-mem-theory-heap-operator
+@type theory
+@lesson 03_memory
+@difficulty 1
+@prompt
+Which operator allocates memory on the heap and returns a pointer to it?
+@answer
+new | the new operator
+@explain
+new allocates on the heap; the memory stays until you delete it.
+
+@exercise cpp-mem-choice-pair
+@type choice
+@lesson 03_memory
+@difficulty 1
+@prompt
+Which pairs of operators are correct?
+@choices
+- new with delete[]
+- new[] with delete
+* new with delete, and new[] with delete[]
+- new with free
+@explain
+Every new needs exactly one delete, and every new[] needs exactly one delete[]. Mixing them is undefined behavior.
+
+@exercise cpp-mem-choice-dangling
+@type choice
+@lesson 03_memory
+@difficulty 2
+@prompt
+Which function returns a dangling pointer?
+@choices
+- int* f() { int* x = new int; *x = 5; return x; }
+* int* f() { int x = 5; return &x; }
+- int* f() { static int x = 5; return &x; }
+- int* f() { return nullptr; }
+@explain
+The local x is destroyed when the function returns, so the returned address points to memory that no longer exists.
+
+@exercise cpp-mem-predict-new
+@type predict
+@lesson 03_memory
+@difficulty 2
+@prompt
+What does this code print?
+@code
+int* a = new int(5);
+int* b = new int{6};
+int* c = new int[3]{1, 2, 3};
+cout << *a << " " << *b << " " << c[0] << c[1] << c[2] << endl;
+delete a;
+delete b;
+delete[] c;
+@answer
+5 6 123
+@explain
+new int(5) and new int{6} create single ints with those values; new int[3]{1, 2, 3} creates an array.
+
+@exercise cpp-mem-predict-funcptr
+@type predict
+@lesson 03_memory
+@difficulty 2
+@prompt
+What does this program print?
+@code
+#include <iostream>
+using namespace std;
+
+int Add(int a, int b) {
+    return a + b;
+}
+
+int main() {
+    int (*fp)(int, int) = Add;
+    cout << fp(20, 10) << endl;
+    return 0;
+}
+@answer
+30
+@explain
+fp points to Add, so fp(20, 10) calls Add(20, 10).
+
+@exercise cpp-mem-predict-global
+@type predict
+@lesson 03_memory
+@difficulty 2
+@prompt
+What does this program print?
+@code
+#include <iostream>
+using namespace std;
+
+int g = 10;
+
+void change() {
+    int g = 99;
+    g = 100;
+}
+
+int main() {
+    change();
+    cout << g << endl;
+    return 0;
+}
+@answer
+10
+@explain
+The local g inside change hides the global g, so the global stays 10.
+
+@exercise cpp-mem-fill-new-int
+@type fill
+@lesson 03_memory
+@difficulty 2
+@prompt
+Write a function that returns a pointer to memory holding 5. The memory must outlive the function.
+@code
+int* getPtrToNewInt() {
+    int* x = new ___;
+    *x = 5;
+    return x;
+}
+@answer
+int | int(5) | int{5}
+@explain
+Memory from new lives on the heap and survives after the function returns (the caller must delete it).
+
+@exercise cpp-mem-fill-array
+@type fill
+@lesson 03_memory
+@difficulty 2
+@prompt
+Allocate an array whose size is decided at run time, then free it.
+@code
+int numItems = 4;
+int* arr = new int[___];
+for (int i = 0; i < numItems; ++i) {
+    arr[i] = i * i;
+}
+delete ___ arr;
+@answer
+numItems
+[]
+@match loose
+@explain
+new int[numItems] creates the array; delete [] arr (delete[] arr) frees it.
+
+@exercise cpp-mem-fill-2d
+@type fill
+@lesson 03_memory
+@difficulty 3
+@prompt
+Complete the allocation of a rows x cols array of ints.
+@code
+int rows = 3;
+int cols = 4;
+int** arr2D = new int*[rows];
+for (int row = 0; row < rows; row++) {
+    arr2D[row] = new int[___];
+}
+for (int row = 0; row < rows; row++) {
+    delete[] ___;
+}
+delete[] arr2D;
+@answer
+cols
+arr2D[row]
+@explain
+Every row is its own array of cols ints. Free the rows first, then the array of row pointers.
+
+@exercise cpp-mem-bug-mixed
+@type bug
+@lesson 03_memory
+@difficulty 2
+@prompt
+Click the buggy line, then type the corrected line.
+@code
+#include <iostream>
+using namespace std;
+
+int main() {
+    int* a = new int[3]{1, 2, 3};
+    cout << a[0] << endl;
+    delete a;
+    return 0;
+}
+@bugline 7
+@answer
+delete[] a;
+@explain
+Memory allocated with new[] must be freed with delete[].
+
+@exercise cpp-mem-bug-stack-delete
+@type bug
+@lesson 03_memory
+@difficulty 2
+@prompt
+Click the line that is a bug.
+@code
+#include <iostream>
+using namespace std;
+
+int main() {
+    int x = 5;
+    int* xPtr = &x;
+    delete xPtr;
+    return 0;
+}
+@bugline 7
+@explain
+x lives on the stack and frees itself. delete is only allowed for memory that was created with new.
+
+@exercise cpp-mem-bug-use-after-delete
+@type bug
+@lesson 03_memory
+@difficulty 2
+@prompt
+Click the line that uses memory it must not use any more.
+@code
+#include <iostream>
+using namespace std;
+
+int main() {
+    int* x = new int(5);
+    delete x;
+    cout << *x << endl;
+    return 0;
+}
+@bugline 7
+@explain
+After delete the memory no longer belongs to the program. Print first, delete afterwards.
