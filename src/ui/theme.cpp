@@ -99,6 +99,13 @@ Theme& Theme::get() {
 // Remembers where the fonts live; fonts themselves load lazily.
 void Theme::init(const std::string& assetsDir) { assetsDir_ = assetsDir; }
 
+// Loads the sizes used by the screens up front.
+void Theme::preload() {
+    for (int px : {11, 12, 13, 14, 15, 16, 17, 20}) font(Face::Regular, px);
+    for (int px : {12, 13, 14, 15, 16, 17, 18, 20, 21, 24, 25, 30, 34, 40, 44}) font(Face::Bold, px);
+    for (int px : {14, 15}) font(Face::Mono, px);
+}
+
 // Unloads every cached font.
 void Theme::shutdown() {
     for (auto& [key, f] : fonts_) UnloadFont(f);

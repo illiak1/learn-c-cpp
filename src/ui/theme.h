@@ -50,6 +50,8 @@ public:
 
     // Sets the directory that holds assets/fonts and loads the default fonts.
     void init(const std::string& assetsDir);
+    // Loads every font size the UI uses so no frame stalls on first use.
+    void preload();
     // Frees GPU resources; call before CloseWindow().
     void shutdown();
 

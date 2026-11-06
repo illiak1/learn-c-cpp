@@ -288,6 +288,7 @@ int App::run() {
 
     Theme& th = Theme::get();
     th.init((platform::resourceRoot() / "assets").string());
+    th.preload();
     progress_.load(platform::userDataDir() / "progress.txt");
     if (!options_.hasTheme) options_.dark = progress_.dark;
     if (!options_.hasTrack) options_.track = progress_.track == "cpp" ? Track::Cpp : Track::C;

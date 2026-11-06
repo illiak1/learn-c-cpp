@@ -69,7 +69,7 @@ Each exercise starts with `@exercise <id>`; ids are unique per track.
 | `@code [lang]` | code shown with the question |
 | `@answer` | accepted answers (see below) |
 | `@choices` | options for `choice`: `- wrong`, `* correct` (exactly one `*`) |
-| `@bugline` | for `bug`: line number(s) of the bug, 1-based, e.g. `7` or `7\|8` |
+| `@bugline` | for `bug`: line number(s) of the bug, 1-based, e.g. `7` or `7 8` (any of them counts) |
 | `@hint` | optional hint, shown on request |
 | `@explain` | explanation shown after answering |
 | `@match` | options: `loose` (ignore all whitespace), `nocase`, `case`, `exact` |
