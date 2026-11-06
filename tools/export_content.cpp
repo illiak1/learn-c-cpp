@@ -2,12 +2,13 @@
 // predict/fill/bug exercises, exam tasks and sets) as standalone source files so they can be compiled
 // and checked outside the repository.
 //
-// usage: export-content <content-dir> <out-dir>
+// usage: export-content <content-dir> <out-dir> [random-exams]
 // For each item it writes <kind>__<id>.<c|cpp> and, when an expected output is known, <same name>.expect.
 #include <algorithm>
 #include <filesystem>
 #include <fstream>
 #include <iostream>
+#include <random>
 
 #include "content/library.h"
 #include "logic/exam.h"
@@ -71,7 +72,7 @@ std::string fillBlanks(std::string code, const std::vector<std::string>& answers
 }  // namespace
 
 // Exports one track.
-static int exportTrack(const fs::path& root, const std::string& name, const fs::path& out) {
+static int exportTrack(const fs::path& root, const std::string& name, const fs::path& out, int randomExams) {
     TrackContent tc = loadTrack(root, name);
     for (const auto& e : tc.errors) std::cerr << "content error: " << e << "\n";
     const bool cpp = name == "cpp";
@@ -140,6 +141,14 @@ static int exportTrack(const fs::path& root, const std::string& name, const fs::
         emit("set__" + s.id, logic::buildSetFile(tc, s, true), nullptr);
         emit("setstub__" + s.id, logic::buildSetFile(tc, s, false), nullptr);
     }
+    // Seeded random exams of different sizes: the assembled file with solutions must compile and print only "yes".
+    for (int i = 0; i < randomExams; ++i) {
+        std::mt19937 rng(static_cast<unsigned>(1000 + i));
+        const int count = i % 3 == 0 ? 3 : i % 3 == 1 ? 5 : 8;
+        logic::Exam e = logic::makeRandomExam(tc, count, 60, rng);
+        emit("set__random" + std::to_string(i), logic::buildExamFile(logic::examTasks(tc, e), "", true), nullptr);
+        emit("setstub__random" + std::to_string(i), logic::buildExamFile(logic::examTasks(tc, e), "", false), nullptr);
+    }
     std::cout << name << ": " << count << " files, " << tc.errors.size() << " content errors\n";
     return static_cast<int>(tc.errors.size());
 }
@@ -149,7 +158,8 @@ int main(int argc, char** argv) {
         std::cerr << "usage: export-content <content-dir> <out-dir>\n";
         return 2;
     }
+    const int randomExams = argc > 3 ? std::atoi(argv[3]) : 0;
     int errors = 0;
-    for (const char* name : {"c", "cpp"}) errors += exportTrack(argv[1], name, argv[2]);
+    for (const char* name : {"c", "cpp"}) errors += exportTrack(argv[1], name, argv[2], randomExams);
     return errors == 0 ? 0 : 1;
 }

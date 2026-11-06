@@ -61,8 +61,10 @@ $(TESTBIN): $(OBJ_TEST)
 	@mkdir -p $(dir $@)
 	$(CXX) $(OBJ_TEST) -o $@
 
-# Content verification helper: make export-content OUT=/some/dir dumps every runnable snippet.
+# Content verification helper: make export-content OUT=/some/dir [RANDOM=n] dumps every runnable snippet
+# (and n random exams built from the reference solutions).
 EXPORT := $(BUILD)/export-content
+RANDOM_EXAMS ?= 0
 OBJ_EXPORT := $(patsubst %.cpp,$(BUILD)/obj/%.o,$(SRC_CORE) tools/export_content.cpp)
 
 $(EXPORT): $(OBJ_EXPORT)
@@ -70,7 +72,7 @@ $(EXPORT): $(OBJ_EXPORT)
 	$(CXX) $(OBJ_EXPORT) -o $@
 
 export-content: $(EXPORT)
-	./$(EXPORT) content $(OUT)
+	./$(EXPORT) content $(OUT) $(RANDOM_EXAMS)
 
 clean:
 	rm -rf $(BUILD)
