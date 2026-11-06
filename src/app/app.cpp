@@ -1,0 +1,210 @@
+// app.cpp - window setup, main loop, sidebar navigation and screen switching.
+#include "app/app.h"
+
+#include <algorithm>
+#include <cstring>
+
+#include "app/screens.h"
+#include "platform/paths.h"
+#include "raylib.h"
+
+namespace app {
+
+using namespace ui;
+
+// ---- Small helpers --------------------------------------------------------------------------
+
+Section sectionOf(Page page) {
+    switch (page) {
+        case Page::Home: return Section::Home;
+        case Page::Lessons:
+        case Page::Lesson: return Section::Lessons;
+        case Page::Practice:
+        case Page::Exercise: return Section::Practice;
+        case Page::Exam:
+        case Page::ExamRun:
+        case Page::ExamReview: return Section::Exam;
+        case Page::Mistakes: return Section::Mistakes;
+        case Page::Stats: return Section::Stats;
+    }
+    return Section::Home;
+}
+
+const char* trackName(Track t) { return t == Track::C ? "C" : "C++"; }
+
+Color trackColor(Track t) { return t == Track::C ? Color{37, 99, 235, 255} : Color{139, 70, 232, 255}; }
+
+// Parses --dark, --cpp, --page=NAME and --screenshot=FILE.
+Options parseArgs(int argc, char** argv) {
+    Options o;
+    for (int i = 1; i < argc; ++i) {
+        const std::string a = argv[i];
+        if (a == "--dark") o.dark = true;
+        else if (a == "--cpp") o.track = Track::Cpp;
+        else if (a.rfind("--page=", 0) == 0) {
+            const std::string n = a.substr(7);
+            if (n == "lessons") o.page = Page::Lessons;
+            else if (n == "practice") o.page = Page::Practice;
+            else if (n == "exam") o.page = Page::Exam;
+            else if (n == "mistakes") o.page = Page::Mistakes;
+            else if (n == "stats") o.page = Page::Stats;
+        } else if (a.rfind("--screenshot=", 0) == 0) {
+            o.screenshot = a.substr(13);
+        }
+    }
+    return o;
+}
+
+// ---- Screen base ----------------------------------------------------------------------------
+
+// Opens the scroll view and returns a centred column (max width kContentMaxW).
+Column Screen::begin(Rect area) {
+    viewport_ = area;
+    Rect content = scrollBegin(scroll_, area);
+    const float w = std::min(metrics::kContentMaxW, content.width - 64.0f);
+    Column col;
+    col.w = w;
+    col.x = content.x + (content.width - w) / 2.0f;
+    col.y = content.y + 32.0f;
+    return col;
+}
+
+void Screen::end(const Column& col) { scrollEnd(scroll_, viewport_, col.y + 32.0f); }
+
+// ---- App ------------------------------------------------------------------------------------
+
+App::App(Options options) : options_(std::move(options)), track_(options_.track), page_(options_.page) {}
+
+App::~App() = default;
+
+// Registers every page implementation.
+void App::registerScreens() {
+    screens_[Page::Home] = makeHomeScreen();
+    screens_[Page::Lessons] = makePlaceholderScreen("Lessons", "Read the lecture notes topic by topic, with runnable examples and real output.");
+    screens_[Page::Lesson] = makePlaceholderScreen("Lesson", "");
+    screens_[Page::Practice] = makePlaceholderScreen("Practice", "Theory, multiple choice, fill in the code, predict the output and find the bug.");
+    screens_[Page::Exercise] = makePlaceholderScreen("Exercise", "");
+    screens_[Page::Exam] = makePlaceholderScreen("Exam mode", "A timed set of whole-function tasks, just like the real coding exam.");
+    screens_[Page::ExamRun] = makePlaceholderScreen("Exam", "");
+    screens_[Page::ExamReview] = makePlaceholderScreen("Exam review", "");
+    screens_[Page::Mistakes] = makePlaceholderScreen("Mistakes", "Replay the tasks you answered wrongly until they stick.");
+    screens_[Page::Stats] = makePlaceholderScreen("Statistics", "Your progress, accuracy per topic and daily streak.");
+}
+
+void App::setTrack(Track t) {
+    if (t == track_) return;
+    track_ = t;
+    go(Page::Home);
+}
+
+void App::go(Page page) {
+    page_ = page;
+    screens_[page_]->onEnter(*this);
+}
+
+Rect App::contentArea() const {
+    const float w = static_cast<float>(GetScreenWidth());
+    const float h = static_cast<float>(GetScreenHeight());
+    return Rect{metrics::kSidebarW, 0.0f, w - metrics::kSidebarW, h};
+}
+
+// Left navigation: logo, track toggle, page list, theme switch.
+void App::drawSidebar(Rect r) {
+    Context& cx = Context::get();
+    Theme& th = Theme::get();
+    const Palette& p = th.colors();
+    DrawRectangleRec(r, p.surface);
+    DrawLineEx(Vector2{r.x + r.width - 0.5f, r.y}, Vector2{r.x + r.width - 0.5f, r.y + r.height}, 1.0f, p.border);
+
+    // Logo
+    Rect mark{r.x + 20.0f, r.y + 22.0f, 38.0f, 38.0f};
+    shadowRound(mark, 10.0f, withAlpha(p.accent, 0.3f));
+    fillRound(mark, 10.0f, p.accent);
+    drawCentered(Face::Bold, 17, "C++", mark, p.textOnAccent);
+    drawText(Face::Bold, 18, "Exam Trainer", r.x + 70.0f, r.y + 24.0f, p.text);
+    drawText(Face::Regular, 13, "C and C++ practice", r.x + 70.0f, r.y + 43.0f, p.textMuted);
+
+    // Track toggle
+    drawText(Face::Bold, 12, "TRACK", r.x + 20.0f, r.y + 82.0f, p.textMuted);
+    const int sel = tabs(Rect{r.x + 16.0f, r.y + 102.0f, r.width - 32.0f, 42.0f}, {"C", "C++"}, track_ == Track::C ? 0 : 1);
+    if (sel != (track_ == Track::C ? 0 : 1)) setTrack(sel == 0 ? Track::C : Track::Cpp);
+
+    // Navigation items
+    struct Item { const char* label; Icon icon; Section section; Page page; };
+    static const Item items[] = {
+        {"Home", Icon::Home, Section::Home, Page::Home},
+        {"Lessons", Icon::Book, Section::Lessons, Page::Lessons},
+        {"Practice", Icon::Pencil, Section::Practice, Page::Practice},
+        {"Exam mode", Icon::Timer, Section::Exam, Page::Exam},
+        {"Mistakes", Icon::Cross, Section::Mistakes, Page::Mistakes},
+        {"Statistics", Icon::Chart, Section::Stats, Page::Stats},
+    };
+    drawText(Face::Bold, 12, "LEARN", r.x + 20.0f, r.y + 170.0f, p.textMuted);
+    float y = r.y + 192.0f;
+    for (const Item& it : items) {
+        Rect row{r.x + 12.0f, y, r.width - 24.0f, 42.0f};
+        const bool active = sectionOf(page_) == it.section;
+        const uint32_t id = cx.makeId(it.label);
+        const bool hov = cx.hovered(row);
+        if (hov) cx.cursor = MOUSE_CURSOR_POINTING_HAND;
+        const float h = cx.anim(id, hov ? 1.0f : 0.0f);
+        if (active) fillRound(row, 10.0f, p.accentSoft);
+        else if (h > 0.0f) fillRound(row, 10.0f, withAlpha(p.surfaceAlt, h));
+        const Color fg = active ? p.accent : mix(p.textMuted, p.text, h);
+        drawIcon(it.icon, row.x + 22.0f, row.y + row.height / 2.0f, 19.0f, fg);
+        drawText(active ? Face::Bold : Face::Regular, 16, it.label, row.x + 46.0f, row.y + 11.0f, fg);
+        if (hov && cx.pressed && page_ != it.page) go(it.page);
+        y += 46.0f;
+    }
+
+    // Theme switch at the bottom
+    const Rect foot{r.x + 12.0f, r.y + r.height - 62.0f, r.width - 24.0f, 46.0f};
+    fillRound(foot, 10.0f, p.surfaceAlt);
+    const bool dark = th.mode() == ThemeMode::Dark;
+    drawIcon(dark ? Icon::Moon : Icon::Sun, foot.x + 22.0f, foot.y + foot.height / 2.0f, 18.0f, p.textMuted, p.surfaceAlt);
+    drawText(Face::Regular, 15, dark ? "Dark theme" : "Light theme", foot.x + 44.0f, foot.y + 13.0f, p.text);
+    bool v = dark;
+    if (toggleSwitch("theme-switch", Rect{foot.x + foot.width - 56.0f, foot.y + 11.0f, 42.0f, 24.0f}, v))
+        th.setMode(v ? ThemeMode::Dark : ThemeMode::Light);
+}
+
+// One frame: input, sidebar, current page.
+void App::frame() {
+    Context& cx = Context::get();
+    cx.beginFrame();
+    const Palette& p = Theme::get().colors();
+    BeginDrawing();
+    ClearBackground(p.bg);
+    screens_[page_]->draw(*this, contentArea());
+    drawSidebar(Rect{0.0f, 0.0f, metrics::kSidebarW, static_cast<float>(GetScreenHeight())});
+    cx.endFrame();
+    EndDrawing();
+}
+
+int App::run() {
+    SetConfigFlags(FLAG_WINDOW_RESIZABLE | FLAG_VSYNC_HINT | FLAG_MSAA_4X_HINT);
+    InitWindow(1280, 720, "Exam Trainer - C and C++");
+    SetWindowMinSize(960, 600);
+    SetTargetFPS(60);
+    SetExitKey(KEY_NULL);
+
+    Theme& th = Theme::get();
+    th.init((platform::resourceRoot() / "assets").string());
+    th.setMode(options_.dark ? ThemeMode::Dark : ThemeMode::Light);
+    registerScreens();
+    go(options_.page);
+
+    while (!WindowShouldClose()) {
+        frame();
+        ++frameCount_;
+        if (!options_.screenshot.empty() && frameCount_ == 12) {
+            TakeScreenshot(options_.screenshot.c_str());
+            break;
+        }
+    }
+    th.shutdown();
+    CloseWindow();
+    return 0;
+}
+
+}  // namespace app

@@ -107,6 +107,27 @@ void tintedCard(Rect r, Color fill, Color border) {
     strokeRound(r, 12.0f, 1.2f, border);
 }
 
+// Pill-shaped on/off switch with a sliding knob.
+bool toggleSwitch(const std::string& idStr, Rect r, bool& value) {
+    Context& cx = Context::get();
+    const Palette& p = Theme::get().colors();
+    const uint32_t id = cx.makeId(idStr);
+    const bool hov = cx.hovered(r);
+    bool flipped = false;
+    if (hov) {
+        cx.cursor = MOUSE_CURSOR_POINTING_HAND;
+        if (cx.pressed) {
+            value = !value;
+            flipped = true;
+        }
+    }
+    const float t = cx.anim(id, value ? 1.0f : 0.0f, 18.0f);
+    fillRound(r, r.height / 2.0f, mix(p.borderStrong, p.accent, t));
+    const float knob = r.height - 6.0f;
+    DrawCircleV(Vector2{r.x + 3.0f + knob / 2.0f + (r.width - knob - 6.0f) * t, r.y + r.height / 2.0f}, knob / 2.0f, WHITE);
+    return flipped;
+}
+
 // Segmented control.
 int tabs(Rect r, const std::vector<std::string>& labels, int selected) {
     Context& cx = Context::get();

@@ -92,8 +92,9 @@ void fillRound(Rect r, float radiusPx, Color c);
 void strokeRound(Rect r, float radiusPx, float thickness, Color c);
 // Soft drop shadow under a rounded rectangle.
 void shadowRound(Rect r, float radiusPx, Color shadow);
-// Draws an icon centred at (cx, cy) with the given size.
-void drawIcon(Icon icon, float cx, float cy, float size, Color c);
+// Draws an icon centred at (cx, cy) with the given size. cutout is the background colour for
+// icons that carve a shape out (moon); transparent means the card surface colour.
+void drawIcon(Icon icon, float cx, float cy, float size, Color c, Color cutout = Color{0, 0, 0, 0});
 
 // ---- Text layout ----------------------------------------------------------------------------
 // Word-wraps text to a width (hard breaks on '\n'); results are cached.
@@ -131,6 +132,8 @@ bool iconButton(const std::string& id, Rect r, Icon icon, bool selected = false)
 void card(Rect r, bool shadow = true);
 // Card filled with a custom colour (e.g. soft success/danger backgrounds).
 void tintedCard(Rect r, Color fill, Color border);
+// On/off switch; returns true on the frame it flips (value is updated).
+bool toggleSwitch(const std::string& id, Rect r, bool& value);
 // Segmented control; returns the (possibly new) selected index.
 int tabs(Rect r, const std::vector<std::string>& labels, int selected);
 // Horizontal progress bar (fraction 0..1).

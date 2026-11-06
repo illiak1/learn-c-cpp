@@ -153,7 +153,7 @@ void shadowRound(Rect r, float radiusPx, Color shadow) {
 }
 
 // Draws an icon from lines, circles and triangles.
-void drawIcon(Icon icon, float cx, float cy, float size, Color c) {
+void drawIcon(Icon icon, float cx, float cy, float size, Color c, Color cutout) {
     const float s = size / 2.0f;  // half extent
     const float t = std::max(1.6f, size / 11.0f);  // stroke
     auto line = [&](float x1, float y1, float x2, float y2) {
@@ -204,7 +204,7 @@ void drawIcon(Icon icon, float cx, float cy, float size, Color c) {
             break;
         case Icon::Moon:
             DrawCircleV(Vector2{cx, cy}, s * 0.85f, c);
-            DrawCircleV(Vector2{cx + s * 0.45f, cy - s * 0.35f}, s * 0.75f, Theme::get().colors().surface);
+            DrawCircleV(Vector2{cx + s * 0.45f, cy - s * 0.35f}, s * 0.75f, cutout.a ? cutout : Theme::get().colors().surface);
             break;
         case Icon::Sun:
             DrawCircleV(Vector2{cx, cy}, s * 0.42f, c);
