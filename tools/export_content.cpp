@@ -1,5 +1,5 @@
 // export_content.cpp - dumps every runnable snippet of the content files (lesson examples with output,
-// predict/fill/bug exercises) as standalone source files so they can be compiled
+// predict/fill/bug exercises, exam tasks and sets) as standalone source files so they can be compiled
 // and checked outside the repository.
 //
 // usage: export-content <content-dir> <out-dir>
@@ -10,6 +10,7 @@
 #include <iostream>
 
 #include "content/library.h"
+#include "logic/exam.h"
 
 namespace fs = std::filesystem;
 using namespace content;
@@ -156,6 +157,15 @@ static int exportTrack(const fs::path& root, const std::string& name, const fs::
         }
     }
 
+    // Exam tasks: solution + tests must print the expected output; stubs must at least compile.
+    for (const Task& t : tc.tasks) {
+        emit("task__" + t.id, logic::buildTaskFile(t, true), &t.expect);
+        emit("taskstub__" + t.id, logic::buildTaskFile(t, false), nullptr);
+    }
+    for (const ExamSet& s : tc.sets) {
+        emit("set__" + s.id, logic::buildSetFile(tc, s, true), nullptr);
+        emit("setstub__" + s.id, logic::buildSetFile(tc, s, false), nullptr);
+    }
     std::cout << name << ": " << count << " files, " << tc.errors.size() << " content errors\n";
     return static_cast<int>(tc.errors.size());
 }
