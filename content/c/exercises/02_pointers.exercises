@@ -1,0 +1,226 @@
+@rem Exercises for lesson 02_pointers (C track). Format: docs/CONTENT_FORMAT.md
+
+@exercise c-ptr-theory-address
+@type theory
+@lesson 02_pointers
+@difficulty 1
+@prompt
+Which operator gives the address of a variable? Write the symbol.
+@answer
+& | address-of | the address-of operator | ampersand
+@explain
+&x is the address of x. Its type is a pointer to the type of x (&i is int* when i is an int).
+
+@exercise c-ptr-theory-step
+@type theory
+@lesson 02_pointers
+@difficulty 2
+@prompt
+On a typical system, by how many bytes does p + 1 move an int pointer p? Write the number.
+@answer
+4 | 4 bytes | sizeof(int)
+@explain
+ptr + 1 moves n * sizeof(type) bytes: 4 bytes for a 4-byte int.
+
+@exercise c-ptr-choice-deref
+@type choice
+@lesson 02_pointers
+@difficulty 1
+@prompt
+After  int i = 5; int *p = &i; *p = 10;  what is the value of i?
+@choices
+- 5
+* 10
+- The address of i
+- It does not compile
+@explain
+*p is the variable p points to, which is i. Assigning to *p therefore changes i.
+
+@exercise c-ptr-choice-null
+@type choice
+@lesson 02_pointers
+@difficulty 1
+@prompt
+What happens when you dereference a NULL pointer?
+@choices
+- It returns 0
+- It returns the address 0
+* Undefined behavior - usually the program crashes
+- The compiler reports an error
+@explain
+NULL means "points to nothing". Always test a pointer before dereferencing it.
+
+@exercise c-ptr-choice-why-pointer
+@type choice
+@lesson 02_pointers
+@difficulty 2
+@prompt
+Why does a swap function need int * parameters in C?
+@choices
+- Because int parameters are not allowed in functions
+* Because C passes arguments by value, so only the addresses let the function change the caller's variables
+- Because pointers are faster than integers
+- Because swap would otherwise be a macro
+@explain
+With int parameters the function swaps its own copies and the caller sees no change.
+
+@exercise c-ptr-predict-update
+@type predict
+@lesson 02_pointers
+@difficulty 1
+@prompt
+What does this code print?
+@code
+int a = 3;
+int *p = &a;
+*p = *p + 2;
+printf("%d\n", a);
+@answer
+5
+@explain
+*p is a, so a becomes 3 + 2 = 5.
+
+@exercise c-ptr-predict-trace
+@type predict
+@lesson 02_pointers
+@difficulty 3
+@prompt
+Trace this code line by line (it is the exercise from the pointer-to-pointer section). What does the last line print?
+@code
+int i = 2, j = 8;
+int *ptr;
+int **pptr;
+ptr = &i;
+pptr = &ptr;
+*ptr = 7;
+**pptr = 12;
+ptr = &j;
+**pptr = 34;
+*pptr = &i;
+*ptr = -25;
+printf("%d %d\n", i, j);
+@answer
+-25 34
+@hint
+Write down which variable ptr points to after every line.
+@explain
+i=7, then i=12 (through pptr), ptr now points to j, j=34, *pptr = &i makes ptr point to i again, and *ptr = -25 sets i. Final state: i = -25, j = 34.
+
+@exercise c-ptr-predict-array
+@type predict
+@lesson 02_pointers
+@difficulty 2
+@prompt
+What does this code print?
+@code
+int a[4] = {10, 20, 30, 40};
+int *p = a + 1;
+p++;
+*p = *p + 5;
+printf("%d %d %d\n", a[1], a[2], *(a + 2));
+@answer
+20 35 35
+@explain
+p starts at a[1] and p++ moves it to a[2]. That element becomes 35. a[2] and *(a + 2) are the same element.
+
+@exercise c-ptr-fill-sum
+@type fill
+@lesson 02_pointers
+@difficulty 2
+@prompt
+Fill in the blank so that sum returns the sum of numValues integers, using pointer arithmetic.
+@code
+int sum(int *ptr, int numValues) {
+    int total = 0;
+    for (int k = 0; k < numValues; k++) {
+        total += ___;
+    }
+    return total;
+}
+@answer
+*(ptr + k) | ptr[k]
+@hint
+ptr + k is the address of element k; follow it with *.
+@explain
+a[i] is the same as *(a + i): ptr + k moves k elements forward and * reads that element.
+
+@exercise c-ptr-fill-until-zero
+@type fill
+@lesson 02_pointers
+@difficulty 2
+@prompt
+Add the elements of {4, 6, 7, 8, 9, 0} until a 0 is reached. Fill in the for loop: for (int *p = a; ....; ....)
+@code
+int a[] = {4, 6, 7, 8, 9, 0};
+int total = 0;
+for (int *p = a; ___; ___) {
+    total += *p;
+}
+@answer
+*p != 0 | *p
+p++ | ++p | p = p + 1 | p += 1
+@explain
+The loop continues while *p is not 0 and moves to the next element with p++.
+
+@exercise c-ptr-fill-swap
+@type fill
+@lesson 02_pointers
+@difficulty 2
+@prompt
+Complete the swap function.
+@code
+void swap(int *x, int *y) {
+    int z = ___;
+    *x = *y;
+    *y = ___;
+}
+@answer
+*x
+z
+@explain
+Save the value x points to in z, copy *y into *x, then store the saved value in *y.
+
+@exercise c-ptr-bug-address
+@type bug
+@lesson 02_pointers
+@difficulty 1
+@prompt
+The program should print 5 through a pointer. Click the buggy line, then type the corrected line.
+@code
+#include <stdio.h>
+
+int main() {
+    int i = 5;
+    int *ptr = i;
+    printf("%d\n", *ptr);
+    return 0;
+}
+@bugline 5
+@answer
+int *ptr = &i;
+@explain
+A pointer must hold an address: use &i. Assigning the int i makes ptr point at address 5.
+
+@exercise c-ptr-bug-loop-end
+@type bug
+@lesson 02_pointers
+@difficulty 2
+@prompt
+This loop should add the five elements but reads one element too many. Click the buggy line, then type the corrected line.
+@code
+#include <stdio.h>
+
+int main() {
+    int a[5] = {1, 2, 3, 4, 5};
+    int total = 0;
+    for (int *p = a; p <= a + 5; p++) {
+        total += *p;
+    }
+    printf("%d\n", total);
+    return 0;
+}
+@bugline 6
+@answer
+for (int *p = a; p < a + 5; p++) {
+@explain
+a + 5 is one past the last element, so the condition must be p < a + 5.

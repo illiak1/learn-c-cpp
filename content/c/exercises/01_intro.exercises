@@ -91,3 +91,342 @@ scanf("%d", &age); | scanf("%d",&age);
 @match loose
 @explain
 scanf needs the address of the variable, so write &age. Without the & it treats the value of age as an address and crashes.
+
+@exercise c-intro-theory-dowhile
+@type theory
+@lesson 01_intro
+@difficulty 1
+@prompt
+Which loop always runs its body at least once, because the condition is checked after the body?
+@answer
+do-while | do while | do...while | the do-while loop
+@explain
+do { ... } while (condition); runs the body first and tests the condition afterwards.
+
+@exercise c-intro-theory-terminator
+@type theory
+@lesson 01_intro
+@difficulty 1
+@prompt
+Which character ends every C string? Write it the way it appears in code.
+@answer
+'\0' | \0 | the null terminator | null terminator | the null character | null character
+@hint
+Its value is 0.
+@explain
+A string is a char array that ends with '\0'. The array must be big enough for the characters plus this terminator.
+
+@exercise c-intro-choice-array-size
+@type choice
+@lesson 01_intro
+@difficulty 2
+@prompt
+Why do you pass the size of an array as a separate parameter when you pass the array to a function?
+@choices
+- Because the function receives a copy of the array and needs the size to copy it
+* Because the function gets no size information about the array
+- Because C does not allow arrays without a size
+- Because sizeof does not exist inside functions
+@explain
+The function works on the caller's original array, but it only receives the address of the first element, so it cannot know how many elements there are.
+
+@exercise c-intro-choice-assign
+@type choice
+@lesson 01_intro
+@difficulty 1
+@prompt
+Which line compares x with 5 instead of assigning 5 to x?
+@choices
+- if (x = 5)
+* if (x == 5)
+- if (x := 5)
+- if (5 = x)
+@explain
+== compares, = assigns. if (x = 5) assigns 5 to x and is always true.
+
+@exercise c-intro-predict-casts
+@type predict
+@lesson 01_intro
+@difficulty 2
+@prompt
+What does this program print?
+@code
+#include <stdio.h>
+
+int main() {
+    printf("%d %.1f %.1f\n", 7 / 2, (float)7 / 2, (float)(7 / 2));
+    return 0;
+}
+@answer
+3 3.5 3.0
+@explain
+7 / 2 is integer division (3). (float)7 / 2 converts first, so it is 3.5. (float)(7 / 2) converts the already truncated 3, giving 3.0.
+
+@exercise c-intro-predict-while
+@type predict
+@lesson 01_intro
+@difficulty 1
+@prompt
+What does this code print?
+@code
+int i = 1;
+while (i <= 3) {
+    printf("%d ", i * i);
+    i++;
+}
+printf("\n");
+@answer
+1 4 9
+@explain
+The loop runs for i = 1, 2 and 3 and prints the square each time.
+
+@exercise c-intro-predict-switch
+@type predict
+@lesson 01_intro
+@difficulty 2
+@prompt
+What does this code print? Watch the missing break.
+@code
+int n = 2;
+switch (n) {
+    case 1: printf("one ");
+    case 2: printf("two ");
+    case 3: printf("three "); break;
+    default: printf("other ");
+}
+printf("\n");
+@answer
+two three
+@explain
+Without break execution falls through to the next case: case 2 prints "two ", falls into case 3, prints "three " and then breaks.
+
+@exercise c-intro-predict-continue
+@type predict
+@lesson 01_intro
+@difficulty 1
+@prompt
+What does this code print?
+@code
+for (int i = 1; i <= 6; i++) {
+    if (i % 3 == 0) {
+        continue;
+    }
+    printf("%d ", i);
+}
+printf("\n");
+@answer
+1 2 4 5
+@explain
+continue skips the rest of the iteration, so the multiples of 3 (3 and 6) are not printed.
+
+@exercise c-intro-predict-dowhile
+@type predict
+@lesson 01_intro
+@difficulty 2
+@prompt
+What does this code print?
+@code
+int n = 3;
+do {
+    printf("%d ", n);
+    n--;
+} while (n > 3);
+printf("\n");
+@answer
+3
+@explain
+The body of a do-while runs once before the condition is checked; after that n is 2 and the condition n > 3 is false.
+
+@exercise c-intro-predict-partial-array
+@type predict
+@lesson 01_intro
+@difficulty 1
+@prompt
+What does this code print?
+@code
+int a[5] = {1, 2, 3};
+printf("%d %d %d\n", a[2], a[3], a[4]);
+@answer
+3 0 0
+@explain
+Partial initialisation fills the remaining elements with 0.
+
+@exercise c-intro-predict-2d
+@type predict
+@lesson 01_intro
+@difficulty 2
+@prompt
+What does this code print?
+@code
+int m[2][3] = {{1, 2, 3}, {4, 5, 6}};
+int total = 0;
+for (int r = 0; r < 2; r++) {
+    total += m[r][1];
+}
+printf("%d\n", total);
+@answer
+7
+@explain
+m[r][1] is the middle element of each row: 2 and 5, which add up to 7.
+
+@exercise c-intro-predict-string-length
+@type predict
+@lesson 01_intro
+@difficulty 2
+@prompt
+What does this code print?
+@code
+char name[20] = "Alice";
+int len = 0;
+while (name[len] != '\0') {
+    len++;
+}
+printf("%d %d\n", len, name[5]);
+@answer
+5 0
+@explain
+"Alice" has 5 characters; name[5] is the terminator '\0', whose value is 0.
+
+@exercise c-intro-predict-by-value
+@type predict
+@lesson 01_intro
+@difficulty 1
+@prompt
+What does this program print?
+@code
+#include <stdio.h>
+
+void tryToChange(int x) {
+    x = 999;
+}
+
+int main() {
+    int value = 5;
+    tryToChange(value);
+    printf("%d\n", value);
+    return 0;
+}
+@answer
+5
+@explain
+C passes ordinary variables by value: the function changes only its own copy.
+
+@exercise c-intro-fill-average
+@type fill
+@lesson 01_intro
+@difficulty 2
+@prompt
+Complete the function so that it returns the average of the array as a double.
+@code
+double calculateAverage(int arr[], int size) {
+    int sum = 0;
+    for (int i = 0; i < size; i++) {
+        sum += ___;
+    }
+    return (double)sum / ___;
+}
+@answer
+arr[i]
+size
+@hint
+Add every element, then divide by how many there are.
+@explain
+sum collects arr[i] for every index; casting sum to double before dividing avoids integer division.
+
+@exercise c-intro-fill-const
+@type fill
+@lesson 01_intro
+@difficulty 1
+@prompt
+Make MAX_SCORE a constant so that assigning to it later is a compile error.
+@code
+___ int MAX_SCORE = 100;
+@answer
+const
+@explain
+const makes a variable unchangeable.
+
+@exercise c-intro-fill-scanf
+@type fill
+@lesson 01_intro
+@difficulty 1
+@prompt
+Complete the call so that scanf stores the number in age.
+@code
+int age;
+scanf("%d", ___);
+@answer
+&age
+@explain
+scanf needs the address of the variable, so you pass &age.
+
+@exercise c-intro-bug-assign
+@type bug
+@lesson 01_intro
+@difficulty 1
+@prompt
+x is 3, but this program says "x is five". Click the buggy line, then type the corrected line.
+@code
+#include <stdio.h>
+
+int main() {
+    int x = 3;
+    if (x = 5) {
+        printf("x is five\n");
+    }
+    return 0;
+}
+@bugline 5
+@answer
+if (x == 5) {
+@explain
+if (x = 5) assigns 5 to x and the condition is then always true. Comparing needs ==.
+
+@exercise c-intro-bug-offbyone
+@type bug
+@lesson 01_intro
+@difficulty 2
+@prompt
+This program should print the sum of the five numbers, but it reads past the end of the array. Click the buggy line, then type the corrected line.
+@code
+#include <stdio.h>
+
+int main() {
+    int numbers[5] = {10, 20, 30, 40, 50};
+    int sum = 0;
+    for (int i = 0; i <= 5; i++) {
+        sum += numbers[i];
+    }
+    printf("Sum: %d\n", sum);
+    return 0;
+}
+@bugline 6
+@answer
+for (int i = 0; i < 5; i++) {
+@explain
+The valid indexes are 0 to 4. With i <= 5 the loop also reads numbers[5], which is out of bounds (undefined behavior).
+
+@exercise c-intro-bug-missing-return
+@type bug
+@lesson 01_intro
+@difficulty 2
+@prompt
+add should return the sum, but the result is garbage. Click the buggy line, then type the corrected line.
+@code
+#include <stdio.h>
+
+int add(int a, int b) {
+    int c = a + b;
+}
+
+int main() {
+    printf("%d\n", add(2, 3));
+    return 0;
+}
+@bugline 4
+@answer
+return a + b; | return c;
+@hint
+What does add hand back to the caller?
+@explain
+add never returns a value. Reading the result of a non-void function that falls off its end is undefined behavior.

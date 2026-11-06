@@ -1,0 +1,206 @@
+@rem Exercises for lesson 03_memory (C track). Format: docs/CONTENT_FORMAT.md
+
+@exercise c-mem-theory-null
+@type theory
+@lesson 03_memory
+@difficulty 1
+@prompt
+What does malloc return when it cannot allocate the memory?
+@answer
+NULL | a null pointer | null pointer | null
+@explain
+Always check the result of malloc against NULL before using it.
+
+@exercise c-mem-theory-dangling
+@type theory
+@lesson 03_memory
+@difficulty 1
+@prompt
+What is a pointer to a variable that no longer exists called?
+@answer
+dangling pointer | a dangling pointer | dangling
+@explain
+Using a dangling pointer is undefined behavior. Typical causes are returning the address of a local variable and using memory after free.
+
+@exercise c-mem-choice-header
+@type choice
+@lesson 03_memory
+@difficulty 1
+@prompt
+Which header declares malloc and free?
+@choices
+- <stdio.h>
+- <string.h>
+* <stdlib.h>
+- <memory.h>
+@explain
+malloc, calloc, realloc and free are declared in <stdlib.h>.
+
+@exercise c-mem-choice-stack
+@type choice
+@lesson 03_memory
+@difficulty 1
+@prompt
+Where does the local variable in  int x = 5;  inside a function live?
+@choices
+* On the stack; it disappears when the function returns
+- On the heap; it must be freed
+- In global memory for the whole run
+- In a register that the program cannot use
+@explain
+Local variables live on the stack and are released automatically at the end of their scope. Only malloc'ed memory needs free.
+
+@exercise c-mem-choice-leak
+@type choice
+@lesson 03_memory
+@difficulty 2
+@prompt
+You call malloc inside a loop and call free(p) only once after the loop. What is the result?
+@choices
+- Everything is freed
+- A compile error
+* Only the last block is freed; the earlier blocks leak
+- Only the first block is freed
+@explain
+Each iteration overwrites p with a new address, so the earlier addresses are lost and those blocks can no longer be freed. Free inside the loop.
+
+@exercise c-mem-predict-calloc
+@type predict
+@lesson 03_memory
+@difficulty 2
+@prompt
+What does this code print?
+@code
+int *p = calloc(3, sizeof(int));
+printf("%d %d %d\n", p[0], p[1], p[2]);
+free(p);
+@answer
+0 0 0
+@explain
+calloc sets all the memory it allocates to zero (malloc does not).
+
+@exercise c-mem-predict-shadow
+@type predict
+@lesson 03_memory
+@difficulty 2
+@prompt
+What does this program print?
+@code
+#include <stdio.h>
+
+int g = 1;
+
+void f() {
+    int g = 5;
+    g = g + 1;
+}
+
+int main() {
+    f();
+    printf("%d\n", g);
+    return 0;
+}
+@answer
+1
+@explain
+The local g inside f hides the global one, so only the local variable changes.
+
+@exercise c-mem-fill-basic
+@type fill
+@lesson 03_memory
+@difficulty 2
+@prompt
+Allocate an array of numItems integers, check the allocation and release the memory again.
+@code
+int numItems = 5;
+int *arr = ___(numItems * sizeof(int));
+if (arr == ___) {
+    return 1;
+}
+arr[0] = 42;
+___(arr);
+@answer
+malloc
+NULL
+free
+@explain
+malloc reserves the memory and returns NULL on failure; every successful malloc is matched by exactly one free.
+
+@exercise c-mem-fill-sizeof
+@type fill
+@lesson 03_memory
+@difficulty 1
+@prompt
+Complete the allocation of 8 doubles.
+@code
+double *d = malloc(8 * ___(double));
+@answer
+sizeof
+@explain
+malloc counts bytes, so multiply the number of items by sizeof the item type.
+
+@exercise c-mem-bug-size
+@type bug
+@lesson 03_memory
+@difficulty 2
+@prompt
+This code should store the numbers 0 to 9 in a dynamic array of 10 ints, but it allocates too little memory. Click the buggy line, then type the corrected line.
+@code
+#include <stdio.h>
+#include <stdlib.h>
+
+int main() {
+    int *arr = malloc(10);
+    for (int i = 0; i < 10; i++) {
+        arr[i] = i;
+    }
+    printf("%d\n", arr[9]);
+    free(arr);
+    return 0;
+}
+@bugline 5
+@answer
+int *arr = malloc(10 * sizeof(int));
+@explain
+malloc(10) gives 10 bytes, not 10 ints. Multiply by sizeof(int).
+
+@exercise c-mem-bug-use-after-free
+@type bug
+@lesson 03_memory
+@difficulty 2
+@prompt
+Click the line that uses memory it must not use any more.
+@code
+#include <stdio.h>
+#include <stdlib.h>
+
+int main() {
+    int *p = malloc(sizeof(int));
+    *p = 7;
+    free(p);
+    printf("%d\n", *p);
+    return 0;
+}
+@bugline 8
+@explain
+After free(p) the memory no longer belongs to the program: reading *p is undefined behavior. Print first, free afterwards.
+
+@exercise c-mem-bug-double-free
+@type bug
+@lesson 03_memory
+@difficulty 2
+@prompt
+Click the line that is a bug.
+@code
+#include <stdlib.h>
+
+int main() {
+    int *p = malloc(sizeof(int));
+    *p = 7;
+    free(p);
+    free(p);
+    return 0;
+}
+@bugline 7
+@explain
+Freeing the same memory twice is undefined behavior. Free once, or set p = NULL after the first free (free(NULL) is safe).
