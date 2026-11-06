@@ -230,11 +230,16 @@ void drawIcon(Icon icon, float cx, float cy, float size, Color c, Color cutout) 
             line(-0.4f, -0.8f, 0.4f, 0.0f);
             line(0.4f, 0.0f, -0.4f, 0.8f);
             break;
-        case Icon::Flame:
-            DrawCircleV(Vector2{cx, cy + s * 0.3f}, s * 0.6f, c);
-            DrawTriangle(Vector2{cx - s * 0.58f, cy + s * 0.15f}, Vector2{cx + s * 0.58f, cy + s * 0.15f},
-                         Vector2{cx + s * 0.05f, cy - s * 1.0f}, c);
+        case Icon::Flame: {
+            // Outer flame (teardrop with a bent tip) and a lighter inner flame.
+            const Color inner = mix(c, WHITE, 0.55f);
+            DrawCircleV(Vector2{cx, cy + s * 0.35f}, s * 0.62f, c);
+            DrawTriangle(Vector2{cx - s * 0.6f, cy + s * 0.2f}, Vector2{cx + s * 0.56f, cy + s * 0.2f}, Vector2{cx - s * 0.05f, cy - s * 1.0f}, c);
+            DrawTriangle(Vector2{cx + s * 0.1f, cy - s * 0.55f}, Vector2{cx + s * 0.62f, cy + s * 0.3f}, Vector2{cx + s * 0.2f, cy + s * 0.05f}, c);
+            DrawCircleV(Vector2{cx, cy + s * 0.5f}, s * 0.3f, inner);
+            DrawTriangle(Vector2{cx - s * 0.28f, cy + s * 0.45f}, Vector2{cx + s * 0.28f, cy + s * 0.45f}, Vector2{cx, cy - s * 0.1f}, inner);
             break;
+        }
         case Icon::Bulb:
             DrawRing(Vector2{cx, cy - s * 0.2f}, s * 0.55f, s * 0.55f + t, 0, 360, 24, c);
             line(-0.3f, 0.65f, 0.3f, 0.65f);

@@ -105,7 +105,7 @@ void App::registerScreens() {
     screens_[Page::ExamRun] = makeExamRunScreen();
     screens_[Page::ExamReview] = makeExamReviewScreen();
     screens_[Page::Mistakes] = makeMistakesScreen();
-    screens_[Page::Stats] = makePlaceholderScreen("Statistics", "Your progress, accuracy per topic and daily streak.");
+    screens_[Page::Stats] = makeStatsScreen();
 }
 
 void App::setTrack(Track t) {

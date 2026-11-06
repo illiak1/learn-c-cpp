@@ -14,6 +14,7 @@ std::unique_ptr<Screen> makeExamSetupScreen();
 std::unique_ptr<Screen> makeExamRunScreen();
 std::unique_ptr<Screen> makeExamReviewScreen();
 std::unique_ptr<Screen> makeMistakesScreen();
+std::unique_ptr<Screen> makeStatsScreen();
 std::unique_ptr<Screen> makePracticeScreen();
 std::unique_ptr<Screen> makeExerciseScreen();
 // Simple "coming soon" page with a title and a description.
