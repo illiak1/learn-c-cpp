@@ -20,6 +20,21 @@ public:
                    "this page gives you the file, the clock and the review.");
         const content::TrackContent& tc = app.content();
 
+        // An exam that was left running can be resumed (the clock kept running).
+        logic::Exam& running = app.exam();
+        if (!running.finished && !running.taskIds.empty() && app.page() == Page::Exam) {
+            const double elapsed = GetTime() - running.startedAt;
+            const int left = running.minutes > 0 ? static_cast<int>(running.minutes * 60 - elapsed) : static_cast<int>(elapsed);
+            Rect r = col.take(84.0f);
+            tintedCard(r, p.accentSoft, withAlpha(p.accent, 0.5f));
+            drawIcon(Icon::Timer, r.x + 34.0f, r.y + 42.0f, 24.0f, p.accent);
+            drawText(Face::Bold, size::kH3, "Exam in progress", r.x + 62.0f, r.y + 16.0f, p.text);
+            drawText(Face::Regular, 15, ellipsize(Face::Regular, 15, running.title, r.width - 420.0f) + "  -  " +
+                     (running.minutes > 0 ? logic::formatClock(left) + " left" : logic::formatClock(left) + " elapsed"), r.x + 62.0f, r.y + 48.0f, p.textMuted);
+            if (button("Resume", Rect{r.x + r.width - 280.0f, r.y + 20.0f, 120.0f, 44.0f}, ButtonStyle::Primary, Icon::Play)) app.go(Page::ExamRun);
+            if (button("Finish", Rect{r.x + r.width - 148.0f, r.y + 20.0f, 128.0f, 44.0f}, ButtonStyle::Secondary, Icon::Flag)) app.finishExam();
+        }
+
         // How it works + the exam rule
         const std::string rule =
             "A wrong result fails only that function. A compile error, an infinite loop or a crash gives 0 for the whole exam.";

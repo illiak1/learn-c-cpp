@@ -98,8 +98,7 @@ private:
                 o.placeholder = "Type a short answer";
                 o.readOnly = locked;
                 o.status = locked ? (a.result.correct ? 1 : 2) : 0;
-                if (textInput("theory-answer", Rect{col.x, col.y, col.w, 44.0f}, a.text, o) && !locked && !a.text.empty())
-                    doCheck(app, s, ex);
+                if (textInput("theory-answer", Rect{col.x, col.y, col.w, 44.0f}, a.text, o)) submit_ = true;
                 col.space(60.0f);
                 break;
             }
@@ -135,6 +134,16 @@ private:
 
         // Action row
         const bool can = canCheck(ex);
+        // Enter in a one-line field (or Ctrl+Enter anywhere) checks the answer; Enter after checking goes on.
+        const bool ctrlEnter = (IsKeyDown(KEY_LEFT_CONTROL) || IsKeyDown(KEY_RIGHT_CONTROL)) && IsKeyPressed(KEY_ENTER);
+        if (!locked && can && (submit_ || ctrlEnter)) doCheck(app, s, ex);
+        submit_ = false;
+        if (locked && IsKeyPressed(KEY_ENTER) && Context::get().focus == 0) {
+            s.pos++;
+            loadedId_.clear();
+            scroll_.offset = 0.0f;
+            return;
+        }
         if (!locked) {
             float x = col.x;
             if (!ex.hint.empty() && !a.hint && button("Show hint", Rect{x, col.y, 138.0f, 40.0f}, ButtonStyle::Ghost, Icon::Bulb)) a.hint = true;
@@ -285,7 +294,7 @@ private:
             o.readOnly = a.checked;
             o.status = a.checked ? (i < a.result.blankOk.size() && a.result.blankOk[i] ? 1 : 2) : 0;
             cx.pushId(static_cast<int>(i));
-            textInput("blank", cell, a.blanks[i], o);
+            if (textInput("blank", cell, a.blanks[i], o)) submit_ = true;
             cx.popId();
         }
         col.space(h + 16.0f);
@@ -316,7 +325,7 @@ private:
             o.placeholder = "Corrected line of code";
             o.readOnly = a.checked;
             o.status = a.checked ? (a.result.fixOk ? 1 : 2) : 0;
-            textInput("bug-fix", Rect{col.x, col.y, col.w, 42.0f}, a.fix, o);
+            if (textInput("bug-fix", Rect{col.x, col.y, col.w, 42.0f}, a.fix, o)) submit_ = true;
             col.space(58.0f);
         }
     }
@@ -397,6 +406,7 @@ private:
 
     Attempt attempt_;
     std::string loadedId_;
+    bool submit_ = false;  // Enter pressed inside an answer field this frame
 };
 
 }  // namespace

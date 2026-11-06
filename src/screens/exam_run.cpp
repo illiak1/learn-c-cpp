@@ -13,10 +13,12 @@ namespace {
 
 class ExamRunScreen : public Screen {
 public:
-    void onEnter(App&) override {
+    void onEnter(App& app) override {
         scroll_ = {};
-        current_ = 0;
         confirmUntil_ = 0.0;
+        // A new exam starts at task 1; resuming the same exam keeps the task that was open.
+        if (app.exam().startedAt != startedAt_) current_ = 0;
+        startedAt_ = app.exam().startedAt;
     }
 
     void draw(App& app, Rect area) override {
@@ -130,6 +132,7 @@ public:
 
 private:
     int current_ = 0;
+    double startedAt_ = -1.0;
     double confirmUntil_ = 0.0;
 };
 
