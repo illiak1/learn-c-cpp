@@ -77,11 +77,14 @@ Each exercise starts with `@exercise <id>`; ids are unique per track.
 ### Answers and variants
 
 * One `@answer` line = one answer. Variants are separated by `|`: `two | 2 | Two`.
+  In `fill` exercises each line is the answer of one blank; in all other types the lines are joined into a single
+  answer (so a multi-line program output can be written on several lines).
 * To use a literal `|` in an answer write `\|`.
 * Answers are compared after **normalising**: leading/trailing whitespace is removed and every run of whitespace
   (including newlines) becomes one space. `1 2 3` therefore equals `1\n2\n3`.
-* `theory` exercises ignore letter case by default. `@match loose` additionally ignores *all* whitespace, which is
-  handy for code (`i<n` equals `i < n`).
+* `theory` exercises ignore letter case by default. `fill` and `bug` answers are code, so *all* whitespace is
+  ignored (`i<n` equals `i < n`); use `@match exact` to switch that off, or `@match loose` to turn it on for another
+  type.
 
 ### Per type
 

@@ -211,6 +211,12 @@ void parseExercises(const std::string& text, const std::string& file, std::vecto
     auto finish = [&]() {
         if (!cur) return;
         const std::string at = "exercise '" + cur->id + "'";
+        // Outside fill exercises all @answer lines form ONE answer (whitespace-collapsed).
+        if (cur->type != ExType::Fill && cur->answers.size() > 1) {
+            std::string joined;
+            for (const std::string& a : cur->answers) joined += (joined.empty() ? "" : " ") + a;
+            cur->answers = {joined};
+        }
         if (!haveType) errors.push_back(where(file, curLine, at + ": missing @type"));
         if (cur->prompt.empty()) errors.push_back(where(file, curLine, at + ": missing @prompt"));
         if (cur->type == ExType::Choice) {
@@ -245,6 +251,7 @@ void parseExercises(const std::string& text, const std::string& file, std::vecto
             if (!parseType(d.arg, cur->type)) errors.push_back(where(file, d.lineNo, "unknown type '" + d.arg + "'"));
             else haveType = true;
             if (cur->type == ExType::Theory) cur->ignoreCase = true;
+            if (cur->type == ExType::Fill || cur->type == ExType::Bug) cur->loose = true;  // code: spacing does not matter
         } else if (d.name == "lesson") cur->lesson = d.arg;
         else if (d.name == "difficulty") cur->difficulty = std::clamp(toInt(d.arg, 1), 1, 3);
         else if (d.name == "prompt") cur->prompt = prose(d.lines);
