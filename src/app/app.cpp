@@ -119,6 +119,7 @@ void App::startSession(const std::string& title, std::vector<std::string> ids) {
     session_.title = title;
     session_.ids = std::move(ids);
     session_.pos = 0;
+    session_.results.assign(session_.ids.size(), -1);
     go(Page::Exercise);
 }
 

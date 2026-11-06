@@ -86,6 +86,7 @@ public:
         std::string title;
         std::vector<std::string> ids;
         size_t pos = 0;
+        std::vector<signed char> results;  // per question: -1 not answered, 0 wrong, 1 correct
     };
     void startSession(const std::string& title, std::vector<std::string> ids);
     Session& session() { return session_; }

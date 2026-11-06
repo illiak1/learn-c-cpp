@@ -1,4 +1,4 @@
-// practice.cpp - practice list (filter by type, start a session per lesson) and the exercise page.
+// practice.cpp - practice list: filter by type, start a mixed or per-lesson session.
 #include <algorithm>
 #include <random>
 
@@ -78,106 +78,8 @@ private:
     int filter_ = 0;
 };
 
-// Draws the exercise being worked on. (Interactive answering is added with the answer checker.)
-class ExerciseScreen : public Screen {
-public:
-    void onEnter(App&) override {
-        scroll_ = {};
-        reveal_ = false;
-        hint_ = false;
-    }
-
-    void draw(App& app, Rect area) override {
-        const Palette& p = Theme::get().colors();
-        Column col = begin(area);
-        App::Session& s = app.session();
-        if (s.ids.empty()) {
-            if (button("Back to practice", Rect{col.x, col.y, 190.0f, 38.0f}, ButtonStyle::Secondary)) app.go(Page::Practice);
-            end(col);
-            return;
-        }
-        s.pos = std::min(s.pos, s.ids.size() - 1);
-        const content::Exercise* ex = app.content().findExercise(s.ids[s.pos]);
-        if (button("Practice", Rect{col.x, col.y, 120.0f, 34.0f}, ButtonStyle::Ghost, Icon::ChevronLeft)) app.go(Page::Practice);
-        const std::string counter = "Question " + std::to_string(s.pos + 1) + " of " + std::to_string(s.ids.size());
-        drawText(Face::Bold, 15, s.title + "  -  " + counter, col.x + 132.0f, col.y + 8.0f, p.textMuted);
-        col.space(42.0f);
-        progressBar(Rect{col.x, col.y, col.w, 8.0f}, static_cast<float>(s.pos) / static_cast<float>(s.ids.size()), p.accent);
-        col.space(28.0f);
-        if (!ex) {
-            end(col);
-            return;
-        }
-
-        float bx = col.x;
-        bx += badge(content::typeName(ex->type), bx, col.y, p.accent, p.accentSoft) + 8.0f;
-        const std::string diff = ex->difficulty == 1 ? "Easy" : ex->difficulty == 2 ? "Medium" : "Hard";
-        badge(diff, bx, col.y, p.textMuted, p.surfaceAlt);
-        col.space(34.0f);
-        col.space(drawParagraph(Face::Bold, size::kH3 + 1, ex->prompt, col.x, col.y, col.w, p.text) + 16.0f);
-        if (!ex->code.empty()) {
-            CodeBoxOpts o;
-            o.cpp = app.track() == Track::Cpp;
-            const float h = codeBoxHeight(ex->code, o);
-            codeBox("ex-code", Rect{col.x, col.y, col.w, h}, ex->code, o);
-            col.space(h + 16.0f);
-        }
-        if (!ex->hint.empty()) {
-            if (hint_) {
-                const float h = textHeight(Face::Regular, size::kBody, ex->hint, col.w - 40.0f) + 28.0f;
-                Rect r{col.x, col.y, col.w, h};
-                tintedCard(r, p.warningSoft, withAlpha(p.warning, 0.45f));
-                drawParagraph(Face::Regular, size::kBody, "Hint: " + ex->hint, r.x + 20.0f, r.y + 14.0f, r.width - 40.0f, p.text);
-                col.space(h + 14.0f);
-            } else if (button("Show hint", Rect{col.x, col.y, 140.0f, 36.0f}, ButtonStyle::Ghost, Icon::Bulb)) {
-                hint_ = true;
-            }
-            if (!hint_) col.space(48.0f);
-        }
-        if (reveal_) {
-            std::string text = "Answer: ";
-            if (ex->type == ExType::Choice) {
-                for (const auto& c : ex->choices)
-                    if (c.correct) text += c.text;
-            } else {
-                for (size_t i = 0; i < ex->answers.size(); ++i) text += (i ? "   /   " : "") + ex->answers[i];
-            }
-            if (!ex->explanation.empty()) text += "\n\n" + ex->explanation;
-            const float h = textHeight(Face::Regular, size::kBody, text, col.w - 40.0f) + 28.0f;
-            Rect r{col.x, col.y, col.w, h};
-            tintedCard(r, p.successSoft, withAlpha(p.success, 0.5f));
-            drawParagraph(Face::Regular, size::kBody, text, r.x + 20.0f, r.y + 14.0f, r.width - 40.0f, p.text);
-            col.space(h + 14.0f);
-        } else if (button("Show answer", Rect{col.x, col.y, 160.0f, 40.0f}, ButtonStyle::Secondary, Icon::Eye)) {
-            reveal_ = true;
-        }
-        if (!reveal_) col.space(52.0f);
-
-        // Navigation
-        if (s.pos > 0 && button("Previous", Rect{col.x, col.y, 130.0f, 40.0f}, ButtonStyle::Ghost, Icon::ChevronLeft)) {
-            s.pos--;
-            onEnter(app);
-        }
-        const bool last = s.pos + 1 >= s.ids.size();
-        if (button(last ? "Finish" : "Next", Rect{col.x + col.w - 140.0f, col.y, 140.0f, 40.0f}, ButtonStyle::Primary, last ? Icon::Check : Icon::ChevronRight)) {
-            if (last) app.go(Page::Practice);
-            else {
-                s.pos++;
-                onEnter(app);
-            }
-        }
-        col.space(52.0f);
-        end(col);
-    }
-
-private:
-    bool reveal_ = false;
-    bool hint_ = false;
-};
-
 }  // namespace
 
 std::unique_ptr<Screen> makePracticeScreen() { return std::make_unique<PracticeScreen>(); }
-std::unique_ptr<Screen> makeExerciseScreen() { return std::make_unique<ExerciseScreen>(); }
 
 }  // namespace app

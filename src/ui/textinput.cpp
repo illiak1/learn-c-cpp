@@ -238,8 +238,8 @@ bool textInput(const std::string& idStr, Rect r, std::string& text, const TextIn
     // ---- drawing ----
     const bool focused = cx.focus == id;
     const float f = cx.anim(id, focused ? 1.0f : (hov ? 0.5f : 0.0f), 18.0f);
-    fillRound(r, 9.0f, o.readOnly ? p.surfaceAlt : p.surface);
-    strokeRound(r, 9.0f, 1.0f + f, mix(p.borderStrong, p.accent, focused ? 1.0f : f * 0.4f));
+    fillRound(r, 9.0f, o.status == 1 ? p.successSoft : o.status == 2 ? p.dangerSoft : (o.readOnly ? p.surfaceAlt : p.surface));
+    strokeRound(r, 9.0f, 1.0f + f, o.status == 1 ? p.success : o.status == 2 ? p.danger : mix(p.borderStrong, p.accent, focused ? 1.0f : f * 0.4f));
 
     // Keep the caret visible by adjusting the scroll offsets.
     const float innerW = r.width - 2.0f * kPadX;

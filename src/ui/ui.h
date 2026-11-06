@@ -167,6 +167,7 @@ struct TextInputOpts {
     bool readOnly = false;
     const char* placeholder = "";
     int fontPx = size::kBody;
+    int status = 0;  // 0 normal, 1 correct (green), 2 wrong (red)
 };
 // Editable text field. Returns true when Enter is pressed (single line) or the text changed (multiline).
 bool textInput(const std::string& id, Rect r, std::string& text, const TextInputOpts& opts = {});
