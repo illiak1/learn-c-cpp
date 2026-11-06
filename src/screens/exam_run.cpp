@@ -13,6 +13,7 @@ namespace {
 
 class ExamRunScreen : public Screen {
 public:
+    // Resets scroll; a new exam starts at task 1, a resumed one keeps its task.
     void onEnter(App& app) override {
         scroll_ = {};
         confirmUntil_ = 0.0;
@@ -21,6 +22,7 @@ public:
         startedAt_ = app.exam().startedAt;
     }
 
+    // Draws the running exam: clock, task statement, copy buttons and navigation.
     void draw(App& app, Rect area) override {
         const Palette& p = Theme::get().colors();
         Context& cx = Context::get();

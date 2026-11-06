@@ -220,7 +220,9 @@ float badge(const std::string& text, float x, float y, Color fg, Color bg) {
 Rect scrollBegin(ScrollState& s, Rect vp) {
     Context& cx = Context::get();
     const float maxOff = std::max(0.0f, s.contentH - vp.height);
-    if (cx.hovered(vp) && cx.wheel != 0.0f) s.offset -= cx.wheel * 56.0f;
+    // Shift + wheel scrolls code boxes sideways, so the page keeps still then.
+    const bool shift = IsKeyDown(KEY_LEFT_SHIFT) || IsKeyDown(KEY_RIGHT_SHIFT);
+    if (cx.hovered(vp) && cx.wheel != 0.0f && !shift) s.offset -= cx.wheel * 56.0f;
     if (cx.focus == 0) {
         if (IsKeyPressed(KEY_PAGE_DOWN) || IsKeyPressedRepeat(KEY_PAGE_DOWN)) s.offset += vp.height * 0.85f;
         if (IsKeyPressed(KEY_PAGE_UP) || IsKeyPressedRepeat(KEY_PAGE_UP)) s.offset -= vp.height * 0.85f;

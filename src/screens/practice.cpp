@@ -23,6 +23,7 @@ bool matches(const content::Exercise& e, int filter) {
 
 class PracticeScreen : public Screen {
 public:
+    // Draws the type filter, mixed sessions and one card per lesson.
     void draw(App& app, Rect area) override {
         const Palette& p = Theme::get().colors();
         Column col = begin(area);

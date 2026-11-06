@@ -17,7 +17,5 @@ std::unique_ptr<Screen> makeMistakesScreen();
 std::unique_ptr<Screen> makeStatsScreen();
 std::unique_ptr<Screen> makePracticeScreen();
 std::unique_ptr<Screen> makeExerciseScreen();
-// Simple "coming soon" page with a title and a description.
-std::unique_ptr<Screen> makePlaceholderScreen(const char* title, const char* description);
 
 }  // namespace app

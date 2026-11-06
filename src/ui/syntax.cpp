@@ -8,6 +8,7 @@ namespace ui {
 
 namespace {
 
+// Keywords of C.
 const std::unordered_set<std::string>& cKeywords() {
     static const std::unordered_set<std::string> k{
         "if", "else", "for", "while", "do", "switch", "case", "default", "break", "continue", "return", "goto",
@@ -16,6 +17,7 @@ const std::unordered_set<std::string>& cKeywords() {
     return k;
 }
 
+// Extra keywords of C++.
 const std::unordered_set<std::string>& cppKeywords() {
     static const std::unordered_set<std::string> k{
         "class", "public", "private", "protected", "new", "delete", "this", "nullptr", "using", "namespace",
@@ -25,6 +27,7 @@ const std::unordered_set<std::string>& cppKeywords() {
     return k;
 }
 
+// Names highlighted as types.
 const std::unordered_set<std::string>& typeNames() {
     static const std::unordered_set<std::string> k{
         "int", "char", "float", "double", "void", "bool", "long", "short", "unsigned", "signed", "size_t",

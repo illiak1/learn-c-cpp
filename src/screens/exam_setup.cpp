@@ -12,6 +12,7 @@ namespace {
 
 class ExamSetupScreen : public Screen {
 public:
+    // Draws exam mode entry: resume card, rules, quick exam, original papers and single functions.
     void draw(App& app, Rect area) override {
         const Palette& p = Theme::get().colors();
         Column col = begin(area);

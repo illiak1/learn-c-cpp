@@ -35,6 +35,7 @@ bool isTopLevel(const std::string& code) {
 
 }  // namespace
 
+// Adds the usual #includes and a main() when the snippet has none.
 std::string makeCompilable(const std::string& code, bool cpp) {
     std::string pre;
     if (code.find("#include") == std::string::npos) {

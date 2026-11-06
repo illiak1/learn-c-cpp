@@ -110,6 +110,7 @@ void App::registerScreens() {
     screens_[Page::Stats] = makeStatsScreen();
 }
 
+// Switches the track, remembers it in the settings and returns to the home page.
 void App::setTrack(Track t) {
     if (t == track_) return;
     track_ = t;
@@ -134,10 +135,12 @@ void App::startSession(const std::string& title, std::vector<std::string> ids) {
     go(Page::Exercise);
 }
 
+// Writes the progress file when something changed.
 void App::saveProgress() {
     if (progress_.dirty()) progress_.save();
 }
 
+// Number of wrong questions plus failed exam functions waiting for a retry.
 int App::mistakeCount() {
     return static_cast<int>(progress_.wrongExercises(trackKey()).size() + progress_.failedTasks(trackKey()).size());
 }
@@ -179,12 +182,14 @@ void App::finishExam() {
     go(Page::ExamReview);
 }
 
+// Switches page; leaving the exam review first stores the finished exam.
 void App::go(Page page) {
     if (page_ == Page::ExamReview && page != Page::ExamReview) commitExam();
     page_ = page;
     screens_[page_]->onEnter(*this);
 }
 
+// Rectangle to the right of the sidebar.
 Rect App::contentArea() const {
     const float w = static_cast<float>(GetScreenWidth());
     const float h = static_cast<float>(GetScreenHeight());
@@ -272,6 +277,7 @@ void App::frame() {
     EndDrawing();
 }
 
+// Opens the window, loads content and progress, and runs the frame loop until the window closes.
 int App::run() {
     SetConfigFlags(FLAG_WINDOW_RESIZABLE | FLAG_VSYNC_HINT | FLAG_MSAA_4X_HINT);
     InitWindow(options_.width, options_.height, "Exam Trainer - C and C++");

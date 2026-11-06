@@ -6,6 +6,7 @@
 
 namespace logic {
 
+// Trims and collapses whitespace (the comparison form of an answer).
 std::string normalise(const std::string& text) {
     std::string out;
     bool pendingSpace = false;
@@ -21,6 +22,7 @@ std::string normalise(const std::string& text) {
     return out;
 }
 
+// Removes every whitespace character.
 std::string stripSpaces(const std::string& text) {
     std::string out;
     for (unsigned char ch : text)
@@ -28,6 +30,7 @@ std::string stripSpaces(const std::string& text) {
     return out;
 }
 
+// Splits "a | b | c" into variants; "\|" stays a literal bar.
 std::vector<std::string> splitVariants(const std::string& line) {
     std::vector<std::string> out;
     std::string cur;
@@ -62,6 +65,7 @@ std::string prepare(const std::string& s, bool loose, bool ignoreCase) {
 
 }  // namespace
 
+// True when the input equals any variant of the answer line.
 bool matchesAny(const std::string& input, const std::string& answerLine, bool loose, bool ignoreCase) {
     const std::string in = prepare(input, loose, ignoreCase);
     if (in.empty()) return false;
@@ -70,6 +74,7 @@ bool matchesAny(const std::string& input, const std::string& answerLine, bool lo
     return false;
 }
 
+// Theory: the typed text must match one variant.
 Result checkTheory(const content::Exercise& e, const std::string& input) {
     Result r;
     for (const std::string& a : e.answers)
@@ -77,6 +82,7 @@ Result checkTheory(const content::Exercise& e, const std::string& input) {
     return r;
 }
 
+// Multiple choice: the selected option must be the marked one.
 Result checkChoice(const content::Exercise& e, int selected) {
     Result r;
     r.correct = selected >= 0 && selected < static_cast<int>(e.choices.size()) &&
@@ -84,6 +90,7 @@ Result checkChoice(const content::Exercise& e, int selected) {
     return r;
 }
 
+// Fill in the code: every blank must match its answer line.
 Result checkFill(const content::Exercise& e, const std::vector<std::string>& inputs) {
     Result r;
     r.correct = !e.answers.empty();
@@ -95,6 +102,7 @@ Result checkFill(const content::Exercise& e, const std::vector<std::string>& inp
     return r;
 }
 
+// Predict the output: the typed output must match (whitespace collapsed).
 Result checkPredict(const content::Exercise& e, const std::string& input) {
     Result r;
     for (const std::string& a : e.answers)
@@ -102,6 +110,7 @@ Result checkPredict(const content::Exercise& e, const std::string& input) {
     return r;
 }
 
+// Find the bug: the clicked line must be a bug line and the typed fix must match when one is required.
 Result checkBug(const content::Exercise& e, int selectedLine, const std::string& fix) {
     Result r;
     r.lineOk = std::find(e.bugLines.begin(), e.bugLines.end(), selectedLine) != e.bugLines.end();
@@ -112,11 +121,13 @@ Result checkBug(const content::Exercise& e, int selectedLine, const std::string&
     return r;
 }
 
+// The first variant of an answer line, for "correct answer" messages.
 std::string displayAnswer(const std::string& answerLine) {
     const auto v = splitVariants(answerLine);
     return v.empty() ? std::string() : v.front();
 }
 
+// Counts the ___ blanks in code.
 int countBlanks(const std::string& code) {
     int n = 0;
     for (size_t p = code.find("___"); p != std::string::npos; p = code.find("___", p + 3)) ++n;

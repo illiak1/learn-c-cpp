@@ -40,6 +40,7 @@ std::string indent(const std::string& text) {
 
 }  // namespace
 
+// Builds the single source file: includes, every stub or solution, then main() with the tests at the bottom.
 std::string buildExamFile(const std::vector<const content::Task*>& tasks, const std::string& mainOverride, bool withSolution) {
     std::ostringstream out;
     std::set<std::string> seen;
@@ -79,10 +80,12 @@ std::string buildExamFile(const std::vector<const content::Task*>& tasks, const 
     return out.str();
 }
 
+// Source file for a single task.
 std::string buildTaskFile(const content::Task& task, bool withSolution) {
     return buildExamFile({&task}, "", withSolution);
 }
 
+// Resolves the exam task ids to tasks (unknown ids are skipped).
 std::vector<const content::Task*> examTasks(const content::TrackContent& track, const Exam& exam) {
     std::vector<const content::Task*> out;
     for (const std::string& id : exam.taskIds)
@@ -90,11 +93,13 @@ std::vector<const content::Task*> examTasks(const content::TrackContent& track, 
     return out;
 }
 
+// Source file of a fixed exam set.
 std::string buildSetFile(const content::TrackContent& track, const content::ExamSet& set, bool withSolution) {
     Exam e = makeSetExam(set);
     return buildExamFile(examTasks(track, e), set.mainOverride, withSolution);
 }
 
+// Starts an exam from a fixed set.
 Exam makeSetExam(const content::ExamSet& set) {
     Exam e;
     e.title = set.title;
@@ -106,6 +111,7 @@ Exam makeSetExam(const content::ExamSet& set) {
     return e;
 }
 
+// Untimed exam made of specific tasks (retrying failed functions).
 Exam makeTaskListExam(const std::string& title, const std::vector<std::string>& taskIds, int minutes) {
     Exam e;
     e.title = title;
@@ -115,6 +121,7 @@ Exam makeTaskListExam(const std::string& title, const std::vector<std::string>& 
     return e;
 }
 
+// Picks distinct random tasks and keeps them in the order of the paper.
 Exam makeRandomExam(const content::TrackContent& track, int count, int minutes, std::mt19937& rng) {
     std::vector<std::string> pool;
     for (const content::Task& t : track.tasks) pool.push_back(t.id);
@@ -132,6 +139,7 @@ Exam makeRandomExam(const content::TrackContent& track, int count, int minutes, 
     return e;
 }
 
+// Earned points; everything is 0 when the file did not compile, loop forever or crash.
 Score scoreExam(const content::TrackContent& track, const Exam& exam) {
     Score s;
     for (size_t i = 0; i < exam.taskIds.size(); ++i) {
@@ -152,6 +160,7 @@ Score scoreExam(const content::TrackContent& track, const Exam& exam) {
     return s;
 }
 
+// Formats seconds as m:ss or h:mm:ss.
 std::string formatClock(int seconds) {
     if (seconds < 0) seconds = 0;
     const int h = seconds / 3600, m = (seconds / 60) % 60, s = seconds % 60;

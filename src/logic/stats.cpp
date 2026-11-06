@@ -5,6 +5,7 @@
 
 namespace logic {
 
+// Aggregates records and content into the numbers shown on the statistics page.
 Stats computeStats(const Progress& progress, const content::TrackContent& tc, const std::string& today, int days) {
     Stats s;
     const std::string& tr = tc.name;

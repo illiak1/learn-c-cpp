@@ -6,6 +6,7 @@
 
 using namespace logic;
 
+// Parses one exercise from text.
 static content::Exercise one(const std::string& text) {
     std::vector<content::Exercise> ex;
     std::vector<std::string> errors;

@@ -153,6 +153,7 @@ static int exportTrack(const fs::path& root, const std::string& name, const fs::
     return static_cast<int>(tc.errors.size());
 }
 
+// Exports the content of both tracks.
 int main(int argc, char** argv) {
     if (argc < 3) {
         std::cerr << "usage: export-content <content-dir> <out-dir>\n";

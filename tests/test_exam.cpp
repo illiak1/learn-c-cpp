@@ -5,6 +5,7 @@
 
 using namespace logic;
 
+// Two small tasks and one set used by the tests.
 static content::TrackContent sample() {
     content::TrackContent tc;
     const char* text =

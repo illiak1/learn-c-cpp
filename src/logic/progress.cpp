@@ -23,6 +23,7 @@ static long daysFromCivil(long y, unsigned m, unsigned d) {
     return era * 146097 + static_cast<long>(doe) - 719468;
 }
 
+// Days since 1970-01-01 for a "YYYY-MM-DD" date (-1 when malformed).
 long dayNumber(const std::string& date) {
     int y = 0, m = 0, d = 0;
     if (date.size() != 10 || std::sscanf(date.c_str(), "%d-%d-%d", &y, &m, &d) != 3) return -1;
@@ -30,6 +31,7 @@ long dayNumber(const std::string& date) {
     return daysFromCivil(y, static_cast<unsigned>(m), static_cast<unsigned>(d));
 }
 
+// Inverse of dayNumber.
 std::string dateFromDayNumber(long z) {
     z += 719468;
     const long era = (z >= 0 ? z : z - 146096) / 146097;
@@ -45,6 +47,7 @@ std::string dateFromDayNumber(long z) {
     return buf;
 }
 
+// Today in local time as "YYYY-MM-DD".
 std::string todayString() {
     const std::time_t t = std::time(nullptr);
     std::tm tmv{};
@@ -78,6 +81,7 @@ std::vector<std::string> fields(const std::string& line) {
     return out;
 }
 
+// Parses an integer, 0 on failure.
 int toInt(const std::string& s) {
     try {
         return std::stoi(s);
@@ -141,6 +145,7 @@ bool Progress::load(const fs::path& file) {
     return true;
 }
 
+// Writes the progress file atomically (temp file then rename).
 bool Progress::save() const {
     if (path_.empty()) return false;
     std::error_code ec;
@@ -183,6 +188,7 @@ void Progress::touchDay(const std::string& date, bool counted, bool correct) {
     }
 }
 
+// Counts one answer to an exercise and the day it happened.
 void Progress::recordAnswer(const std::string& tr, const std::string& id, bool correct, const std::string& today) {
     ExerciseRecord& r = exercises_[tr + "\t" + id];
     ++r.attempts;
@@ -193,11 +199,13 @@ void Progress::recordAnswer(const std::string& tr, const std::string& id, bool c
     dirty_ = true;
 }
 
+// History of one exercise (nullptr when never answered).
 const ExerciseRecord* Progress::exercise(const std::string& tr, const std::string& id) const {
     const auto it = exercises_.find(tr + "\t" + id);
     return it == exercises_.end() ? nullptr : &it->second;
 }
 
+// Ids of exercises whose latest answer was wrong.
 std::vector<std::string> Progress::wrongExercises(const std::string& tr) const {
     std::vector<std::string> out;
     const std::string prefix = tr + "\t";
@@ -206,12 +214,14 @@ std::vector<std::string> Progress::wrongExercises(const std::string& tr) const {
     return out;
 }
 
+// Stores the latest pass/fail of an exam task.
 void Progress::recordTask(const std::string& tr, const std::string& id, bool passed, const std::string& today) {
     tasks_[tr + "\t" + id] = {passed, today};
     touchDay(today, false, false);
     dirty_ = true;
 }
 
+// Ids of exam tasks whose latest result was a fail.
 std::vector<std::string> Progress::failedTasks(const std::string& tr) const {
     std::vector<std::string> out;
     const std::string prefix = tr + "\t";
@@ -220,6 +230,7 @@ std::vector<std::string> Progress::failedTasks(const std::string& tr) const {
     return out;
 }
 
+// Latest result of an exam task; false when it was never marked.
 bool Progress::taskResult(const std::string& tr, const std::string& id, bool& passed) const {
     const auto it = tasks_.find(tr + "\t" + id);
     if (it == tasks_.end()) return false;
@@ -227,16 +238,19 @@ bool Progress::taskResult(const std::string& tr, const std::string& id, bool& pa
     return true;
 }
 
+// Appends a finished exam to the history.
 void Progress::recordExam(const ExamRecord& record) {
     exams_.push_back(record);
     touchDay(record.date, false, false);
     dirty_ = true;
 }
 
+// Remembers that a lesson section was opened.
 void Progress::markSectionRead(const std::string& tr, const std::string& lesson, const std::string& section) {
     if (sections_.insert(tr + "\t" + lesson + "\t" + section).second) dirty_ = true;
 }
 
+// Number of opened sections of a lesson.
 int Progress::sectionsRead(const std::string& tr, const std::string& lesson) const {
     const std::string prefix = tr + "\t" + lesson + "\t";
     int n = 0;
@@ -245,6 +259,7 @@ int Progress::sectionsRead(const std::string& tr, const std::string& lesson) con
     return n;
 }
 
+// Remembers the lesson section to continue from.
 void Progress::setLastLesson(const std::string& tr, const std::string& lesson, int section) {
     auto& slot = lastLesson_[tr];
     if (slot.first != lesson || slot.second != section) {
@@ -253,6 +268,7 @@ void Progress::setLastLesson(const std::string& tr, const std::string& lesson, i
     }
 }
 
+// The lesson section to continue from (false when none).
 bool Progress::lastLesson(const std::string& tr, std::string& lesson, int& section) const {
     const auto it = lastLesson_.find(tr);
     if (it == lastLesson_.end()) return false;
@@ -282,6 +298,7 @@ int Progress::currentStreak(const std::string& today) const {
     return streak;
 }
 
+// Longest run of consecutive active days.
 int Progress::bestStreak() const {
     int best = 0, run = 0;
     long prev = -100;
@@ -295,6 +312,7 @@ int Progress::bestStreak() const {
     return best;
 }
 
+// Wipes all progress records (settings are kept).
 void Progress::reset() {
     exercises_.clear();
     tasks_.clear();

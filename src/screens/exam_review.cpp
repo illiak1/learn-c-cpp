@@ -14,11 +14,13 @@ namespace {
 
 class ExamReviewScreen : public Screen {
 public:
+    // Resets scroll and the opened solution panels.
     void onEnter(App&) override {
         scroll_ = {};
         open_.clear();
     }
 
+    // Draws the review: score, file-ran gate, per-function marks and solutions.
     void draw(App& app, Rect area) override {
         const Palette& p = Theme::get().colors();
         Context& cx = Context::get();

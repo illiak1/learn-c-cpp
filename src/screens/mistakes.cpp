@@ -13,6 +13,7 @@ namespace {
 
 class MistakesScreen : public Screen {
 public:
+    // Draws the wrong questions and failed exam functions with replay buttons.
     void draw(App& app, Rect area) override {
         const Palette& p = Theme::get().colors();
         Column col = begin(area);

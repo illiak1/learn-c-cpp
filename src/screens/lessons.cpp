@@ -13,6 +13,7 @@ namespace {
 // List of all lessons of the current track as clickable cards.
 class LessonsScreen : public Screen {
 public:
+    // Draws the lesson list.
     void draw(App& app, Rect area) override {
         const Palette& p = Theme::get().colors();
         Column col = begin(area);
@@ -51,6 +52,7 @@ class LessonScreen : public Screen {
 public:
     void onEnter(App&) override { scroll_ = {}; }
 
+    // Draws the lesson reader: header, section chips, content and previous/next.
     void draw(App& app, Rect area) override {
         const Palette& p = Theme::get().colors();
         Column col = begin(area);

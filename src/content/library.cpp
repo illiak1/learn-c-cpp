@@ -12,6 +12,7 @@ namespace fs = std::filesystem;
 
 namespace content {
 
+// Human-readable name of an exercise type.
 const char* typeName(ExType t) {
     switch (t) {
         case ExType::Theory: return "Theory";
@@ -23,24 +24,28 @@ const char* typeName(ExType t) {
     return "";
 }
 
+// Finds a lesson by id (nullptr when missing).
 const Lesson* TrackContent::findLesson(const std::string& id) const {
     for (const Lesson& l : lessons)
         if (l.id == id) return &l;
     return nullptr;
 }
 
+// Finds an exercise by id (nullptr when missing).
 const Exercise* TrackContent::findExercise(const std::string& id) const {
     for (const Exercise& e : exercises)
         if (e.id == id) return &e;
     return nullptr;
 }
 
+// Finds an exam task by id (nullptr when missing).
 const Task* TrackContent::findTask(const std::string& id) const {
     for (const Task& t : tasks)
         if (t.id == id) return &t;
     return nullptr;
 }
 
+// Reads a whole text file ("" when it cannot be opened).
 std::string readFile(const fs::path& path) {
     std::ifstream in(path, std::ios::binary);
     if (!in) return "";

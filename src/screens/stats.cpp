@@ -33,11 +33,13 @@ std::string weekdayLetter(const std::string& date) {
 
 class StatsScreen : public Screen {
 public:
+    // Resets scroll and the reset confirmation.
     void onEnter(App&) override {
         scroll_ = {};
         confirmUntil_ = 0.0;
     }
 
+    // Draws the statistics cards, charts and history.
     void draw(App& app, Rect area) override {
         const Palette& p = Theme::get().colors();
         Context& cx = Context::get();

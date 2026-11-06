@@ -25,6 +25,7 @@ void miniStat(Rect r, Icon icon, Color accent, const std::string& value, const s
 
 class HomeScreen : public Screen {
 public:
+    // Draws the dashboard: stats, continue and mistakes cards, quick links and exam tips.
     void draw(App& app, Rect area) override {
         const Palette& p = Theme::get().colors();
         Column col = begin(area);
@@ -123,35 +124,8 @@ public:
     }
 };
 
-class PlaceholderScreen : public Screen {
-public:
-    PlaceholderScreen(const char* title, const char* description) : title_(title), description_(description) {}
-
-    void draw(App& app, Rect area) override {
-        const Palette& p = Theme::get().colors();
-        Column col = begin(area);
-        drawText(Face::Bold, size::kH1, title_, col.x, col.y, p.text);
-        const float bw = badgeWidth(std::string(trackName(app.track())) + " track");
-        badge(std::string(trackName(app.track())) + " track", col.x + col.w - bw, col.y + 10.0f, WHITE, trackColor(app.track()));
-        col.space(48.0f);
-        col.space(drawParagraph(Face::Regular, size::kBody, description_, col.x, col.y, col.w, p.textMuted) + 12.0f);
-        Rect r = col.take(120.0f);
-        card(r);
-        drawCentered(Face::Regular, size::kBody, "This page arrives in a later stage.", r, p.textMuted);
-        end(col);
-    }
-
-private:
-    const char* title_;
-    const char* description_;
-};
-
 }  // namespace
 
 std::unique_ptr<Screen> makeHomeScreen() { return std::make_unique<HomeScreen>(); }
-
-std::unique_ptr<Screen> makePlaceholderScreen(const char* title, const char* description) {
-    return std::make_unique<PlaceholderScreen>(title, description);
-}
 
 }  // namespace app

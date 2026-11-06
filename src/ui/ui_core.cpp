@@ -106,6 +106,7 @@ uint32_t hashString(uint32_t seed, const std::string& s) {
 void Context::pushId(const std::string& s) { idStack_.push_back(hashString(idStack_.back(), s)); }
 // Opens an id scope named by an integer (list indices).
 void Context::pushId(int i) { pushId(std::to_string(i)); }
+// Closes the innermost id scope.
 void Context::popId() {
     if (idStack_.size() > 1) idStack_.pop_back();
 }
@@ -139,6 +140,7 @@ float roundness(Rect r, float radiusPx) {
 
 void fillRound(Rect r, float radiusPx, Color c) { DrawRectangleRounded(r, roundness(r, radiusPx), 10, c); }
 
+// Outline of a rounded rectangle.
 void strokeRound(Rect r, float radiusPx, float thickness, Color c) {
     DrawRectangleRoundedLinesEx(r, roundness(r, radiusPx), 10, thickness, c);
 }
@@ -353,10 +355,12 @@ const std::vector<std::string>& wrapLines(Face face, int px, const std::string& 
     return cache.emplace(std::move(key), std::move(lines)).first->second;
 }
 
+// Height of wrapped text.
 float textHeight(Face face, int px, const std::string& text, float width) {
     return static_cast<float>(wrapLines(face, px, text, width).size()) * Theme::get().lineHeight(px);
 }
 
+// Draws wrapped text at (x, y) and returns its height; lines outside the clip are skipped.
 float drawParagraph(Face face, int px, const std::string& text, float x, float y, float width, Color c) {
     const float lh = Theme::get().lineHeight(px);
     const Rect clipR = Context::get().clip();
@@ -369,12 +373,14 @@ float drawParagraph(Face face, int px, const std::string& text, float x, float y
     return cy - y;
 }
 
+// Draws one line centred inside a rectangle.
 void drawCentered(Face face, int px, const std::string& text, Rect r, Color c) {
     Theme& th = Theme::get();
     const float w = th.textWidth(face, px, text);
     drawText(face, px, text, r.x + (r.width - w) / 2.0f, r.y + (r.height - static_cast<float>(px) * 1.2f) / 2.0f + static_cast<float>(px) * 0.05f, c);
 }
 
+// Cuts a string to fit a width, adding "..." when needed.
 std::string ellipsize(Face face, int px, const std::string& text, float width) {
     Theme& th = Theme::get();
     if (th.textWidth(face, px, text) <= width) return text;

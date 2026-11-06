@@ -27,12 +27,14 @@ struct Attempt {
 
 class ExerciseScreen : public Screen {
 public:
+    // Starts the page with a fresh attempt.
     void onEnter(App&) override {
         scroll_ = {};
         attempt_ = Attempt{};
         loadedId_.clear();
     }
 
+    // Draws the top bar and the current question or the session summary.
     void draw(App& app, Rect area) override {
         const Palette& p = Theme::get().colors();
         Column col = begin(area);
