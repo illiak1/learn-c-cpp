@@ -129,7 +129,7 @@ private:
                 drawFill(col, ex, cpp);
                 break;
             case ExType::Bug:
-                col.space(drawParagraph(Face::Regular, size::kBody, "(find-the-bug view arrives in the next step)", col.x, col.y, col.w, p.textMuted) + 8.0f);
+                drawBug(col, ex, cpp);
                 break;
         }
 
@@ -233,28 +233,85 @@ private:
         col.space(6.0f);
     }
 
-    // Code with a list of blank inputs below it.
+    // Code with an input box drawn in place of every ___ blank.
     void drawFill(Column& col, const content::Exercise& ex, bool cpp) {
+        Attempt& a = attempt_;
+        // Replace each ___ with spaces wide enough for the longest accepted answer and remember where it went.
+        struct Slot { int line, col, cols; };
+        std::vector<Slot> slots;
+        std::string display;
+        int line = 0, column = 0;
+        size_t blank = 0;
+        for (size_t i = 0; i < ex.code.size(); ++i) {
+            if (ex.code.compare(i, 3, "___") == 0 && blank < ex.answers.size()) {
+                size_t longest = 0;
+                for (const std::string& v : logic::splitVariants(ex.answers[blank])) longest = std::max(longest, v.size());
+                const int cols = static_cast<int>(std::max<size_t>(8, longest + 3));
+                slots.push_back({line, column, cols});
+                display.append(static_cast<size_t>(cols), ' ');
+                column += cols;
+                ++blank;
+                i += 2;
+            } else {
+                display.push_back(ex.code[i]);
+                if (ex.code[i] == '\n') {
+                    ++line;
+                    column = 0;
+                } else {
+                    ++column;
+                }
+            }
+        }
+        CodeBoxOpts co;
+        co.cpp = cpp;
+        const float h = codeBoxHeight(display, co);
+        const Rect box{col.x, col.y, col.w, h};
+        codeBox("ex-code", box, display, co);
+        Context& cx = Context::get();
+        for (size_t i = 0; i < slots.size() && i < a.blanks.size(); ++i) {
+            Rect cell = codeBoxCell(box, display, co, slots[i].line, slots[i].col, slots[i].cols);
+            cell = Rect{cell.x, cell.y + 1.0f, cell.width - 4.0f, cell.height - 2.0f};
+            TextInputOpts o;
+            o.mono = true;
+            o.fontPx = size::kCode;
+            o.padX = 6.0f;
+            o.readOnly = a.checked;
+            o.status = a.checked ? (i < a.result.blankOk.size() && a.result.blankOk[i] ? 1 : 2) : 0;
+            cx.pushId(static_cast<int>(i));
+            textInput("blank", cell, a.blanks[i], o);
+            cx.popId();
+        }
+        col.space(h + 16.0f);
+    }
+
+    // Code with clickable lines; the student picks the faulty line and types the corrected one.
+    void drawBug(Column& col, const content::Exercise& ex, bool cpp) {
         const Palette& p = Theme::get().colors();
         Attempt& a = attempt_;
         CodeBoxOpts co;
         co.cpp = cpp;
+        co.clickableLines = !a.checked;
+        co.selectedLine = a.bugLine - 1;
+        co.highlightLine = a.checked ? ex.bugLines.front() - 1 : -1;
         const float h = codeBoxHeight(ex.code, co);
-        codeBox("ex-code", Rect{col.x, col.y, col.w, h}, ex.code, co);
-        col.space(h + 18.0f);
-        for (size_t i = 0; i < a.blanks.size(); ++i) {
-            drawText(Face::Bold, 15, "Blank " + std::to_string(i + 1), col.x, col.y + 11.0f, p.textMuted);
+        const int clicked = codeBox("ex-code", Rect{col.x, col.y, col.w, h}, ex.code, co);
+        if (clicked >= 0 && !a.checked) a.bugLine = clicked + 1;
+        col.space(h + 10.0f);
+        drawText(Face::Regular, 15, a.bugLine > 0 ? "Selected line " + std::to_string(a.bugLine) : "Click the line that contains the bug.",
+                 col.x, col.y, a.bugLine > 0 ? p.danger : p.textMuted);
+        col.space(28.0f);
+        if (!ex.answers.empty()) {
+            drawLabel("TYPE THE CORRECTED LINE", col.x, col.y, p.textMuted);
+            col.space(20.0f);
             TextInputOpts o;
             o.mono = true;
             o.fontPx = size::kCode;
+            o.placeholder = "Corrected line of code";
             o.readOnly = a.checked;
-            o.status = a.checked ? (i < a.result.blankOk.size() && a.result.blankOk[i] ? 1 : 2) : 0;
-            Context::get().pushId(static_cast<int>(i));
-            textInput("blank", Rect{col.x + 90.0f, col.y, col.w - 90.0f, 40.0f}, a.blanks[i], o);
-            Context::get().popId();
-            col.space(50.0f);
+            o.status = a.checked ? (a.result.fixOk ? 1 : 2) : 0;
+            textInput("bug-fix", Rect{col.x, col.y, col.w, 42.0f}, a.fix, o);
+            col.space(58.0f);
         }
-        col.space(4.0f);
     }
 
     // Result card: verdict, correct answer and explanation.

@@ -8,9 +8,6 @@ namespace ui {
 
 namespace {
 
-constexpr float kPadX = 11.0f;
-constexpr float kPadY = 8.0f;
-
 // Byte index of the previous UTF-8 character boundary.
 int prevChar(const std::string& s, int i) {
     if (i <= 0) return 0;
@@ -105,6 +102,8 @@ bool textInput(const std::string& idStr, Rect r, std::string& text, const TextIn
     InputState& st = cx.inputs[id];
     cx.inputOrder.push_back(id);
 
+    const float kPadX = o.padX;
+    const float kPadY = o.padY;
     const Face face = o.mono ? Face::Mono : Face::Regular;
     const int px = o.fontPx;
     const float lh = th.lineHeight(px);

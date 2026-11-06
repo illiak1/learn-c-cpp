@@ -56,6 +56,8 @@ Options parseArgs(int argc, char** argv) {
             else if (n == "stats") o.page = Page::Stats;
         } else if (a.rfind("--lesson=", 0) == 0) {
             o.lesson = a.substr(9);
+        } else if (a.rfind("--question=", 0) == 0) {
+            o.question = std::atoi(a.c_str() + 11);
         } else if (a.rfind("--section=", 0) == 0) {
             o.section = std::atoi(a.c_str() + 10);
         } else if (a.rfind("--screenshot=", 0) == 0) {
@@ -234,6 +236,7 @@ int App::run() {
         std::vector<std::string> ids;
         for (const auto& e : content().exercises) ids.push_back(e.id);
         startSession("Sample session", ids);
+        session_.pos = static_cast<size_t>(std::max(0, options_.question));
     } else {
         go(options_.page);
     }

@@ -168,6 +168,8 @@ struct TextInputOpts {
     const char* placeholder = "";
     int fontPx = size::kBody;
     int status = 0;  // 0 normal, 1 correct (green), 2 wrong (red)
+    float padX = 11.0f;
+    float padY = 8.0f;
 };
 // Editable text field. Returns true when Enter is pressed (single line) or the text changed (multiline).
 bool textInput(const std::string& id, Rect r, std::string& text, const TextInputOpts& opts = {});
@@ -183,6 +185,8 @@ struct CodeBoxOpts {
     bool clickableLines = false; // lines react to hover/click (find-the-bug)
     int selectedLine = -1;       // persistent selection (find-the-bug)
 };
+// Rectangle covering `cols` monospace cells starting at (line, col) inside a code box drawn at `box`.
+Rect codeBoxCell(Rect box, const std::string& code, const CodeBoxOpts& opts, int line, int col, int cols);
 // Height needed to show all lines.
 float codeBoxHeight(const std::string& code, const CodeBoxOpts& opts = {});
 // Draws a read-only code block with syntax colours; returns the 0-based line clicked this frame, or -1.

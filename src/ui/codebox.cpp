@@ -33,6 +33,17 @@ float codeLineHeight(int px) { return static_cast<float>(px) * 1.5f; }
 
 }  // namespace
 
+// Geometry of a run of cells (used to overlay input boxes on blanks).
+Rect codeBoxCell(Rect box, const std::string& code, const CodeBoxOpts& o, int line, int col, int cols) {
+    Theme& th = Theme::get();
+    const float adv = th.monoAdvance(o.fontPx);
+    const float lh = codeLineHeight(o.fontPx);
+    const size_t digits = std::to_string(splitLines(code).size()).size();
+    const float gutter = o.lineNumbers ? static_cast<float>(digits) * adv + 22.0f : 0.0f;
+    return Rect{box.x + gutter + kPad + static_cast<float>(col) * adv, box.y + kPad + static_cast<float>(line) * lh,
+                static_cast<float>(cols) * adv, lh};
+}
+
 // Total height of a code box for the text.
 float codeBoxHeight(const std::string& code, const CodeBoxOpts& o) {
     return static_cast<float>(splitLines(code).size()) * codeLineHeight(o.fontPx) + 2.0f * kPad;

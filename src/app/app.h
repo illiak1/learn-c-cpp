@@ -54,6 +54,7 @@ struct Options {
     Page page = Page::Home;
     std::string lesson;      // --lesson=ID (with --page=lesson)
     int section = 0;         // --section=N
+    int question = 0;        // --question=N (start index of the sample session)
     std::string screenshot;  // when set: save a PNG after a few frames and exit
 };
 
