@@ -1,0 +1,54 @@
+@lesson 07_exam_tips
+@title Before the exam
+@summary How the coding exam is marked, how to write safely, and a checklist to run before you submit.
+@order 7
+
+@section 7.1 How the exam works
+@points
+- The exam is one source file with about 5 functions (or classes) to write. The tests are in main() at the bottom of the file.
+- You write and test the code in Visual Studio (or your usual IDE). This app never compiles your code.
+- Each function is marked on its own: a function that returns a wrong result fails only that function.
+- Read each task carefully: names, parameters, return types and the rules of the task (for example "no array indexing") must match exactly.
+@note
+A compile error, an infinite loop or a crash gives 0 for the whole exam. A wrong result fails only that function. Everything below is about keeping the file building, finishing and never crashing.
+
+@section 7.2 While you write
+@points
+- Copy the signatures first and compile at once: an empty file that builds is a better starting point than a perfect function in a file that does not.
+- Give every non-void function a return statement before you do anything else (return 0; or return false; as a placeholder).
+- Write one function, compile, run the tests, then move on.
+- If a function is not finished, make it compile and terminate instead of leaving half a loop in it.
+- Do not edit the tests at the bottom. Read them: they show exactly how your function is called.
+- Trace your code on the example from the task before you run it.
+- For classes: write the constructor and destructor first, then one method at a time.
+
+@section 7.3 The ways to lose everything
+@mistakes
+- A missing return, semicolon or brace; a missing semicolon after a class } is a classic.
+- A loop that never ends: p++ forgotten in a pointer loop, i-- instead of i++, a condition that never becomes false.
+- Dereferencing nullptr or an uninitialised pointer: always test before using ->, and set unused pointers to nullptr.
+- Walking off the end of an array or a list: stop at size - 1, or when next is nullptr.
+- Using memory after delete, deleting twice, or deleting memory that new did not create.
+- Mixing new[] with delete (or new with delete[]).
+- Losing the rest of a list by overwriting a next pointer before saving it.
+- Forgetting the empty-list case in every list function.
+- Returning the address of a local variable.
+
+@section 7.4 Checklist before you submit
+@points
+- The file compiles with no errors (read the warnings, too).
+- Every loop has a clear exit: say out loud when it stops.
+- Every function returns a value on every path.
+- Every new has exactly one matching delete; the destructor frees what the constructor allocated.
+- Pointers are checked for nullptr before they are dereferenced.
+- You tested the empty case and the one-element case, not only the example from the task.
+- You did not change the tests, the function names or the signatures.
+- The program runs from start to finish and all tests print yes.
+
+@section 7.5 C++ notes
+@points
+- Put the classes and functions above main(), or write prototypes first.
+- A class definition ends with a semicolon.
+- Use nullptr, not NULL or 0, for "no pointer".
+- cout needs #include <iostream> and either using namespace std; or the std:: prefix.
+- Strings from pointer exercises are char arrays that end with '\0'; the array must hold the characters PLUS the terminator.

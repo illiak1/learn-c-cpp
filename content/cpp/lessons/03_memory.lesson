@@ -1,0 +1,332 @@
+@lesson 03_memory
+@title Memory management
+@summary Scope and lifetime, stack and heap, new and delete, leaks, dynamic arrays, malloc/free, globals and function pointers.
+@order 3
+
+@section 3.1 Scope and lifetime, dangling pointers
+@points
+- A local variable gets memory when declared and loses it when it goes out of scope (end of its { } block or function).
+- After that the memory may be reused; its old value is not guaranteed.
+- A pointer to a variable that no longer exists is a DANGLING POINTER. Using it is undefined behavior.
+@code cpp wrong WRONG (do not run) - dangling pointer in a block
+int main() {
+    int *p;
+    if (true) {
+        int x = 5;
+        p = &x;
+    }                        // x goes out of scope here
+    cout << *p << endl;      // undefined behavior: p is dangling
+}
+@code cpp wrong WRONG (do not run) - returning the address of a local variable
+int* getPtrToFive() {
+    int x = 5;
+    return &x;               // x is destroyed when the function returns
+}
+int main() {
+    int *p = getPtrToFive();
+    cout << *p << endl;      // undefined behavior
+}
+@text
+Task: write a function that returns a pointer to memory holding 5. The memory must outlive the function, so allocate it with new (3.2).
+
+@section 3.2 Stack and heap, the new operator
+@points
+- int x;      -> allocated on the STACK; freed automatically at end of scope.
+- new int;    -> allocated on the HEAP; stays until you delete it.
+- new returns a pointer to the new memory; the type tells it how much to allocate.
+- Forms:
+new int         one int, uninitialised
+new int(5)      one int with value 5
+new int{5}      one int with value 5
+new int[5]      array of 5 ints          (note the brackets)
+@code cpp
+#include <iostream>
+using namespace std;
+
+int main() {
+    int* a = new int(5);        // one int initialised to 5
+    int* b = new int{6};        // one int initialised to 6
+    int* c = new int[3]{1, 2, 3};   // array of 3 ints
+    cout << *a << " " << *b << " " << c[0] << c[1] << c[2] << endl;
+    delete a;
+    delete b;
+    delete[] c;                 // arrays need delete[]
+    return 0;
+}
+@output 
+5 6 123
+
+@section 3.3 The delete operator
+@points
+- delete p;  frees memory that was allocated with new (single object).
+- delete[] p;  frees memory that was allocated with new[] (array).
+- Every new must be matched by exactly one delete (and every new[] by one delete[]).
+- Setting the pointer to nullptr afterwards avoids accidental reuse.
+@code cpp Correct solution of the task from 3.1
+#include <iostream>
+using namespace std;
+
+int* getPtrToNewInt() {
+    int* x = new int;     // lives on the heap, survives after the function returns
+    *x = 5;
+    return x;
+}
+
+int main() {
+    int* p = getPtrToNewInt();
+    cout << *p << endl;   // 5
+    delete p;             // free it when done
+    p = nullptr;
+    return 0;
+}
+@output 
+5
+
+@section 3.4 Memory leaks
+@points
+- A memory leak happens when memory is allocated but never freed, or the last pointer to it is lost.
+- Example of a leak: calling getPtrToFive() (which uses new) in a loop without delete. Each iteration allocates a new block and overwrites p, so after 3 iterations 3 blocks exist and p points only to the last.
+- Putting a single "delete p;" AFTER the loop frees only the last block (2 blocks still leak).
+- Fix: delete inside the loop, in every iteration.
+@code cpp Correct version (delete inside the loop)
+#include <iostream>
+using namespace std;
+
+int* getPtrToFive() {
+    int* x = new int;
+    *x = 5;
+    return x;
+}
+
+int main() {
+    int* p;
+    for (int i = 0; i < 3; ++i) {
+        p = getPtrToFive();
+        cout << *p << endl;
+        delete p;          // without this line, 3 blocks leak (delete after the loop would free only the last one)
+    }
+    return 0;
+}
+@output 
+5
+5
+5
+
+@section 3.5 Common mistakes
+@text
+a) Using memory after deletion (undefined behavior) WRONG:
+@code cpp
+    int *x = getPtrToFive();
+    delete x;
+    cout << *x << endl;     // memory already freed
+@text
+Correct: print first, delete afterwards.
+@text
+b) Deleting the same memory twice (undefined behavior) WRONG:
+@code cpp
+    int *x = getPtrToFive();
+    delete x;
+    delete x;               // double delete
+@text
+Correct: delete once (or set x = nullptr after the first delete; deleting nullptr is safe).
+@text
+c) Deleting memory that was not allocated by new (undefined behavior) WRONG:
+@code cpp
+    int x = 5;
+    int *xPtr = &x;
+    delete xPtr;            // x lives on the stack
+@text
+Correct: do not delete it; the stack variable frees itself.
+@text
+d) Mixing new[] with delete (or new with delete[]) - undefined behavior.
+@text
+e) Forgetting to delete (leak, see 3.4).
+
+@section 3.6 Dynamic arrays: new[] and delete[]
+@points
+- A stack array needs a size known at compile time:
+int n; cin >> n;
+int arr[n];                // not allowed in standard C++ (C99 allows variable-length arrays, and some C++ compilers accept them as an extension; do not rely on it in C++.)
+- With new[] the size can be decided at run time:
+int *arr = new int[numItems]; int = type of the items; numItems = number of items.
+- Free it with delete[] arr;
+@text
+Exercise: ask the user "how many integers", allocate an array of that size, read the integers, print them, free the array.
+@code cpp
+#include <iostream>
+using namespace std;
+
+int main() {
+    int numItems;
+    cout << "how many items? ";
+    cin >> numItems;
+    int* arr = new int[numItems];
+    for (int i = 0; i < numItems; ++i) {
+        cout << "enter item " << i << ": ";
+        cin >> arr[i];
+    }
+    for (int i = 0; i < numItems; ++i) {
+        cout << arr[i] << endl;
+    }
+    delete[] arr;
+    return 0;
+}
+@output Output (user types: 3, 7, 4, 9)
+how many items? enter item 0: enter item 1: enter item 2: 7
+4
+9
+
+@section 3.7 Dynamic 2D arrays
+@points
+- int** arr2D = new int*[rows];  creates an array of `rows` pointers (their values are not set yet).
+- A loop then gives every row its own array:  arr2D[row] = new int[cols];
+- Access with arr2D[row][col].
+- Free in reverse order: delete[] each row first, then delete[] arr2D. Freeing arr2D first would lose the row pointers (leak).
+@code cpp
+#include <iostream>
+
+int main() {
+    int rows = 3;
+    int cols = 4;
+
+    // allocate: an array of row pointers, then one array per row
+    int** arr2D = new int*[rows];
+    for (int row = 0; row < rows; row++) {
+        arr2D[row] = new int[cols];
+    }
+
+    int counter = 1;
+    for (int row = 0; row < rows; row++) {
+        for (int col = 0; col < cols; col++) {
+            arr2D[row][col] = counter++;
+        }
+    }
+
+    std::cout << "2D Array:\n";
+    for (int row = 0; row < rows; row++) {
+        for (int col = 0; col < cols; col++) {
+            std::cout << arr2D[row][col] << " ";
+        }
+        std::cout << std::endl;
+    }
+
+    // deallocate in reverse order
+    for (int row = 0; row < rows; row++) {
+        delete[] arr2D[row];
+    }
+    delete[] arr2D;
+    return 0;
+}
+@output 
+2D Array:
+1 2 3 4
+5 6 7 8
+9 10 11 12
+
+@section 3.8 Memory management in c: malloc and free
+@text
+Key points (language C; needs <stdlib.h>):
+@points
+- malloc(bytes) allocates raw memory and returns a pointer, or NULL on failure. Always check for NULL.
+- Use sizeof to get the right size: malloc(n * sizeof(int)).
+- free(ptr) releases it. One free per successful malloc.
+- Do not use memory after free (undefined behavior); set the pointer to NULL afterwards.
+- C has no new/delete, and malloc/free must not be mixed with new/delete.
+@code cpp
+#include <stdio.h>
+#include <stdlib.h>
+
+int main() {
+    // single integer
+    int *ptr = (int*)malloc(sizeof(int));
+    if (ptr == NULL) {
+        printf("Memory allocation failed!\n");
+        return 1;
+    }
+    *ptr = 42;
+    printf("Value: %d\n", *ptr);
+    free(ptr);
+    ptr = NULL;             // good practice after free
+
+    // dynamic array
+    int size = 5;
+    int *arr = (int*)malloc(size * sizeof(int));
+    if (arr == NULL) {
+        printf("Memory allocation failed!\n");
+        return 1;
+    }
+    for (int i = 0; i < size; i++) {
+        arr[i] = i * 10;
+    }
+    printf("Array elements: ");
+    for (int i = 0; i < size; i++) {
+        printf("%d ", arr[i]);
+    }
+    printf("\n");
+    free(arr);
+    arr = NULL;
+    return 0;
+}
+@output 
+Value: 42
+Array elements: 0 10 20 30 40
+
+@section 3.9 Global variables and shadowing
+@points
+- A variable declared outside every function is global and can be used everywhere.
+- A local variable with the same name HIDES (shadows) the global one inside its scope: assignments change only the local variable and the global stays unchanged.
+- Prefer parameters and return values over globals.
+@code cpp
+#include <iostream>
+using namespace std;
+
+int glVar = 10;                 // global: accessible everywhere
+
+void setGlobal() {
+    glVar = 20;                 // changes the global
+}
+
+void shadow() {
+    int glVar = 99;             // new LOCAL variable hides the global one
+    glVar = 100;                // changes only the local
+}
+
+int main() {
+    cout << glVar << endl;      // 10
+    setGlobal();
+    cout << glVar << endl;      // 20
+    shadow();
+    cout << glVar << endl;      // still 20
+    glVar = 33;
+    cout << glVar << endl;      // 33
+    return 0;
+}
+@output 
+10
+20
+20
+33
+
+@section 3.10 Function pointers
+@points
+- You can store the address of a function in a function pointer and call the function through it.
+- The pointer type must match the function's return type and parameter types: int (*functionPtr)(int, int);
+- Only assignment and calling are allowed; no pointer arithmetic.
+@code cpp
+#include <iostream>
+using namespace std;
+
+int Add(int num1, int num2) {
+    return num1 + num2;
+}
+
+int main() {
+    // must have the same return type and parameter types as the function
+    int (*functionPtr)(int, int);
+    functionPtr = Add;
+    int result = functionPtr(20, 10);
+    cout << result << endl;
+    return 0;
+}
+@output 
+30

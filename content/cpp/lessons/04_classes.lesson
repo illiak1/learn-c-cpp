@@ -1,0 +1,610 @@
+@lesson 04_classes
+@title Classes
+@summary Fields, methods, constructors, this, static members, access control, copy constructors, structs and destructors.
+@order 4
+
+@section 4.1 Why classes: representing a geometric vector
+@text
+A geometric vector has a start point and an end point; each point has x and y. Without classes it takes 4 separate doubles that must all be passed to every function.
+@code cpp
+#include <iostream>
+using namespace std;
+
+void printVector(double x0, double x1, double y0, double y1) {
+    cout << "(" << x0 << "," << y0 << ") -> (" << x1 << "," << y1 << ")" << endl;
+}
+
+void offsetVector(double &x0, double &x1, double &y0, double &y1,
+                  double offsetX, double offsetY) {
+    x0 += offsetX; x1 += offsetX; y0 += offsetY; y1 += offsetY;
+}
+
+int main() {
+    double xStart = 1.2, xEnd = 2.0, yStart = 0.4, yEnd = 1.6;
+    printVector(xStart, xEnd, yStart, yEnd);
+    offsetVector(xStart, xEnd, yStart, yEnd, 1.0, 1.5);
+    printVector(xStart, xEnd, yStart, yEnd);
+    return 0;
+}
+@output 
+(1.2,0.4) -> (2,1.6)
+(2.2,1.9) -> (3,3.1)
+@text
+Problem: many variables travel together through every function call. Solution: group related data into one type, a class.
+
+@section 4.2 Class, fields, instances
+@points
+- A class is a user-defined data type that groups related pieces of data.
+- The pieces are called fields (also members).
+- An instance (object) is one occurrence of a class; every instance has its own values for the fields.
+- Access a field with  instance.field
+- DON'T FORGET the semicolon after the closing brace of a class; a missing one causes cryptic compiler errors.
+@code cpp Syntax
+class Vector {            // Vector = name of the new type
+public:
+    double xStart;        // fields
+    double xEnd;
+    double yStart;
+    double yEnd;
+    int color;            // fields can have different types
+};                        // <- semicolon
+
+int main() {
+    Vector vector1;       // two separate instances
+    Vector vector2;
+    vector2.xStart = 10;  // only vector2.xStart changes
+    vector1.xEnd = 12;
+}
+
+@section 4.3 Fields that are classes
+@points
+- A point has x and y; a vector has two points. Model it that way: class Vector contains two Point fields.
+- Chain the dots to reach inner fields: vec.start.x
+- Assigning one instance to another copies ALL of its fields (the copy is independent).
+@code cpp
+#include <iostream>
+using namespace std;
+
+class Point {
+public:
+    double x, y;
+};
+
+class Vector {
+public:
+    Point start, end;        // fields can be classes
+};
+
+int main() {
+    Vector vec1;
+    vec1.start.x = 3.0;
+    vec1.start.y = 4.0;
+    vec1.end.x = 5.0;
+    vec1.end.y = 6.0;
+
+    Vector vec2;
+    vec2.start = vec1.start;     // assigning an instance copies all of its fields
+    vec2.start.x = 7.0;          // changes only vec2
+
+    cout << "vec1.start = (" << vec1.start.x << "," << vec1.start.y << ")" << endl;
+    cout << "vec2.start = (" << vec2.start.x << "," << vec2.start.y << ")" << endl;
+    return 0;
+}
+@output 
+vec1.start = (3,4)
+vec2.start = (7,4)
+
+@section 4.4 Passing objects to functions
+@points
+- By value: the function gets a copy; changes are lost. Fine when the function only reads the object.
+- By reference (Type &p): the function works on the original.
+- By pointer (Type *p): the function works on the original; use p->field.
+- (Large objects: prefer a reference to avoid copying; use const Type& when the function must not modify it.)
+@code cpp
+#include <iostream>
+using namespace std;
+
+class Point { public: double x, y; };
+class Vector { public: Point start, end; };
+
+void offsetPointByValue(Point p, double dx, double dy) {   // works on a copy
+    p.x += dx;
+    p.y += dy;
+}
+
+void offsetPoint(Point &p, double dx, double dy) {          // by reference
+    p.x += dx;
+    p.y += dy;
+}
+
+void printVector(Vector v) {                                // by value: no modification needed
+    cout << "(" << v.start.x << "," << v.start.y << ") -> ("
+         << v.end.x << "," << v.end.y << ")" << endl;
+}
+
+void offsetVector(Vector &v, double dx, double dy) {        // by reference: modifies the original
+    v.start.x += dx; v.end.x += dx;
+    v.start.y += dy; v.end.y += dy;
+}
+
+void offsetVectorPtr(Vector *v, double dx, double dy) {     // by pointer: use ->
+    v->start.x += dx; v->end.x += dx;
+    v->start.y += dy; v->end.y += dy;
+}
+
+int main() {
+    Point p;
+    p.x = 3.0; p.y = 4.0;
+    offsetPointByValue(p, 1.0, 2.0);
+    cout << "(" << p.x << "," << p.y << ")" << endl;      // unchanged
+    offsetPoint(p, 1.0, 2.0);
+    cout << "(" << p.x << "," << p.y << ")" << endl;      // changed
+
+    Vector vec;
+    vec.start.x = 1.2; vec.end.x = 2.0;
+    vec.start.y = 0.4; vec.end.y = 1.6;
+    printVector(vec);
+    offsetVector(vec, 1.0, 1.5);
+    printVector(vec);
+    offsetVectorPtr(&vec, 1.0, 1.5);
+    printVector(vec);
+    return 0;
+}
+@output 
+(3,4)
+(4,6)
+(1.2,0.4) -> (2,1.6)
+(2.2,1.9) -> (3,3.1)
+(3.2,3.4) -> (4,4.6)
+
+@section 4.5 Methods
+@points
+- A method is a function that belongs to a class.
+- It is called on an object: vec.print(). The object before the dot is passed implicitly (it is "this"); that is how print() knows which vector's fields to use.
+- Inside a method, fields are used directly (start.x, not vec.start.x).
+- A method can call methods of its fields (end.print()).
+@code cpp
+#include <iostream>
+using namespace std;
+
+class Point {
+public:
+    double x, y;
+    void offset(double offsetX, double offsetY) { x += offsetX; y += offsetY; }
+    void print() { cout << "(" << x << "," << y << ")"; }
+};
+
+class Vector {
+public:
+    Point start, end;
+    void offset(double offsetX, double offsetY) {   // methods of fields can be called
+        start.offset(offsetX, offsetY);
+        end.offset(offsetX, offsetY);
+    }
+    void print() {
+        start.print();
+        cout << " -> ";
+        end.print();
+        cout << endl;
+    }
+};
+
+int main() {
+    Vector vec;
+    vec.start.x = 1.2; vec.end.x = 2.0;
+    vec.start.y = 0.4; vec.end.y = 1.6;
+    vec.print();              // the object before the dot is the one the method works on
+    vec.offset(1.0, 1.5);
+    vec.print();
+    return 0;
+}
+@output 
+(1.2,0.4) -> (2,1.6)
+(2.2,1.9) -> (3,3.1)
+
+@section 4.6 Header and implementation files
+@points
+- Like function prototypes, a class can declare its methods in the class body and define them later.
+- Header (.h): class declaration. Source (.cpp): method definitions.
+- ClassName::method tells the compiler which class a definition belongs to (:: is the scope operator).
+- Compile all .cpp files together:  g++ main.cpp vector.cpp -o app
+@code cpp vector.h
+// vector.h - class declarations
+class Point {
+public:
+    double x, y;
+    void offset(double offsetX, double offsetY);
+    void print();
+};
+
+class Vector {
+public:
+    Point start, end;
+    void offset(double offsetX, double offsetY);
+    void print();
+};
+@code cpp vector.cpp
+// vector.cpp - method implementations
+#include <iostream>
+#include "vector.h"
+using namespace std;
+
+void Point::offset(double offsetX, double offsetY) { x += offsetX; y += offsetY; }
+void Point::print() { cout << "(" << x << "," << y << ")"; }
+
+void Vector::offset(double offsetX, double offsetY) {
+    start.offset(offsetX, offsetY);
+    end.offset(offsetX, offsetY);
+}
+void Vector::print() {
+    start.print();
+    cout << " -> ";
+    end.print();
+    cout << endl;
+}
+@code cpp main.cpp
+// main.cpp
+#include "vector.h"
+
+int main() {
+    Vector v;
+    v.start.x = 1.0; v.start.y = 2.0;
+    v.end.x = 3.0;   v.end.y = 4.0;
+    v.print();
+    v.offset(1.0, 1.0);
+    v.print();
+    return 0;
+}
+@output 
+(1,2) -> (3,4)
+(2,3) -> (4,5)
+
+@section 4.7 Constructors and initialization lists
+@points
+- A constructor is a method with the same name as the class and no return type. It runs automatically when an instance is created.
+- A constructor with no parameters is the default constructor.
+- A class may have several constructors with different parameters (overloading).
+- Initialization list:  Point(double nx, double ny) : x(nx), y(ny) { } initialises fields before the body runs. () and {} are both allowed.
+- Without a constructor, fields of basic types are NOT initialised.
+@code cpp
+#include <iostream>
+using namespace std;
+
+class Point {
+public:
+    double x, y;
+
+    Point() {                               // default constructor
+        x = 0.0; y = 0.0;
+        cout << "default constructor" << endl;
+    }
+    Point(double nx, double ny) {           // 2-parameter constructor
+        x = nx; y = ny;
+        cout << "2-parameter constructor" << endl;
+    }
+};
+
+class Point2 {
+public:
+    double x, y;
+    Point2() : x(0), y(0) { }                       // initialization list
+    Point2(double nx, double ny) : x(nx), y{ny} { } // () or {} both work
+};
+
+int main() {
+    Point p;                 // default constructor
+    Point q(2.0, 3.0);       // 2-parameter constructor
+    cout << p.x << "," << p.y << " " << q.x << "," << q.y << endl;
+
+    Point2 r(4.0, 5.0);
+    cout << r.x << "," << r.y << endl;
+    return 0;
+}
+@output 
+default constructor
+2-parameter constructor
+0,0 2,3
+4,5
+
+@section 4.8 Pointers to objects, new, this
+@points
+- Declaring Point* p; creates only a pointer, no object.
+- Use -> to reach members through a pointer:  p->x  (same as (*p).x).
+- new Point() creates an object on the heap and returns its address; it must be freed with delete.
+- Two pointers can point to the same object; deleting it once makes both of them dangling.
+- Inside a method, `this` is a pointer to the current object; this->x is the same as x.
+@code cpp
+#include <iostream>
+using namespace std;
+
+class Point {
+public:
+    double x, y;
+    Point() : x(0.0), y(0.0) { }
+    Point(double nx, double ny) : x(nx), y(ny) { }
+    void setBoth(double v) { this->x = v; this->y = v; }   // this = pointer to the current object
+};
+
+int main() {
+    // pointer to an existing object
+    Point p;
+    Point* pPtr = &p;
+    pPtr->x = 10;                 // -> is used when the variable is a pointer
+    p.y = 20;
+    cout << p.x << " " << p.y << " | " << pPtr->x << " " << pPtr->y << endl;
+
+    // object created with new
+    Point* q = new Point();
+    Point* alias = q;             // two pointers to the same object
+    alias->x = 10;
+    q->y = 20;
+    cout << q->x << " " << q->y << endl;
+    q->setBoth(1.5);
+    cout << alias->x << " " << alias->y << endl;
+    delete q;                     // delete once; alias is now dangling, do not use it
+    return 0;
+}
+@output 
+10 20 | 10 20
+10 20
+1.5 1.5
+
+@section 4.9 Static members
+@points
+- A static member belongs to the class itself, not to an instance.
+- Access it with ClassName::member (no object needed).
+- A static data member must be defined once outside the class (float Maths::PI = 3.14f;).
+- A static method cannot use `this` or non-static members; using them is a compile error.
+@code cpp
+#include <iostream>
+using namespace std;
+
+class Point {
+public:
+    double x, y;
+    Point(double nx, double ny) : x(nx), y(ny) { }
+};
+
+class Maths {
+public:
+    static float PI;
+    static float Mul(Point a, Point b) {      // static: no access to non-static members
+        return a.x * b.x + a.y * b.y;
+    }
+};
+float Maths::PI = 3.14f;     // a static data member must be defined once, outside the class
+
+int main() {
+    Point q(1.0, 2.0);
+    cout << Maths::PI << endl;                 // use :: to access static members
+    cout << Maths::Mul(q, q) << endl;          // 1*1 + 2*2 = 5
+    return 0;
+}
+@output 
+3.14
+5
+
+@section 4.10 Access modifiers, getters and setters
+@points
+- public: accessible from anywhere.
+- private: accessible only inside the class's own methods.
+- Default access: class -> private, struct -> public.
+- Make fields private and expose them through getters (read) and, if needed, setters (controlled write).
+- Marking a getter const (double getX() const) promises it does not change the object.
+@code cpp
+#include <iostream>
+using namespace std;
+
+class Point {
+private:                       // private: only accessible inside the class
+    double x, y;
+public:
+    Point(double nx, double ny) : x(nx), y(ny) { }
+    double getX() const { return x; }      // getters give read-only access
+    double getY() const { return y; }
+    void setX(double nx) { x = nx; }       // setters allow controlled changes
+};
+
+class Hidden { double a; };        // class members are private by default
+struct Open  { double a; };        // struct members are public by default
+
+int main() {
+    Point p(2.0, 3.0);
+    // p.x = 5.0;                  // compile error: x is private
+    p.setX(5.0);
+    cout << p.getX() << " " << p.getY() << endl;
+
+    Open o;
+    o.a = 1.0;                     // allowed (public)
+    // Hidden h; h.a = 1.0;        // would not compile (private)
+    cout << o.a << endl;
+    return 0;
+}
+@output 
+5 3
+1
+@text
+Common mistake:
+@points
+- Accessing a private field from outside the class (compile error).
+
+@section 4.11 Copy constructors, shallow vs deep copy
+@points
+- Copying an object (Type b = a;) calls the copy constructor.
+- The default copy constructor copies every field. For a pointer field that copies the ADDRESS, so both objects share the same data (shallow copy). Changing one changes the other.
+- A custom copy constructor Type(const Type& o) can allocate new memory and copy the data (deep copy).
+- A class that owns memory also needs a destructor that frees it ("rule of three": destructor, copy constructor, copy assignment operator).
+- Syntax of a copy constructor for class Point:  Point(const Point& o)
+@code cpp Problem - shallow copy (student1 changes when student2 is modified)
+#include <iostream>
+using namespace std;
+
+class MITStudent {
+public:
+    int studentID;
+    char* name;
+    MITStudent() : studentID(0), name(nullptr) { }
+};
+
+int main() {
+    MITStudent student1;
+    student1.studentID = 98;
+    char n[] = "foo";
+    student1.name = n;
+
+    MITStudent student2 = student1;   // default copy: copies the POINTER, not the text
+    student2.name[0] = 'b';
+    cout << student1.name << endl;    // boo - student1 changed too!
+    return 0;
+}
+@output 
+boo
+@code cpp Solution - deep copy with copy constructor and destructor
+#include <iostream>
+#include <cstring>
+using namespace std;
+
+class MITStudent {
+public:
+    int studentID;
+    char* name;
+
+    MITStudent(int id, const char* n) : studentID(id) {
+        name = new char[strlen(n) + 1];
+        strcpy(name, n);
+    }
+    MITStudent(const MITStudent& o) : studentID(o.studentID) {   // copy constructor: deep copy
+        name = new char[strlen(o.name) + 1];
+        strcpy(name, o.name);
+    }
+    ~MITStudent() { delete[] name; }                             // free what the constructors allocated
+};
+
+int main() {
+    MITStudent student1(98, "foo");
+    MITStudent student2 = student1;   // calls the copy constructor
+    student2.name[0] = 'b';
+    cout << student1.name << " " << student2.name << endl;   // foo boo
+    return 0;
+}
+@output 
+foo boo
+
+@section 4.12 Structs
+@points
+- struct comes from C. In C++ it is the same as a class, except that members are public by default.
+- Use struct for simple data bundles, class for types with behavior.
+@code cpp
+#include <iostream>
+using namespace std;
+
+struct Point {          // same as a class, but members are public by default
+    double x;
+    double y;
+};
+
+int main() {
+    Point p;
+    p.x = 1.0;
+    p.y = 2.0;
+    cout << p.x << "," << p.y << endl;
+    return 0;
+}
+@output 
+1,2
+
+@section 4.13 Arrays of objects
+@points
+- Point points[5]; creates 5 objects using the DEFAULT constructor, so the class needs one.
+- Point* p = new Point[5];  heap array; free with delete[] p;
+- Array of pointers: each element is created with new Point(...) and must be deleted individually.
+- Point** pp = new Point*[5];  heap array of pointers: delete each element, then delete[] pp.
+@code cpp
+#include <iostream>
+using namespace std;
+
+class Point {
+public:
+    int x;
+    Point(int val) : x(val) { }
+    Point() : x(0) { }                  // needed for arrays: elements are default-constructed
+    void Print() { cout << x << " "; }
+};
+
+int main() {
+    // array on the stack
+    Point points[5];
+    for (int i = 0; i < 5; i++) points[i].x = i;
+    for (int i = 0; i < 5; i++) points[i].Print();
+    cout << endl;
+
+    // array on the heap
+    Point* heapPoints = new Point[5];
+    for (int i = 0; i < 5; i++) heapPoints[i].x = i * 10;
+    for (int i = 0; i < 5; i++) heapPoints[i].Print();
+    cout << endl;
+    delete[] heapPoints;
+
+    // array of pointers
+    Point* pointPointers[5];
+    for (int i = 0; i < 5; i++) pointPointers[i] = new Point(i * 2);
+    for (int i = 0; i < 5; i++) pointPointers[i]->Print();
+    cout << endl;
+    for (int i = 0; i < 5; i++) delete pointPointers[i];
+
+    // heap array of pointers
+    Point** pp = new Point*[5];
+    for (int i = 0; i < 5; i++) pp[i] = new Point(i * 3);
+    for (int i = 0; i < 5; i++) pp[i]->Print();
+    cout << endl;
+    for (int i = 0; i < 5; i++) delete pp[i];
+    delete[] pp;
+    return 0;
+}
+@output 
+0 1 2 3 4
+0 10 20 30 40
+0 2 4 6 8
+0 3 6 9 12
+
+@section 4.14 Destructors
+@points
+- A destructor ~ClassName() runs automatically when an object goes out of scope (or when delete is applied to it).
+- It has no parameters and no return type.
+- Use it to release resources the object owns (memory from new, files).
+- Without it, memory allocated with new inside the object leaks.
+@code cpp
+#include <iostream>
+using namespace std;
+
+class Point {
+public:
+    int x, y;
+};
+
+class ManyPoints {
+public:
+    Point* points;
+    ManyPoints() {
+        points = new Point[20000];
+        cout << "constructor: memory allocated" << endl;
+    }
+    ~ManyPoints() {                 // called automatically when the object goes out of scope
+        delete[] points;
+        cout << "destructor: memory freed" << endl;
+    }
+};
+
+int main() {
+    {
+        ManyPoints mp;
+        cout << "inside the block" << endl;
+    }                               // mp goes out of scope here
+    cout << "after the block" << endl;
+    return 0;
+}
+@output 
+constructor: memory allocated
+inside the block
+destructor: memory freed
+after the block

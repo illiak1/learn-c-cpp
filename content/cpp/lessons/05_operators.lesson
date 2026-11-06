@@ -1,0 +1,176 @@
+@lesson 05_operators
+@title Function and operator overloading
+@summary Overloaded functions, operator+, member and friend operators, prefix and postfix ++, operator<<.
+@order 5
+
+@section 5.1 Function overloading
+@points
+- Several functions may share a name in the same scope if their parameter lists differ in the number and/or types of parameters.
+- The compiler picks the version that matches the call.
+- Functions that differ ONLY in return type cannot be overloaded.
+- A string literal such as "Hello" has type const char*, so the parameter must be const char* (not char*).
+@code cpp
+#include <iostream>
+using namespace std;
+
+class printData {
+public:
+    void print(int i)           { cout << "Printing int: " << i << endl; }
+    void print(double f)        { cout << "Printing double: " << f << endl; }
+    void print(const char* c)   { cout << "Printing string: " << c << endl; }
+};
+
+int main() {
+    printData pd;
+    pd.print(5);              // print(int)
+    pd.print(500.263);        // print(double)
+    pd.print("Hello C++");    // print(const char*)
+    return 0;
+}
+@output 
+Printing int: 5
+Printing double: 500.263
+Printing string: Hello C++
+
+@section 5.2 Operator overloading: operator+
+@points
+- Most built-in operators can be redefined for user-defined types.
+- An overloaded operator is a function named "operator" followed by the symbol, with a return type and parameters like any other function:
+Box operator+(const Box& b) const;
+- a + b is translated to a.operator+(b) (member function). The left operand is the object the member is called on (*this); the right operand is the parameter.
+- Take the parameter by const reference to avoid a copy; mark the member const when it does not modify *this.
+- The result is a NEW object; the operands are unchanged.
+@code cpp
+#include <iostream>
+using namespace std;
+
+class Box {
+public:
+    Box() : length(0), breadth(0), height(0) { }
+    double getVolume() const { return length * breadth * height; }
+    void setLength(double len)  { length = len; }
+    void setBreadth(double bre) { breadth = bre; }
+    void setHeight(double hei)  { height = hei; }
+
+    // overload + : adds two Box objects dimension by dimension
+    Box operator+(const Box& b) const {
+        Box box;
+        box.length  = this->length  + b.length;
+        box.breadth = this->breadth + b.breadth;
+        box.height  = this->height  + b.height;
+        return box;
+    }
+
+private:
+    double length, breadth, height;
+};
+
+int main() {
+    Box Box1, Box2, Box3;
+
+    Box1.setLength(6.0);  Box1.setBreadth(7.0);  Box1.setHeight(5.0);
+    Box2.setLength(12.0); Box2.setBreadth(13.0); Box2.setHeight(10.0);
+
+    cout << "Volume of Box1 : " << Box1.getVolume() << endl;
+    cout << "Volume of Box2 : " << Box2.getVolume() << endl;
+
+    Box3 = Box1 + Box2;          // same as Box1.operator+(Box2)
+    cout << "Volume of Box3 : " << Box3.getVolume() << endl;
+    return 0;
+}
+@output 
+Volume of Box1 : 210
+Volume of Box2 : 1560
+Volume of Box3 : 5400
+@text
+Check: volume of Box1 = 6*7*5 = 210; Box2 = 12*13*10 = 1560; Box3 has dimensions (18, 20, 15), volume 5400.
+
+@section 5.3 Member vs non-member operators
+@points
+- A binary operator can be a member function (one parameter, the right operand) or a free function (two parameters, one per operand):
+@code text
+  Box operator+(const Box& b) const;              // member
+  Box operator+(const Box& a, const Box& b);      // non-member
+@points
+- Operators like << for streams (cout << obj) cannot be members of your class, because the left operand is the stream. Write them as free functions, declared `friend` if they need access to private fields.
+
+@section 5.4 Overloading ++ (prefix and postfix) and << for a Clock class
+@text
+Goal: use Clock objects like this
+@code cpp
+Clock c1, c2(3,20), c3(10,59);
+cout << c1 << " " << c2 << " " << c3 << endl;   // 12:00 03:20 10:59
+c1++;  ++c2;  c3++;
+@points
+- Prefix ++c: the object increments itself, then the result is used. Member form:   Clock& operator++();   body: tick(); return *this; Returning a reference to *this is the usual convention.
+- Postfix c++: the OLD value is the result of the expression. Member form:   Clock operator++(int); The int parameter is unused and unnamed; it only tells the compiler "this is the postfix version" (the call is c.operator++(0)). Body: save a copy of the old state, tick(), return the saved copy.
+- Postfix is therefore slower (makes a copy); prefer ++c when the value is not needed.
+- operator<< is a friend free function that writes to an ostream and returns that ostream so calls can be chained.
+- Decrement (--) is overloaded the same way.
+- tick() advances one minute: min = (min + 1) % 60, and when min wraps to 0 the hour becomes (hour + 1) % 24.
+@code cpp
+#include <iostream>
+using namespace std;
+
+class Clock {
+    friend ostream& operator<<(ostream& os, const Clock& c);
+public:
+    Clock(int h = 12, int m = 0) : hour(h), min(m) { }   // noon by default
+    Clock& operator++();        // prefix  ++c : advance, then return the object itself
+    Clock operator++(int);      // postfix c++ : the unused int tells the compiler this is postfix
+private:
+    void tick();                // advance the clock by 1 minute
+    int hour, min;
+};
+
+void Clock::tick() {
+    min = (min + 1) % 60;
+    if (min == 0)
+        hour = (hour + 1) % 24;
+}
+
+ostream& operator<<(ostream& os, const Clock& c) {
+    if (c.hour < 10) os << '0';       // pad hour with a 0
+    os << c.hour << ":";
+    if (c.min < 10) os << '0';        // pad minutes with a 0
+    os << c.min;
+    return os;
+}
+
+Clock& Clock::operator++() {          // prefix
+    tick();
+    return *this;
+}
+
+Clock Clock::operator++(int) {        // postfix
+    Clock old = *this;                // save the old value
+    tick();
+    return old;                       // return the value from BEFORE the increment
+}
+
+int main() {
+    Clock c1, c2(3, 20), c3(10, 59);
+    cout << c1 << " " << c2 << " " << c3 << endl;
+
+    c1++;
+    ++c2;
+    c3++;
+    cout << c1 << " " << c2 << " " << c3 << endl;
+
+    c1 = ++c2;                        // c2 is incremented first, then copied to c1
+    cout << c1 << " " << c2 << endl;
+
+    c1 = c3++;                        // c1 gets the OLD c3, then c3 is incremented
+    cout << c1 << " " << c3 << endl;
+    return 0;
+}
+@output 
+12:00 03:20 10:59
+12:01 03:21 11:00
+03:22 03:22
+11:00 11:01
+@text
+Explanation of the last two lines:
+@points
+- c1 = ++c2;   c2 goes from 03:21 to 03:22, and c1 receives 03:22.
+- c1 = c3++;   c1 receives the OLD c3 (11:00), then c3 becomes 11:01.

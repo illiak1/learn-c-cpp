@@ -119,7 +119,7 @@ static int exportTrack(const fs::path& root, const std::string& name, const fs::
                 const Block& o = s.blocks[i + 1];
                 if (c.kind != Block::Kind::Code || o.kind != Block::Kind::Output || c.warn || c.lang == "text") continue;
                 if (c.text.find("scanf") != std::string::npos || c.text.find("cin >>") != std::string::npos) continue;
-                if (!hasMain(c.text)) continue;
+                if (!hasMain(c.text) || c.text.find("#include \"") != std::string::npos) continue;  // multi-file examples are checked by hand
                 // a lesson may hold a C example inside the C++ track (malloc): honour its language
                 emit("lesson__" + l.id + "__" + s.id + "__" + std::to_string(i), c.text, &o.text);
             }

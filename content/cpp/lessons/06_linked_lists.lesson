@@ -1,0 +1,351 @@
+@lesson 06_linked_lists
+@title Linked lists
+@summary Nodes, function-based and class-based singly linked lists, Node**, deep copies and the doubly linked list idea.
+@order 6
+
+@section 6.1 What a linked list is, the node
+@points
+- A linked list is a chain of nodes allocated on the heap. Each node holds data and a pointer to the next node.
+- The list is reached through a head pointer (the first node). An empty list has head == nullptr. The last node's next pointer is nullptr.
+- Good: inserting and deleting does not shift other elements and the size can change at run time. Bad: no direct access by index (you must walk from the head).
+- Every node is created with new, so every node must be deleted.
+@code cpp
+struct Node {
+    int data;          // the stored value
+    Node* nextPtr;     // pointer to the next node (nullptr at the end)
+};
+
+head -> [10|*] -> [20|*] -> [30|nullptr]
+
+@section 6.2 Function-based singly linked list
+@text
+Operations:
+@points
+- InsertAtEnd: create the node; if the list is empty it becomes the head; otherwise walk to the last node and link the new node after it.
+- PrintList: walk from head to nullptr printing data.
+- DeleteWithValue: remove the first node holding a value. Cases: list empty; the head holds the value (move head forward); value found later (keep a `prev` pointer, set prev->nextPtr = cur->nextPtr, delete cur); value not found.
+- DeleteList: walk the list and delete every node (save nextPtr before deleting the node).
+@code cpp
+#include <iostream>
+using namespace std;
+
+struct Node {
+    int data;
+    Node* nextPtr;
+};
+
+// Node** lets the function change the caller's head pointer
+void InsertAtEnd(Node** ptrToHeadPtr, int newData) {
+    Node* newNode = new Node();
+    newNode->data = newData;
+    newNode->nextPtr = nullptr;
+
+    if (*ptrToHeadPtr == nullptr) {       // empty list: the new node becomes the head
+        *ptrToHeadPtr = newNode;
+        return;
+    }
+
+    Node* curNodePtr = *ptrToHeadPtr;
+    while (curNodePtr->nextPtr != nullptr) {   // walk to the last node
+        curNodePtr = curNodePtr->nextPtr;
+    }
+    curNodePtr->nextPtr = newNode;
+}
+
+void PrintList(Node* headPtr) {
+    Node* curNodePtr = headPtr;
+    while (curNodePtr != nullptr) {
+        cout << curNodePtr->data << " ";
+        curNodePtr = curNodePtr->nextPtr;
+    }
+    cout << endl;
+}
+
+// delete the first node that contains the given value
+void DeleteWithValue(Node** ptrToHeadPtr, int value) {
+    if (*ptrToHeadPtr == nullptr) {
+        cout << "List is empty." << endl;
+        return;
+    }
+
+    Node* curNodePtr = *ptrToHeadPtr;
+
+    if (curNodePtr->data == value) {                 // the head holds the value
+        *ptrToHeadPtr = curNodePtr->nextPtr;
+        delete curNodePtr;
+        return;
+    }
+
+    Node* prev = nullptr;                            // search, remembering the previous node
+    while (curNodePtr != nullptr && curNodePtr->data != value) {
+        prev = curNodePtr;
+        curNodePtr = curNodePtr->nextPtr;
+    }
+
+    if (curNodePtr == nullptr) {
+        cout << "Value not found in the list." << endl;
+        return;
+    }
+
+    prev->nextPtr = curNodePtr->nextPtr;             // unlink, then free
+    delete curNodePtr;
+}
+
+void DeleteList(Node** ptrToHeadPtr) {              // free every node
+    Node* cur = *ptrToHeadPtr;
+    while (cur != nullptr) {
+        Node* next = cur->nextPtr;
+        delete cur;
+        cur = next;
+    }
+    *ptrToHeadPtr = nullptr;
+}
+
+int main() {
+    Node* headPtr = nullptr;               // empty list
+
+    InsertAtEnd(&headPtr, 10);
+    InsertAtEnd(&headPtr, 20);
+    InsertAtEnd(&headPtr, 30);
+    cout << "Linked List: ";
+    PrintList(headPtr);                    // 10 20 30
+
+    DeleteWithValue(&headPtr, 20);
+    PrintList(headPtr);                    // 10 30
+    DeleteWithValue(&headPtr, 99);         // not found
+
+    DeleteList(&headPtr);
+    PrintList(headPtr);                    // (empty line)
+    return 0;
+}
+@output 
+Linked List: 10 20 30
+10 30
+Value not found in the list.
+
+@section 6.3 Why Node** is needed
+@points
+- Parameters are copies. If a function receives Node* headPtr, it gets a copy of the head pointer, so assigning headPtr = newNode inside the function does not change the caller's head.
+- To change the caller's head pointer, pass its ADDRESS: a Node** (pointer to pointer, see 02 topic 2.5).
+- Inside the function:  *ptrToHeadPtr  is the caller's head pointer.
+- At the call: InsertAtEnd(&headPtr, 10);
+- PrintList only reads the list, so a plain Node* is enough.
+@code text
+void InsertAtEnd(Node** ptrToHeadPtr, int newData);   // can change head
+void PrintList(Node* headPtr);                         // only reads
+@mistakes
+- Dereferencing curNodePtr when it is nullptr (check before using ->).
+- Losing the rest of the list by overwriting a next pointer before saving it.
+- Forgetting to delete nodes (leak) or using a node after deleting it.
+- Forgetting the empty-list case.
+
+@section 6.4 Class-based singly linked list
+@points
+- The same list as a class: Node has a constructor; LinkedList keeps head private and offers methods.
+- The destructor calls clear() so all nodes are freed automatically when the list goes out of scope.
+- Because the list owns heap memory it needs a copy constructor and an assignment operator that make a DEEP copy (new nodes with the same values); otherwise two lists would share nodes and delete them twice.
+- operator= first checks `this != &other` (self-assignment), clears the old content, then copies.
+- Methods that do not modify the list are marked const.
+@code cpp
+#include <iostream>
+using namespace std;
+
+class Node {
+public:
+    int data;
+    Node* next;
+
+    Node(int value) {
+        data = value;
+        next = nullptr;
+    }
+};
+
+class LinkedList {
+private:
+    Node* head;
+
+public:
+    LinkedList() {
+        head = nullptr;
+    }
+
+    // Destructor: free all nodes
+    ~LinkedList() {
+        clear();
+    }
+
+    // Copy constructor: build a separate list with the same values (deep copy)
+    LinkedList(const LinkedList& other) {
+        head = nullptr;
+        Node* current = other.head;
+        while (current != nullptr) {
+            insertAtEnd(current->data);
+            current = current->next;
+        }
+    }
+
+    // Assignment operator
+    LinkedList& operator=(const LinkedList& other) {
+        if (this != &other) {            // protect against list = list
+            clear();
+            Node* current = other.head;
+            while (current != nullptr) {
+                insertAtEnd(current->data);
+                current = current->next;
+            }
+        }
+        return *this;
+    }
+
+    void insertAtEnd(int newData) {
+        Node* newNode = new Node(newData);
+        if (head == nullptr) {
+            head = newNode;
+            return;
+        }
+        Node* current = head;
+        while (current->next != nullptr) {
+            current = current->next;
+        }
+        current->next = newNode;
+    }
+
+    void insertAtBeginning(int newData) {
+        Node* newNode = new Node(newData);
+        newNode->next = head;
+        head = newNode;
+    }
+
+    // Delete the first node that contains the given value
+    void deleteWithValue(int value) {
+        if (head == nullptr) {
+            cout << "List is empty." << endl;
+            return;
+        }
+
+        if (head->data == value) {       // the head holds the value
+            Node* temp = head;
+            head = head->next;
+            delete temp;
+            return;
+        }
+
+        Node* current = head;
+        Node* prev = nullptr;
+        while (current != nullptr && current->data != value) {
+            prev = current;
+            current = current->next;
+        }
+
+        if (current == nullptr) {
+            cout << "Value not found in the list." << endl;
+            return;
+        }
+
+        prev->next = current->next;      // unlink, then free
+        delete current;
+    }
+
+    void printList() const {
+        Node* current = head;
+        while (current != nullptr) {
+            cout << current->data << " ";
+            current = current->next;
+        }
+        cout << endl;
+    }
+
+    bool isEmpty() const {
+        return head == nullptr;
+    }
+
+    void clear() {
+        Node* current = head;
+        while (current != nullptr) {
+            Node* temp = current;
+            current = current->next;
+            delete temp;
+        }
+        head = nullptr;
+    }
+
+    int getSize() const {
+        int count = 0;
+        Node* current = head;
+        while (current != nullptr) {
+            count++;
+            current = current->next;
+        }
+        return count;
+    }
+
+    bool contains(int value) const {
+        Node* current = head;
+        while (current != nullptr) {
+            if (current->data == value) {
+                return true;
+            }
+            current = current->next;
+        }
+        return false;
+    }
+};
+
+int main() {
+    LinkedList list;
+
+    list.insertAtEnd(10);
+    list.insertAtEnd(20);
+    list.insertAtEnd(30);
+    cout << "After inserting 10, 20, 30: ";
+    list.printList();
+
+    list.insertAtBeginning(5);
+    cout << "After inserting 5 at beginning: ";
+    list.printList();
+
+    list.deleteWithValue(20);
+    cout << "After deleting 20: ";
+    list.printList();
+
+    cout << "Trying to delete 100: ";
+    list.deleteWithValue(100);
+
+    cout << "Contains 10: " << (list.contains(10) ? "Yes" : "No") << endl;
+    cout << "Contains 25: " << (list.contains(25) ? "Yes" : "No") << endl;
+    cout << "Size: " << list.getSize() << endl;
+
+    LinkedList list2 = list;             // copy constructor
+    cout << "Copied list: ";
+    list2.printList();
+
+    list.clear();
+    cout << "After clearing: ";
+    list.printList();
+    cout << "Is empty: " << (list.isEmpty() ? "Yes" : "No") << endl;
+
+    LinkedList list3;
+    list3 = list2;                       // assignment operator
+    cout << "Assigned list: ";
+    list3.printList();
+    return 0;
+}
+@output 
+After inserting 10, 20, 30: 10 20 30
+After inserting 5 at beginning: 5 10 20 30
+After deleting 20: 5 10 30
+Trying to delete 100: Value not found in the list.
+Contains 10: Yes
+Contains 25: No
+Size: 3
+Copied list: 5 10 30
+After clearing:
+Is empty: Yes
+Assigned list: 5 10 30
+
+@section 6.5 Doubly linked list (idea)
+@points
+- Each node has two pointers: prevPointer and nextPointer. The list keeps head and tail pointers (and often a size counter).
+- Inserting must update the neighbours in both directions, and the head/tail when inserting at an end.
+- A complete DoublyLinkedList with InsertAtBeginning, InsertAtEnd and InsertAtPosition is given in Coding_Exam_2_Preparation.txt.
