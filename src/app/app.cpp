@@ -6,6 +6,7 @@
 
 #include <cstdio>
 #include <cstdlib>
+#include <random>
 
 #include "app/screens.h"
 #include "content/library.h"
@@ -51,6 +52,8 @@ Options parseArgs(int argc, char** argv) {
             else if (n == "practice") o.page = Page::Practice;
             else if (n == "exam") o.page = Page::Exam;
             else if (n == "mistakes") o.page = Page::Mistakes;
+            else if (n == "examrun") o.page = Page::ExamRun;
+            else if (n == "review") o.page = Page::ExamReview;
             else if (n == "lesson") o.page = Page::Lesson;
             else if (n == "exercise") o.page = Page::Exercise;
             else if (n == "stats") o.page = Page::Stats;
@@ -96,8 +99,8 @@ void App::registerScreens() {
     screens_[Page::Lesson] = makeLessonScreen();
     screens_[Page::Practice] = makePracticeScreen();
     screens_[Page::Exercise] = makeExerciseScreen();
-    screens_[Page::Exam] = makePlaceholderScreen("Exam mode", "A timed set of whole-function tasks, just like the real coding exam.");
-    screens_[Page::ExamRun] = makePlaceholderScreen("Exam", "");
+    screens_[Page::Exam] = makeExamSetupScreen();
+    screens_[Page::ExamRun] = makeExamRunScreen();
     screens_[Page::ExamReview] = makePlaceholderScreen("Exam review", "");
     screens_[Page::Mistakes] = makePlaceholderScreen("Mistakes", "Replay the tasks you answered wrongly until they stick.");
     screens_[Page::Stats] = makePlaceholderScreen("Statistics", "Your progress, accuracy per topic and daily streak.");
@@ -123,6 +126,23 @@ void App::startSession(const std::string& title, std::vector<std::string> ids) {
     session_.pos = 0;
     session_.results.assign(session_.ids.size(), -1);
     go(Page::Exercise);
+}
+
+// Begins an exam: stamps the start time and opens the run page.
+void App::startExam(logic::Exam exam) {
+    exam.startedAt = GetTime();
+    exam.finished = false;
+    exam_ = std::move(exam);
+    go(Page::ExamRun);
+}
+
+// Stops the clock and opens the review.
+void App::finishExam() {
+    if (!exam_.finished) {
+        exam_.finished = true;
+        exam_.finishedAt = GetTime();
+    }
+    go(Page::ExamReview);
 }
 
 void App::go(Page page) {
@@ -237,6 +257,12 @@ int App::run() {
         for (const auto& e : content().exercises) ids.push_back(e.id);
         startSession("Sample session", ids);
         session_.pos = static_cast<size_t>(std::max(0, options_.question));
+    } else if (options_.page == Page::ExamRun || options_.page == Page::ExamReview) {
+        // Screenshot helper: start the first fixed set (or a random mix) directly.
+        const auto& sets = content().sets;
+        std::mt19937 rng(7);
+        startExam(sets.empty() ? logic::makeRandomExam(content(), 5, 60, rng) : logic::makeSetExam(sets.front()));
+        if (options_.page == Page::ExamReview) finishExam();
     } else {
         go(options_.page);
     }

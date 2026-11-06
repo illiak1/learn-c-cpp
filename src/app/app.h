@@ -9,6 +9,7 @@
 #include <vector>
 
 #include "content/types.h"
+#include "logic/exam.h"
 #include "ui/ui.h"
 
 namespace app {
@@ -92,6 +93,12 @@ public:
     void startSession(const std::string& title, std::vector<std::string> ids);
     Session& session() { return session_; }
 
+    // The exam being taken or reviewed.
+    void startExam(logic::Exam exam);
+    logic::Exam& exam() { return exam_; }
+    // Ends the timer and opens the review page.
+    void finishExam();
+
 private:
     void frame();
     void drawSidebar(ui::Rect r);
@@ -105,6 +112,7 @@ private:
     std::string lessonId_;
     int lessonSection_ = 0;
     Session session_;
+    logic::Exam exam_;
     int frameCount_ = 0;
 };
 
