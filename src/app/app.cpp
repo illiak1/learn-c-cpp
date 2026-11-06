@@ -101,7 +101,7 @@ void App::registerScreens() {
     screens_[Page::Exercise] = makeExerciseScreen();
     screens_[Page::Exam] = makeExamSetupScreen();
     screens_[Page::ExamRun] = makeExamRunScreen();
-    screens_[Page::ExamReview] = makePlaceholderScreen("Exam review", "");
+    screens_[Page::ExamReview] = makeExamReviewScreen();
     screens_[Page::Mistakes] = makePlaceholderScreen("Mistakes", "Replay the tasks you answered wrongly until they stick.");
     screens_[Page::Stats] = makePlaceholderScreen("Statistics", "Your progress, accuracy per topic and daily streak.");
 }
