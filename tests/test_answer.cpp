@@ -82,4 +82,9 @@ TEST(snippet_wrapping) {
     const std::string full = "#include <stdio.h>\nint main() { return 0; }";
     CHECK_EQ(makeCompilable(full, false), full + "\n");
     CHECK(makeCompilable("int f(int a) {\n    return a;\n}", false).find("int main(void)") != std::string::npos);
+    // statements that merely start with a brace initialiser or a loop are NOT top-level declarations
+    const std::string stmts = makeCompilable("int a[4] = {1, 2};\nint *p = a + 1;\np++;\nfor (int i = 0; i < 2; i++) {\n}", false);
+    CHECK(stmts.find("int main(void) {\nint a[4]") != std::string::npos);
+    const std::string cls = makeCompilable("class P {\npublic:\n    int x;\n};", true);
+    CHECK(cls.find("\n\nint main(void) {\n    return 0;\n}") != std::string::npos);
 }

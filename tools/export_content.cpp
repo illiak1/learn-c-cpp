@@ -11,6 +11,7 @@
 
 #include "content/library.h"
 #include "logic/exam.h"
+#include "logic/snippet.h"
 
 namespace fs = std::filesystem;
 using namespace content;
@@ -33,35 +34,8 @@ std::string safe(std::string s) {
 // True when the snippet defines main().
 bool hasMain(const std::string& code) { return code.find("main(") != std::string::npos; }
 
-// True when the snippet starts with top-level declarations (functions, classes) instead of statements.
-bool topLevel(const std::string& code) {
-    size_t pos = 0;
-    while (pos < code.size()) {
-        const size_t nl = code.find('\n', pos);
-        const std::string line = code.substr(pos, nl == std::string::npos ? std::string::npos : nl - pos);
-        if (!line.empty() && line[0] != ' ' && line[0] != '\t' && line[0] != '#' && line[0] != '/' && line[0] != '}') {
-            if (line.find('{') != std::string::npos || line.rfind("class ", 0) == 0 || line.rfind("struct ", 0) == 0) return true;
-            if (line.back() == ')' || line.back() == ';') {
-                // prototype or global variable: keep scanning
-            }
-        }
-        if (nl == std::string::npos) break;
-        pos = nl + 1;
-    }
-    return false;
-}
-
-// Makes a compilable program out of a snippet.
-std::string wrap(const std::string& code, bool cpp) {
-    std::string pre;
-    if (code.find("#include") == std::string::npos) {
-        pre = cpp ? "#include <iostream>\n#include <cstring>\n#include <cstdlib>\n#include <cstdio>\nusing namespace std;\n"
-                  : "#include <stdio.h>\n#include <stdbool.h>\n#include <string.h>\n#include <stdlib.h>\n";
-    }
-    if (hasMain(code)) return pre + code;
-    if (topLevel(code)) return pre + code + "\nint main(void) { return 0; }\n";
-    return pre + "int main(void) {\n" + code + "\n    return 0;\n}\n";
-}
+// Makes a compilable program out of a snippet (shared with the app's Copy to IDE button).
+std::string wrap(const std::string& code, bool cpp) { return logic::makeCompilable(code, cpp); }
 
 // First variant of an answer line ("a | b" -> "a"), unescaping "\|".
 std::string firstVariant(const std::string& answer) {

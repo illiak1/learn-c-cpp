@@ -1,6 +1,8 @@
 // snippet.cpp - wraps code fragments so students can paste them straight into an IDE.
 #include "logic/snippet.h"
 
+#include <cctype>
+
 namespace logic {
 
 namespace {
@@ -8,17 +10,25 @@ namespace {
 // True when the code contains a main function.
 bool hasMain(const std::string& code) { return code.find("main(") != std::string::npos; }
 
-// True when the fragment starts with top-level declarations (functions, classes) instead of statements.
+// True when the fragment holds top-level declarations (function or class definitions) instead of statements.
 bool isTopLevel(const std::string& code) {
+    static const char* statementWords[] = {"for", "while", "if", "switch", "else", "do", "return", "case", "default", "goto"};
     size_t pos = 0;
     while (pos < code.size()) {
         const size_t nl = code.find('\n', pos);
-        const std::string line = code.substr(pos, nl == std::string::npos ? std::string::npos : nl - pos);
-        if (!line.empty() && line[0] != ' ' && line[0] != '\t' && line[0] != '#' && line[0] != '/' && line[0] != '}' &&
-            (line.find('{') != std::string::npos || line.rfind("class ", 0) == 0 || line.rfind("struct ", 0) == 0))
-            return true;
-        if (nl == std::string::npos) break;
-        pos = nl + 1;
+        std::string line = code.substr(pos, nl == std::string::npos ? std::string::npos : nl - pos);
+        pos = nl == std::string::npos ? code.size() : nl + 1;
+        while (!line.empty() && (line.back() == ' ' || line.back() == '\t' || line.back() == '\r')) line.pop_back();
+        if (line.empty() || line[0] == ' ' || line[0] == '\t' || line[0] == '#' || line[0] == '/' || line[0] == '}') continue;
+        size_t e = 0;
+        while (e < line.size() && (std::isalnum(static_cast<unsigned char>(line[e])) || line[e] == '_')) ++e;
+        const std::string word = line.substr(0, e);
+        bool isStatement = false;
+        for (const char* w : statementWords)
+            if (word == w) isStatement = true;
+        if (isStatement) continue;
+        if ((word == "class" || word == "struct" || word == "union" || word == "enum") && line.back() != ';') return true;
+        if (line.find('(') != std::string::npos && (line.back() == '{' || line.back() == ')')) return true;
     }
     return false;
 }
