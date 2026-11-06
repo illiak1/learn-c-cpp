@@ -1,0 +1,93 @@
+@rem Exercises for lesson 01_intro (C track). Format: docs/CONTENT_FORMAT.md
+
+@exercise c-intro-theory-modulo
+@type theory
+@lesson 01_intro
+@difficulty 1
+@prompt
+Which arithmetic operator gives the remainder of an integer division? Write the operator symbol.
+@answer
+% | the % operator | modulo | modulus
+@hint
+It is not / and it is not *.
+@explain
+The % operator returns the remainder: 10 % 3 is 1. It works on integers only.
+
+@exercise c-intro-choice-intdiv
+@type choice
+@lesson 01_intro
+@difficulty 1
+@prompt
+What does printf("%d", 7 / 2); print?
+@choices
+- 3.5
+* 3
+- 4
+- 3.0
+@explain
+Both operands are int, so this is integer division and the fraction is thrown away: 7 / 2 is 3.
+
+@exercise c-intro-fill-loop
+@type fill
+@lesson 01_intro
+@difficulty 1
+@prompt
+Complete the loop so that it prints 0 1 2 3 4.
+@code
+#include <stdio.h>
+
+int main() {
+    for (int i = 0; ___; i++) {
+        printf("%d ", i);
+    }
+    return 0;
+}
+@answer
+i < 5 | i <= 4 | i != 5
+@match loose
+@hint
+The loop must stop once i reaches 5.
+@explain
+i < 5 is true for 0, 1, 2, 3 and 4, so five numbers are printed.
+
+@exercise c-intro-predict-divmod
+@type predict
+@lesson 01_intro
+@difficulty 1
+@prompt
+What does this program print?
+@code
+#include <stdio.h>
+
+int main() {
+    int a = 10, b = 3;
+    printf("%d %d\n", a / b, a % b);
+    return 0;
+}
+@answer
+3 1
+@explain
+10 / 3 is 3 (integer division) and 10 % 3 is the remainder 1.
+
+@exercise c-intro-bug-scanf
+@type bug
+@lesson 01_intro
+@difficulty 1
+@prompt
+This program should read an age and print it. Click the line that contains the bug, then type the corrected line.
+@code
+#include <stdio.h>
+
+int main() {
+    int age;
+    printf("Enter age: ");
+    scanf("%d", age);
+    printf("You are %d\n", age);
+    return 0;
+}
+@bugline 6
+@answer
+scanf("%d", &age); | scanf("%d",&age);
+@match loose
+@explain
+scanf needs the address of the variable, so write &age. Without the & it treats the value of age as an address and crashes.

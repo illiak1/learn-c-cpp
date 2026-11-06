@@ -30,7 +30,7 @@ SRC_CORE := $(filter src/content/% src/logic/%,$(SRC_ALL))
 SRC_TEST := $(wildcard tests/*.cpp)
 OBJ_TEST := $(patsubst %.cpp,$(BUILD)/obj/%.o,$(SRC_CORE) $(SRC_TEST))
 
-.PHONY: all run test clean distclean raylib
+.PHONY: all run test export-content clean distclean raylib
 
 all: $(APP)
 
@@ -61,10 +61,21 @@ $(TESTBIN): $(OBJ_TEST)
 	@mkdir -p $(dir $@)
 	$(CXX) $(OBJ_TEST) -o $@
 
+# Content verification helper: make export-content OUT=/some/dir dumps every runnable snippet.
+EXPORT := $(BUILD)/export-content
+OBJ_EXPORT := $(patsubst %.cpp,$(BUILD)/obj/%.o,$(SRC_CORE) tools/export_content.cpp)
+
+$(EXPORT): $(OBJ_EXPORT)
+	@mkdir -p $(dir $@)
+	$(CXX) $(OBJ_EXPORT) -o $@
+
+export-content: $(EXPORT)
+	./$(EXPORT) content $(OUT)
+
 clean:
 	rm -rf $(BUILD)
 
 distclean: clean
 	rm -rf third_party
 
--include $(OBJ_APP:.o=.d) $(OBJ_TEST:.o=.d)
+-include $(OBJ_APP:.o=.d) $(OBJ_TEST:.o=.d) $(OBJ_EXPORT:.o=.d)

@@ -1,0 +1,92 @@
+@rem Exercises for lesson 02_pointers (C++ track). Format: docs/CONTENT_FORMAT.md
+
+@exercise cpp-ptr-theory-address
+@type theory
+@lesson 02_pointers
+@difficulty 1
+@prompt
+Which operator gives the address of a variable? Write the symbol.
+@answer
+& | address-of | the address-of operator | ampersand
+@hint
+It is the same symbol that marks a reference parameter.
+@explain
+&x is the address of x, and its type is a pointer to the type of x (&i is int* when i is an int).
+
+@exercise cpp-ptr-choice-deref
+@type choice
+@lesson 02_pointers
+@difficulty 1
+@prompt
+After  int i = 5; int* p = &i; *p = 10;  what is the value of i?
+@choices
+- 5
+* 10
+- The address of i
+- It does not compile
+@explain
+*p is the variable p points to, which is i. Assigning to *p therefore changes i.
+
+@exercise cpp-ptr-predict-update
+@type predict
+@lesson 02_pointers
+@difficulty 1
+@prompt
+What does this code print?
+@code
+int a = 3;
+int* p = &a;
+*p = *p + 2;
+cout << a << endl;
+@answer
+5
+@explain
+*p is a, so a becomes 3 + 2 = 5.
+
+@exercise cpp-ptr-fill-sum
+@type fill
+@lesson 02_pointers
+@difficulty 2
+@prompt
+Fill in the blank so that sum returns the sum of numValues integers, using pointer arithmetic.
+@code
+int sum(int* ptr, int numValues) {
+    int total = 0;
+    for (int k = 0; k < numValues; k++) {
+        total += ___;
+    }
+    return total;
+}
+@answer
+*(ptr + k) | *(ptr+k) | ptr[k]
+@match loose
+@hint
+ptr + k is the address of element k; follow it with *.
+@explain
+a[i] is the same as *(a + i): ptr + k moves k elements forward and * reads that element.
+
+@exercise cpp-ptr-bug-offbyone
+@type bug
+@lesson 02_pointers
+@difficulty 2
+@prompt
+This code should print the five numbers of the array. Click the buggy line, then type the corrected line.
+@code
+#include <iostream>
+using namespace std;
+
+int main() {
+    int arr[] = {4, 6, 7, 8, 9};
+    int* ptr = arr;
+    for (int k = 0; k <= 5; k++) {
+        cout << *(ptr + k) << " ";
+    }
+    cout << endl;
+    return 0;
+}
+@bugline 7
+@answer
+for (int k = 0; k < 5; k++) {
+@match loose
+@explain
+The valid indexes are 0 to 4. With k <= 5 the loop also reads arr[5], one element past the end (undefined behavior).

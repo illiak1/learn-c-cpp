@@ -81,6 +81,15 @@ public:
     int lessonSection() const { return lessonSection_; }
     void setLessonSection(int s) { lessonSection_ = s; }
 
+    // A practice session: an ordered list of exercise ids the student works through.
+    struct Session {
+        std::string title;
+        std::vector<std::string> ids;
+        size_t pos = 0;
+    };
+    void startSession(const std::string& title, std::vector<std::string> ids);
+    Session& session() { return session_; }
+
 private:
     void frame();
     void drawSidebar(ui::Rect r);
@@ -93,6 +102,7 @@ private:
     std::array<content::TrackContent, 2> tracks_;
     std::string lessonId_;
     int lessonSection_ = 0;
+    Session session_;
     int frameCount_ = 0;
 };
 
