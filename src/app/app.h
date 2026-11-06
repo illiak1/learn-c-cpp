@@ -10,6 +10,7 @@
 
 #include "content/types.h"
 #include "logic/exam.h"
+#include "logic/progress.h"
 #include "ui/ui.h"
 
 namespace app {
@@ -51,7 +52,9 @@ protected:
 // Command-line options (used for automated screenshots).
 struct Options {
     bool dark = false;
+    bool hasTheme = false;   // --dark/--light given on the command line
     Track track = Track::C;
+    bool hasTrack = false;   // --c/--cpp given
     Page page = Page::Home;
     std::string lesson;      // --lesson=ID (with --page=lesson)
     int section = 0;         // --section=N
@@ -98,6 +101,17 @@ public:
     logic::Exam& exam() { return exam_; }
     // Ends the timer and opens the review page.
     void finishExam();
+    // Writes the finished exam (score, task results) to the progress file once.
+    void commitExam();
+
+    // Persistent progress (exercise history, streak, settings).
+    logic::Progress& progress() { return progress_; }
+    // Saves the progress file when something changed.
+    void saveProgress();
+    // "c" or "cpp": the key used in the progress file and content folders.
+    std::string trackKey() const { return track_ == Track::C ? "c" : "cpp"; }
+    // Exercises plus exam functions waiting for a retry (shown as a badge in the sidebar).
+    int mistakeCount();
 
 private:
     void frame();
@@ -113,6 +127,7 @@ private:
     int lessonSection_ = 0;
     Session session_;
     logic::Exam exam_;
+    logic::Progress progress_;
     int frameCount_ = 0;
 };
 

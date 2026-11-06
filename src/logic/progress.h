@@ -85,6 +85,8 @@ public:
     // Wipes all progress (settings are kept).
     void reset();
     bool dirty() const { return dirty_; }
+    // Marks the file as needing a save (after changing the public settings).
+    void dirtyFlag() { dirty_ = true; }
 
 private:
     void touchDay(const std::string& date, bool counted, bool correct);

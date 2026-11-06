@@ -44,8 +44,10 @@ Options parseArgs(int argc, char** argv) {
     Options o;
     for (int i = 1; i < argc; ++i) {
         const std::string a = argv[i];
-        if (a == "--dark") o.dark = true;
-        else if (a == "--cpp") o.track = Track::Cpp;
+        if (a == "--dark") { o.dark = true; o.hasTheme = true; }
+        else if (a == "--light") { o.dark = false; o.hasTheme = true; }
+        else if (a == "--cpp") { o.track = Track::Cpp; o.hasTrack = true; }
+        else if (a == "--c") { o.track = Track::C; o.hasTrack = true; }
         else if (a.rfind("--page=", 0) == 0) {
             const std::string n = a.substr(7);
             if (n == "lessons") o.page = Page::Lessons;
@@ -102,13 +104,15 @@ void App::registerScreens() {
     screens_[Page::Exam] = makeExamSetupScreen();
     screens_[Page::ExamRun] = makeExamRunScreen();
     screens_[Page::ExamReview] = makeExamReviewScreen();
-    screens_[Page::Mistakes] = makePlaceholderScreen("Mistakes", "Replay the tasks you answered wrongly until they stick.");
+    screens_[Page::Mistakes] = makeMistakesScreen();
     screens_[Page::Stats] = makePlaceholderScreen("Statistics", "Your progress, accuracy per topic and daily streak.");
 }
 
 void App::setTrack(Track t) {
     if (t == track_) return;
     track_ = t;
+    progress_.track = trackKey();
+    saveProgress();
     go(Page::Home);
 }
 
@@ -128,10 +132,38 @@ void App::startSession(const std::string& title, std::vector<std::string> ids) {
     go(Page::Exercise);
 }
 
+void App::saveProgress() {
+    if (progress_.dirty()) progress_.save();
+}
+
+int App::mistakeCount() {
+    return static_cast<int>(progress_.wrongExercises(trackKey()).size() + progress_.failedTasks(trackKey()).size());
+}
+
+// Records the exam result and the pass/fail state of every marked task (once per exam).
+void App::commitExam() {
+    if (exam_.saved || !exam_.finished) return;
+    const std::string today = logic::todayString();
+    const auto tasks = logic::examTasks(content(), exam_);
+    bool any = exam_.fileAnswered;
+    for (size_t i = 0; i < tasks.size() && i < exam_.marks.size(); ++i) {
+        if (exam_.marks[i] < 0) continue;
+        any = true;
+        progress_.recordTask(trackKey(), tasks[i]->id, exam_.marks[i] == 1, today);
+    }
+    if (!any) return;
+    const logic::Score sc = logic::scoreExam(content(), exam_);
+    logic::ExamRecord r{today, trackKey(), exam_.title, sc.earned, sc.total, static_cast<int>(exam_.finishedAt - exam_.startedAt), exam_.fileRan};
+    progress_.recordExam(r);
+    exam_.saved = true;
+    saveProgress();
+}
+
 // Begins an exam: stamps the start time and opens the run page.
 void App::startExam(logic::Exam exam) {
     exam.startedAt = GetTime();
     exam.finished = false;
+    exam.saved = false;
     exam_ = std::move(exam);
     go(Page::ExamRun);
 }
@@ -146,6 +178,7 @@ void App::finishExam() {
 }
 
 void App::go(Page page) {
+    if (page_ == Page::ExamReview && page != Page::ExamReview) commitExam();
     page_ = page;
     screens_[page_]->onEnter(*this);
 }
@@ -201,6 +234,10 @@ void App::drawSidebar(Rect r) {
         const Color fg = active ? p.accent : mix(p.textMuted, p.text, h);
         drawIcon(it.icon, row.x + 22.0f, row.y + row.height / 2.0f, 19.0f, fg);
         drawText(active ? Face::Bold : Face::Regular, 16, it.label, row.x + 46.0f, row.y + 11.0f, fg);
+        if (it.section == Section::Mistakes) {
+            const int n = mistakeCount();
+            if (n > 0) badge(std::to_string(n), row.x + row.width - badgeWidth(std::to_string(n)) - 10.0f, row.y + 10.0f, WHITE, p.danger);
+        }
         if (hov && cx.pressed && page_ != it.page) go(it.page);
         y += 46.0f;
     }
@@ -212,8 +249,12 @@ void App::drawSidebar(Rect r) {
     drawIcon(dark ? Icon::Moon : Icon::Sun, foot.x + 22.0f, foot.y + foot.height / 2.0f, 18.0f, p.textMuted, p.surfaceAlt);
     drawText(Face::Regular, 15, dark ? "Dark theme" : "Light theme", foot.x + 44.0f, foot.y + 13.0f, p.text);
     bool v = dark;
-    if (toggleSwitch("theme-switch", Rect{foot.x + foot.width - 56.0f, foot.y + 11.0f, 42.0f, 24.0f}, v))
+    if (toggleSwitch("theme-switch", Rect{foot.x + foot.width - 56.0f, foot.y + 11.0f, 42.0f, 24.0f}, v)) {
         th.setMode(v ? ThemeMode::Dark : ThemeMode::Light);
+        progress_.dark = v;
+        progress_.dirtyFlag();
+        saveProgress();
+    }
 }
 
 // One frame: input, sidebar, current page.
@@ -238,6 +279,10 @@ int App::run() {
 
     Theme& th = Theme::get();
     th.init((platform::resourceRoot() / "assets").string());
+    progress_.load(platform::userDataDir() / "progress.txt");
+    if (!options_.hasTheme) options_.dark = progress_.dark;
+    if (!options_.hasTrack) options_.track = progress_.track == "cpp" ? Track::Cpp : Track::C;
+    track_ = options_.track;
     th.setMode(options_.dark ? ThemeMode::Dark : ThemeMode::Light);
     // Load both tracks and report problems on the console.
     const auto root = platform::resourceRoot() / "content";
@@ -275,6 +320,7 @@ int App::run() {
             break;
         }
     }
+    saveProgress();
     th.shutdown();
     CloseWindow();
     return 0;

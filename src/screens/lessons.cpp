@@ -34,7 +34,8 @@ public:
             drawCentered(Face::Bold, size::kH2, std::to_string(++index), num, p.accent);
             drawText(Face::Bold, size::kH3, l.title, r.x + 90.0f, r.y + 22.0f, p.text);
             drawParagraph(Face::Regular, 15, l.summary, r.x + 90.0f, r.y + 50.0f, r.width - 90.0f - 150.0f, p.textMuted);
-            const std::string count = std::to_string(l.sections.size()) + (l.sections.size() == 1 ? " section" : " sections");
+            const int read = app.progress().sectionsRead(app.trackKey(), l.id);
+            const std::string count = std::to_string(read) + " / " + std::to_string(l.sections.size()) + " read";
             badge(count, r.x + r.width - badgeWidth(count) - 56.0f, r.y + 41.0f, p.textMuted, p.surfaceAlt);
             drawIcon(Icon::ChevronRight, r.x + r.width - 30.0f, r.y + 52.0f, 18.0f, p.textMuted);
             if (clicked) app.openLesson(l.id, 0);
@@ -79,6 +80,9 @@ public:
         col.y = y + 52.0f;
 
         const content::Section& sec = lesson->sections[static_cast<size_t>(sel)];
+        app.progress().markSectionRead(app.trackKey(), lesson->id, sec.id);
+        app.progress().setLastLesson(app.trackKey(), lesson->id, sel);
+        app.saveProgress();
         col.space(drawParagraph(Face::Bold, size::kH2, sec.id + "  " + sec.title, col.x, col.y, col.w, p.text) + 14.0f);
         drawBlocks(col, sec.blocks, app.track() == Track::Cpp, lesson->id + "/" + sec.id);
 

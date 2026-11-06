@@ -20,6 +20,7 @@ struct Exam {
     double startedAt = 0.0;             // seconds (caller's clock)
     double finishedAt = 0.0;
     bool finished = false;
+    bool saved = false;                 // result already written to the progress file
     // Review state:
     bool fileRan = true;                // compiled, finished and did not crash
     bool fileAnswered = false;          // student answered the "did it run" question
@@ -40,6 +41,9 @@ Exam makeSetExam(const content::ExamSet& set);
 
 // Picks `count` distinct random tasks (shuffled order, but kept in a stable order by id for readability).
 Exam makeRandomExam(const content::TrackContent& track, int count, int minutes, std::mt19937& rng);
+
+// An untimed exam made of specific tasks (used to retry failed functions).
+Exam makeTaskListExam(const std::string& title, const std::vector<std::string>& taskIds, int minutes = 0);
 
 // Resolves the exam's task ids to tasks (unknown ids are skipped).
 std::vector<const content::Task*> examTasks(const content::TrackContent& track, const Exam& exam);

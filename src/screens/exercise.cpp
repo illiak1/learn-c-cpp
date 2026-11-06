@@ -181,7 +181,6 @@ private:
 
     // Runs the checker, stores the result in the session and locks the question.
     void doCheck(App& app, App::Session& s, const content::Exercise& ex) {
-        (void)app;
         Attempt& a = attempt_;
         switch (ex.type) {
             case ExType::Theory: a.result = logic::checkTheory(ex, a.text); break;
@@ -192,6 +191,8 @@ private:
         }
         a.checked = true;
         s.results[s.pos] = a.result.correct ? 1 : 0;
+        app.progress().recordAnswer(app.trackKey(), ex.id, a.result.correct, logic::todayString());
+        app.saveProgress();
     }
 
     // Copies a compilable version of the exercise code to the clipboard.

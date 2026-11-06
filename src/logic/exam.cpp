@@ -106,6 +106,15 @@ Exam makeSetExam(const content::ExamSet& set) {
     return e;
 }
 
+Exam makeTaskListExam(const std::string& title, const std::vector<std::string>& taskIds, int minutes) {
+    Exam e;
+    e.title = title;
+    e.taskIds = taskIds;
+    e.minutes = minutes;
+    e.marks.assign(taskIds.size(), -1);
+    return e;
+}
+
 Exam makeRandomExam(const content::TrackContent& track, int count, int minutes, std::mt19937& rng) {
     std::vector<std::string> pool;
     for (const content::Task& t : track.tasks) pool.push_back(t.id);

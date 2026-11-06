@@ -83,3 +83,11 @@ TEST(format_clock) {
     CHECK_EQ(formatClock(3661), std::string("1:01:01"));
     CHECK_EQ(formatClock(-5), std::string("0:00"));
 }
+
+TEST(task_list_exam_is_untimed_and_unmarked) {
+    Exam e = makeTaskListExam("Retry", {"a", "b"});
+    CHECK_EQ(e.minutes, 0);
+    CHECK_EQ(e.marks.size(), 2u);
+    CHECK_EQ(static_cast<int>(e.marks[0]), -1);
+    CHECK(!e.saved);
+}
