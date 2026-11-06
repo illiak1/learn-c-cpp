@@ -101,6 +101,47 @@ void card(Rect r, bool shadow) {
     strokeRound(r, 12.0f, 1.0f, p.border);
 }
 
+// Clickable card: lifts by up to 3px on hover.
+bool cardButton(const std::string& idStr, Rect& r) {
+    Context& cx = Context::get();
+    const uint32_t id = cx.makeId(idStr);
+    const bool hov = cx.hovered(r);
+    if (hov) cx.cursor = MOUSE_CURSOR_POINTING_HAND;
+    const float h = cx.anim(id, hov ? 1.0f : 0.0f);
+    bool clicked = false;
+    if (hov && cx.pressed) cx.active = id;
+    if (cx.active == id && cx.released) {
+        clicked = hov;
+        cx.active = 0;
+    }
+    r.y -= 3.0f * h;
+    const Palette& p = Theme::get().colors();
+    shadowRound(r, 12.0f, withAlpha(p.shadow, 1.0f + h * 0.6f));
+    fillRound(r, 12.0f, p.surface);
+    strokeRound(r, 12.0f, 1.0f, mix(p.border, p.borderStrong, h));
+    return clicked;
+}
+
+float chipWidth(const std::string& label) { return Theme::get().textWidth(Face::Bold, 14, label) + 26.0f; }
+
+// Filter chip.
+bool chip(const std::string& label, Rect r, bool selected) {
+    Context& cx = Context::get();
+    const Palette& p = Theme::get().colors();
+    const uint32_t id = cx.makeId("chip:" + label);
+    const bool hov = cx.hovered(r);
+    if (hov) cx.cursor = MOUSE_CURSOR_POINTING_HAND;
+    const float h = cx.anim(id, hov ? 1.0f : 0.0f);
+    if (selected) {
+        fillRound(r, r.height / 2.0f, p.accent);
+    } else {
+        fillRound(r, r.height / 2.0f, mix(p.surface, p.surfaceAlt, h));
+        strokeRound(r, r.height / 2.0f, 1.0f, p.borderStrong);
+    }
+    drawCentered(Face::Bold, 14, label, r, selected ? p.textOnAccent : mix(p.textMuted, p.text, h));
+    return hov && cx.pressed;
+}
+
 // Card with custom fill and border colours.
 void tintedCard(Rect r, Color fill, Color border) {
     fillRound(r, 12.0f, fill);
@@ -146,7 +187,7 @@ int tabs(Rect r, const std::vector<std::string>& labels, int selected) {
         const bool sel = static_cast<int>(i) == selected;
         if (sel) {
             shadowRound(s, 8.0f, p.shadow);
-            fillRound(s, 8.0f, p.surface);
+            fillRound(s, 8.0f, Theme::get().mode() == ThemeMode::Dark ? mix(p.surfaceAlt, p.text, 0.14f) : p.surface);
         }
         drawCentered(Face::Bold, 15, labels[i], s, sel ? p.accent : mix(p.textMuted, p.text, h));
     }

@@ -130,6 +130,11 @@ bool button(const std::string& label, Rect r, ButtonStyle style = ButtonStyle::P
 bool iconButton(const std::string& id, Rect r, Icon icon, bool selected = false);
 // White surface with border and shadow.
 void card(Rect r, bool shadow = true);
+// Card that lifts on hover and reports clicks. r is moved up by the hover lift so content can be drawn inside it.
+bool cardButton(const std::string& id, Rect& r);
+// Pill-shaped filter chip; returns true when clicked.
+bool chip(const std::string& label, Rect r, bool selected);
+float chipWidth(const std::string& label);
 // Card filled with a custom colour (e.g. soft success/danger backgrounds).
 void tintedCard(Rect r, Color fill, Color border);
 // On/off switch; returns true on the frame it flips (value is updated).
@@ -170,6 +175,7 @@ bool textInput(const std::string& id, Rect r, std::string& text, const TextInput
 struct CodeBoxOpts {
     bool lineNumbers = true;
     bool cpp = false;            // keyword set (C vs C++)
+    bool plain = false;          // no syntax colours (tables, diagrams)
     bool copyButton = false;     // small "copy" icon in the corner
     int fontPx = size::kCode;
     int highlightLine = -1;      // 0-based line drawn with a tinted background

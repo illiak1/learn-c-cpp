@@ -367,7 +367,7 @@ float drawParagraph(Face face, int px, const std::string& text, float x, float y
 void drawCentered(Face face, int px, const std::string& text, Rect r, Color c) {
     Theme& th = Theme::get();
     const float w = th.textWidth(face, px, text);
-    drawText(face, px, text, r.x + (r.width - w) / 2.0f, r.y + (r.height - static_cast<float>(px) * 1.2f) / 2.0f, c);
+    drawText(face, px, text, r.x + (r.width - w) / 2.0f, r.y + (r.height - static_cast<float>(px) * 1.2f) / 2.0f + static_cast<float>(px) * 0.05f, c);
 }
 
 std::string ellipsize(Face face, int px, const std::string& text, float width) {

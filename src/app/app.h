@@ -5,6 +5,10 @@
 #include <memory>
 #include <string>
 
+#include <array>
+#include <vector>
+
+#include "content/types.h"
 #include "ui/ui.h"
 
 namespace app {
@@ -48,6 +52,8 @@ struct Options {
     bool dark = false;
     Track track = Track::C;
     Page page = Page::Home;
+    std::string lesson;      // --lesson=ID (with --page=lesson)
+    int section = 0;         // --section=N
     std::string screenshot;  // when set: save a PNG after a few frames and exit
 };
 
@@ -66,6 +72,15 @@ public:
     // Convenience for screens that need the window size.
     ui::Rect contentArea() const;
 
+    // Content of the current track (both tracks are loaded at start-up).
+    const content::TrackContent& content() const { return tracks_[track_ == Track::C ? 0 : 1]; }
+
+    // Lesson reader state.
+    void openLesson(const std::string& lessonId, int section = 0);
+    const std::string& lessonId() const { return lessonId_; }
+    int lessonSection() const { return lessonSection_; }
+    void setLessonSection(int s) { lessonSection_ = s; }
+
 private:
     void frame();
     void drawSidebar(ui::Rect r);
@@ -75,6 +90,9 @@ private:
     Track track_ = Track::C;
     Page page_ = Page::Home;
     std::map<Page, std::unique_ptr<Screen>> screens_;
+    std::array<content::TrackContent, 2> tracks_;
+    std::string lessonId_;
+    int lessonSection_ = 0;
     int frameCount_ = 0;
 };
 

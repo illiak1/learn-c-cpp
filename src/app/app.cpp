@@ -4,7 +4,11 @@
 #include <algorithm>
 #include <cstring>
 
+#include <cstdio>
+#include <cstdlib>
+
 #include "app/screens.h"
+#include "content/library.h"
 #include "platform/paths.h"
 #include "raylib.h"
 
@@ -47,7 +51,12 @@ Options parseArgs(int argc, char** argv) {
             else if (n == "practice") o.page = Page::Practice;
             else if (n == "exam") o.page = Page::Exam;
             else if (n == "mistakes") o.page = Page::Mistakes;
+            else if (n == "lesson") o.page = Page::Lesson;
             else if (n == "stats") o.page = Page::Stats;
+        } else if (a.rfind("--lesson=", 0) == 0) {
+            o.lesson = a.substr(9);
+        } else if (a.rfind("--section=", 0) == 0) {
+            o.section = std::atoi(a.c_str() + 10);
         } else if (a.rfind("--screenshot=", 0) == 0) {
             o.screenshot = a.substr(13);
         }
@@ -80,8 +89,8 @@ App::~App() = default;
 // Registers every page implementation.
 void App::registerScreens() {
     screens_[Page::Home] = makeHomeScreen();
-    screens_[Page::Lessons] = makePlaceholderScreen("Lessons", "Read the lecture notes topic by topic, with runnable examples and real output.");
-    screens_[Page::Lesson] = makePlaceholderScreen("Lesson", "");
+    screens_[Page::Lessons] = makeLessonsScreen();
+    screens_[Page::Lesson] = makeLessonScreen();
     screens_[Page::Practice] = makePlaceholderScreen("Practice", "Theory, multiple choice, fill in the code, predict the output and find the bug.");
     screens_[Page::Exercise] = makePlaceholderScreen("Exercise", "");
     screens_[Page::Exam] = makePlaceholderScreen("Exam mode", "A timed set of whole-function tasks, just like the real coding exam.");
@@ -95,6 +104,13 @@ void App::setTrack(Track t) {
     if (t == track_) return;
     track_ = t;
     go(Page::Home);
+}
+
+// Opens the lesson reader on a lesson (and section index).
+void App::openLesson(const std::string& lessonId, int section) {
+    lessonId_ = lessonId;
+    lessonSection_ = section;
+    go(Page::Lesson);
 }
 
 void App::go(Page page) {
@@ -191,8 +207,22 @@ int App::run() {
     Theme& th = Theme::get();
     th.init((platform::resourceRoot() / "assets").string());
     th.setMode(options_.dark ? ThemeMode::Dark : ThemeMode::Light);
+    // Load both tracks and report problems on the console.
+    const auto root = platform::resourceRoot() / "content";
+    tracks_[0] = content::loadTrack(root, "c");
+    tracks_[1] = content::loadTrack(root, "cpp");
+    for (const auto& t : tracks_)
+        for (const std::string& e : t.errors) std::fprintf(stderr, "content[%s]: %s\n", t.name.c_str(), e.c_str());
     registerScreens();
-    go(options_.page);
+    if (options_.page == Page::Lesson) {
+        const auto& ls = content().lessons;
+        const bool known = !options_.lesson.empty() && content().findLesson(options_.lesson);
+        if (known) openLesson(options_.lesson, options_.section);
+        else if (!ls.empty()) openLesson(ls.front().id, options_.section);
+        else go(Page::Lessons);
+    } else {
+        go(options_.page);
+    }
 
     while (!WindowShouldClose()) {
         frame();

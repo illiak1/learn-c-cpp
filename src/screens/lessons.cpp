@@ -1,0 +1,105 @@
+// lessons.cpp - lesson list and the lesson reader (one section at a time with section chips).
+#include <algorithm>
+
+#include "app/screens.h"
+#include "screens/common.h"
+
+namespace app {
+
+using namespace ui;
+
+namespace {
+
+// List of all lessons of the current track as clickable cards.
+class LessonsScreen : public Screen {
+public:
+    void draw(App& app, Rect area) override {
+        const Palette& p = Theme::get().colors();
+        Column col = begin(area);
+        pageHeader(col, app, "Lessons", "Read the lecture notes topic by topic. Every example is complete and its output is real.");
+        const auto& lessons = app.content().lessons;
+        if (lessons.empty()) {
+            Rect r = col.take(100.0f);
+            card(r);
+            drawCentered(Face::Regular, size::kBody, "No lessons found for this track.", r, p.textMuted);
+        }
+        int index = 0;
+        for (const content::Lesson& l : lessons) {
+            Rect r = col.take(104.0f);
+            Context::get().pushId(l.id);
+            const bool clicked = cardButton("card", r);
+            Context::get().popId();
+            Rect num{r.x + 20.0f, r.y + 26.0f, 52.0f, 52.0f};
+            fillRound(num, 14.0f, p.accentSoft);
+            drawCentered(Face::Bold, size::kH2, std::to_string(++index), num, p.accent);
+            drawText(Face::Bold, size::kH3, l.title, r.x + 90.0f, r.y + 22.0f, p.text);
+            drawParagraph(Face::Regular, 15, l.summary, r.x + 90.0f, r.y + 50.0f, r.width - 90.0f - 150.0f, p.textMuted);
+            const std::string count = std::to_string(l.sections.size()) + (l.sections.size() == 1 ? " section" : " sections");
+            badge(count, r.x + r.width - badgeWidth(count) - 56.0f, r.y + 41.0f, p.textMuted, p.surfaceAlt);
+            drawIcon(Icon::ChevronRight, r.x + r.width - 30.0f, r.y + 52.0f, 18.0f, p.textMuted);
+            if (clicked) app.openLesson(l.id, 0);
+        }
+        end(col);
+    }
+};
+
+// Reader for one lesson: header, section chips, section content, previous/next.
+class LessonScreen : public Screen {
+public:
+    void onEnter(App&) override { scroll_ = {}; }
+
+    void draw(App& app, Rect area) override {
+        const Palette& p = Theme::get().colors();
+        Column col = begin(area);
+        const content::Lesson* lesson = app.content().findLesson(app.lessonId());
+        if (!lesson || lesson->sections.empty()) {
+            if (button("Back to lessons", Rect{col.x, col.y, 180.0f, 38.0f}, ButtonStyle::Secondary)) app.go(Page::Lessons);
+            end(col);
+            return;
+        }
+        const int sections = static_cast<int>(lesson->sections.size());
+        int sel = std::clamp(app.lessonSection(), 0, sections - 1);
+
+        if (button("Lessons", Rect{col.x, col.y, 112.0f, 34.0f}, ButtonStyle::Ghost, Icon::ChevronLeft)) app.go(Page::Lessons);
+        col.space(46.0f);
+        pageHeader(col, app, lesson->title);
+
+        // Section chips, wrapped over several rows.
+        float x = col.x, y = col.y;
+        for (int i = 0; i < sections; ++i) {
+            const std::string& id = lesson->sections[static_cast<size_t>(i)].id;
+            const float w = std::max(52.0f, chipWidth(id));
+            if (x + w > col.x + col.w) {
+                x = col.x;
+                y += 38.0f;
+            }
+            if (chip(id, Rect{x, y, w, 30.0f}, i == sel)) sel = i;
+            x += w + 8.0f;
+        }
+        col.y = y + 52.0f;
+
+        const content::Section& sec = lesson->sections[static_cast<size_t>(sel)];
+        col.space(drawParagraph(Face::Bold, size::kH2, sec.id + "  " + sec.title, col.x, col.y, col.w, p.text) + 14.0f);
+        drawBlocks(col, sec.blocks, app.track() == Track::Cpp, lesson->id + "/" + sec.id);
+
+        // Previous / next
+        col.space(8.0f);
+        if (sel > 0 && button("Previous", Rect{col.x, col.y, 140.0f, 40.0f}, ButtonStyle::Secondary, Icon::ChevronLeft)) sel--;
+        if (sel < sections - 1 &&
+            button("Next section", Rect{col.x + col.w - 170.0f, col.y, 170.0f, 40.0f}, ButtonStyle::Primary, Icon::ChevronRight))
+            sel++;
+        col.space(48.0f);
+        if (sel != app.lessonSection()) {
+            app.setLessonSection(sel);
+            scroll_.offset = 0.0f;
+        }
+        end(col);
+    }
+};
+
+}  // namespace
+
+std::unique_ptr<Screen> makeLessonsScreen() { return std::make_unique<LessonsScreen>(); }
+std::unique_ptr<Screen> makeLessonScreen() { return std::make_unique<LessonScreen>(); }
+
+}  // namespace app

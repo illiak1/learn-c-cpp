@@ -73,7 +73,7 @@ int codeBox(const std::string& idStr, Rect r, const std::string& code, const Cod
     for (size_t i = 0; i < lines.size(); ++i) {
         const float y = r.y + kPad + static_cast<float>(i) * lh;
         const Rect row{r.x + 1.0f, y, r.width - 2.0f, lh};
-        const std::vector<Token> toks = tokenizeLine(lines[i], o.cpp, inBlock);
+        const std::vector<Token> toks = o.plain ? std::vector<Token>{} : tokenizeLine(lines[i], o.cpp, inBlock);
         const bool visible = y + lh >= cx.clip().y && y <= cx.clip().y + cx.clip().height;
         if (!visible) continue;
 
