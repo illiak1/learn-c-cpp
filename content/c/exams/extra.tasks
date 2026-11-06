@@ -1,0 +1,197 @@
+@rem Extra practice tasks for the C track (written for this app, same style as Coding Exam 1).
+@rem Every task was compiled and run: the reference solution prints the expected output.
+
+@task c-sum-digits
+@title sumDigits
+@points 10
+@lesson 01_intro
+@statement
+Write int sumDigits(int n) that returns the sum of the decimal digits of a non-negative integer n.
+E.g., sumDigits(123) is 6 and sumDigits(0) is 0.
+@includes
+#include <stdio.h>
+@stub
+int sumDigits(int n) {
+    // your code here
+    return 0;
+}
+@solution
+int sumDigits(int n) {
+    int sum = 0;
+    while (n > 0) {
+        sum += n % 10;     // last digit
+        n /= 10;           // remove it
+    }
+    return sum;
+}
+@tests
+printf("--- sumDigits ---\n");
+if (sumDigits(123) == 6) printf("yes\n"); else printf("no\n");
+if (sumDigits(0) == 0) printf("yes\n"); else printf("no\n");
+if (sumDigits(9999) == 36) printf("yes\n"); else printf("no\n");
+@expect
+--- sumDigits ---
+yes
+yes
+yes
+@checklist
+- Takes the last digit with % 10 and removes it with / 10.
+- Works for 0 and for numbers with many digits.
+
+@task c-count-char
+@title countChar
+@points 10
+@lesson 01_intro
+@statement
+Write int countChar(const char *s, char c) that returns how many times the character c appears in the string s.
+E.g., countChar("banana", 'a') is 3. An empty string contains no characters.
+@includes
+#include <stdio.h>
+@stub
+int countChar(const char *s, char c) {
+    // your code here
+    return 0;
+}
+@solution
+int countChar(const char *s, char c) {
+    int count = 0;
+    for (int i = 0; s[i] != '\0'; i++) {
+        if (s[i] == c) {
+            count++;
+        }
+    }
+    return count;
+}
+@tests
+printf("--- countChar ---\n");
+if (countChar("banana", 'a') == 3) printf("yes\n"); else printf("no\n");
+if (countChar("banana", 'x') == 0) printf("yes\n"); else printf("no\n");
+if (countChar("", 'a') == 0) printf("yes\n"); else printf("no\n");
+@expect
+--- countChar ---
+yes
+yes
+yes
+@checklist
+- Stops at the terminating '\0' (no length is passed in).
+- Counts every match, not only the first one.
+
+@task c-gcd
+@title gcd
+@points 10
+@lesson 01_intro
+@statement
+Write int gcd(int a, int b) that returns the greatest common divisor of two non-negative integers.
+E.g., gcd(12, 18) is 6 and gcd(0, 5) is 5.
+@includes
+#include <stdio.h>
+@stub
+int gcd(int a, int b) {
+    // your code here
+    return 0;
+}
+@solution
+int gcd(int a, int b) {
+    while (b != 0) {
+        int rest = a % b;
+        a = b;
+        b = rest;
+    }
+    return a;
+}
+@tests
+printf("--- gcd ---\n");
+if (gcd(12, 18) == 6) printf("yes\n"); else printf("no\n");
+if (gcd(7, 13) == 1) printf("yes\n"); else printf("no\n");
+if (gcd(0, 5) == 5) printf("yes\n"); else printf("no\n");
+@expect
+--- gcd ---
+yes
+yes
+yes
+@checklist
+- Repeats a, b = b, a % b until b is 0 (Euclid), so the loop always ends.
+- Handles a = 0.
+
+@task c-sort-ascending
+@title sortAscending
+@points 10
+@lesson 01_intro
+@statement
+Write void sortAscending(int size, int arr[]) that sorts the array in place from the smallest to the largest value (any simple method, for example bubble sort).
+@includes
+#include <stdio.h>
+@stub
+void sortAscending(int size, int arr[]) {
+    // your code here
+}
+@solution
+void sortAscending(int size, int arr[]) {
+    for (int pass = 0; pass < size - 1; pass++) {
+        for (int i = 0; i < size - 1 - pass; i++) {
+            if (arr[i] > arr[i + 1]) {
+                int temp = arr[i];
+                arr[i] = arr[i + 1];
+                arr[i + 1] = temp;
+            }
+        }
+    }
+}
+@tests
+printf("--- sortAscending ---\n");
+int values[5] = {5, 2, 9, 1, 5};
+sortAscending(5, values);
+if (values[0] == 1 && values[1] == 2 && values[2] == 5 && values[3] == 5 && values[4] == 9) printf("yes\n"); else printf("no\n");
+int one[1] = {7};
+sortAscending(1, one);
+if (one[0] == 7) printf("yes\n"); else printf("no\n");
+@expect
+--- sortAscending ---
+yes
+yes
+@checklist
+- Compares neighbouring elements and swaps them with a temporary variable.
+- Inner loop bounds stay inside the array (i + 1 < size).
+- Works for an array with one element.
+
+@task c-reverse-string
+@title reverseString
+@points 10
+@lesson 01_intro
+@statement
+Write void reverseString(char s[]) that reverses a string in place.
+E.g., "hello" becomes "olleh". The terminating '\0' must stay at the end.
+@includes
+#include <stdio.h>
+#include <string.h>
+@stub
+void reverseString(char s[]) {
+    // your code here
+}
+@solution
+void reverseString(char s[]) {
+    int left = 0;
+    int right = (int)strlen(s) - 1;
+    while (left < right) {
+        char temp = s[left];
+        s[left] = s[right];
+        s[right] = temp;
+        left++;
+        right--;
+    }
+}
+@tests
+printf("--- reverseString ---\n");
+char word[] = "hello";
+reverseString(word);
+if (strcmp(word, "olleh") == 0) printf("yes\n"); else printf("no\n");
+char empty[] = "";
+reverseString(empty);
+if (strcmp(empty, "") == 0) printf("yes\n"); else printf("no\n");
+@expect
+--- reverseString ---
+yes
+yes
+@checklist
+- Swaps characters from both ends moving towards the middle.
+- Does not touch the terminating '\0'.

@@ -1,0 +1,383 @@
+@rem Extra practice tasks for the C++ track (written for this app, same style as Coding Exam 2).
+@rem Every task was compiled and run: the reference solution prints the expected output.
+
+@task cpp-rectangle-class
+@title Rectangle class
+@points 20
+@lesson 04_classes
+@statement
+Write a class Rectangle with two private int fields, width and height.
+It needs a constructor Rectangle(int w, int h) that uses an initialization list, and two const methods:
+int area() const returns width * height, and int perimeter() const returns 2 * (width + height).
+@includes
+#include <iostream>
+@stub
+class Rectangle {
+    // your code here: the private fields width and height
+public:
+    Rectangle(int w, int h) {
+        // your code here
+    }
+    int area() const {
+        // your code here
+        return 0;
+    }
+    int perimeter() const {
+        // your code here
+        return 0;
+    }
+};
+@solution
+class Rectangle {
+private:
+    int width;
+    int height;
+
+public:
+    Rectangle(int w, int h) : width(w), height(h) { }
+    int area() const { return width * height; }
+    int perimeter() const { return 2 * (width + height); }
+};
+@tests
+Rectangle r(3, 4);
+std::cout << ((r.area() == 12 && r.perimeter() == 14) ? "yes" : "no") << std::endl;
+const Rectangle square(5, 5);
+std::cout << ((square.area() == 25 && square.perimeter() == 20) ? "yes" : "no") << std::endl;
+@expect
+yes
+yes
+@checklist
+- Fields are private and set in an initialization list.
+- area and perimeter are marked const so they work on a const Rectangle.
+- The class definition ends with a semicolon.
+
+@task cpp-vec-operator
+@title Vec2 with operator+
+@points 20
+@lesson 05_operators
+@statement
+Write a class Vec2 with two public int fields, x and y.
+It needs a constructor Vec2(int x, int y) and an operator+ that returns a NEW Vec2 holding the sum of both vectors.
+The operands must not be changed. Also write bool operator==(const Vec2& other) const that compares both fields.
+@includes
+#include <iostream>
+@stub
+class Vec2 {
+public:
+    int x;
+    int y;
+
+    Vec2(int xValue, int yValue) {
+        // your code here
+    }
+    Vec2 operator+(const Vec2& other) const {
+        // your code here
+        return *this;
+    }
+    bool operator==(const Vec2& other) const {
+        // your code here
+        return false;
+    }
+};
+@solution
+class Vec2 {
+public:
+    int x;
+    int y;
+
+    Vec2(int xValue, int yValue) : x(xValue), y(yValue) { }
+
+    Vec2 operator+(const Vec2& other) const {
+        return Vec2(x + other.x, y + other.y);
+    }
+
+    bool operator==(const Vec2& other) const {
+        return x == other.x && y == other.y;
+    }
+};
+@tests
+Vec2 a(1, 2), b(3, 4);
+Vec2 c = a + b;
+std::cout << ((c.x == 4 && c.y == 6) ? "yes" : "no") << std::endl;
+std::cout << ((a.x == 1 && a.y == 2 && b.x == 3 && b.y == 4) ? "yes" : "no") << std::endl;
+std::cout << ((a + b == Vec2(4, 6) && !(a == b)) ? "yes" : "no") << std::endl;
+@expect
+yes
+yes
+yes
+@checklist
+- operator+ takes a const reference, is const and returns a new object by value.
+- operator== compares both fields.
+
+@task cpp-int-stack
+@title IntStack with dynamic memory
+@points 30
+@lesson 03_memory
+@statement
+Write a class IntStack that stores ints in a dynamically allocated array.
+Constructor IntStack(int capacity) allocates the array with new[]; the destructor frees it with delete[].
+void push(int value) adds a value on top and returns without doing anything when the stack is full.
+int pop() removes and returns the top value (return -1 when the stack is empty).
+int size() const returns how many values are stored. bool isEmpty() const says whether the stack is empty.
+@includes
+#include <iostream>
+@stub
+class IntStack {
+    // your code here: the array, the capacity and the count
+public:
+    IntStack(int capacity) {
+        // your code here
+    }
+    ~IntStack() {
+        // your code here
+    }
+    void push(int value) {
+        // your code here
+    }
+    int pop() {
+        // your code here
+        return -1;
+    }
+    int size() const {
+        // your code here
+        return 0;
+    }
+    bool isEmpty() const {
+        // your code here
+        return false;
+    }
+};
+@solution
+class IntStack {
+private:
+    int* data;
+    int capacity;
+    int count;
+
+public:
+    IntStack(int cap) : data(new int[cap]), capacity(cap), count(0) { }
+    ~IntStack() { delete[] data; }
+
+    void push(int value) {
+        if (count >= capacity) {
+            return;                  // full: ignore
+        }
+        data[count++] = value;
+    }
+
+    int pop() {
+        if (count == 0) {
+            return -1;               // empty
+        }
+        return data[--count];
+    }
+
+    int size() const { return count; }
+    bool isEmpty() const { return count == 0; }
+};
+@tests
+IntStack s(2);
+std::cout << (s.isEmpty() ? "yes" : "no") << std::endl;
+s.push(10);
+s.push(20);
+s.push(30);   // full: ignored
+std::cout << ((s.size() == 2) ? "yes" : "no") << std::endl;
+std::cout << ((s.pop() == 20 && s.pop() == 10) ? "yes" : "no") << std::endl;
+std::cout << ((s.pop() == -1 && s.isEmpty()) ? "yes" : "no") << std::endl;
+@expect
+yes
+yes
+yes
+yes
+@checklist
+- The constructor uses new[] and the destructor delete[] (no leak).
+- push checks the capacity before writing, pop checks for an empty stack before reading.
+- Last in, first out: pop returns the most recently pushed value.
+
+@task cpp-buffer-copy
+@title Buffer with a copy constructor
+@points 30
+@lesson 04_classes
+@statement
+Write a class Buffer that owns a dynamically allocated int array.
+Buffer(int size) allocates size ints with new[] and sets every element to 0; the destructor frees the array.
+void set(int index, int value) and int get(int index) const access the elements (indexes are valid).
+Write a copy constructor that makes a DEEP copy: the new Buffer gets its own array with the same values, so changing the copy must not change the original.
+@includes
+#include <iostream>
+@stub
+class Buffer {
+    // your code here: the array and its size
+public:
+    Buffer(int size) {
+        // your code here
+    }
+    Buffer(const Buffer& other) {
+        // your code here
+    }
+    ~Buffer() {
+        // your code here
+    }
+    void set(int index, int value) {
+        // your code here
+    }
+    int get(int index) const {
+        // your code here
+        return 0;
+    }
+};
+@solution
+class Buffer {
+private:
+    int* data;
+    int size;
+
+public:
+    Buffer(int n) : data(new int[n]), size(n) {
+        for (int i = 0; i < size; i++) {
+            data[i] = 0;
+        }
+    }
+
+    Buffer(const Buffer& other) : data(new int[other.size]), size(other.size) {
+        for (int i = 0; i < size; i++) {
+            data[i] = other.data[i];
+        }
+    }
+
+    ~Buffer() { delete[] data; }
+
+    void set(int index, int value) { data[index] = value; }
+    int get(int index) const { return data[index]; }
+};
+@tests
+Buffer a(3);
+a.set(0, 7);
+a.set(2, 9);
+Buffer b = a;
+b.set(0, 100);
+std::cout << ((a.get(0) == 7 && a.get(1) == 0 && a.get(2) == 9) ? "yes" : "no") << std::endl;
+std::cout << ((b.get(0) == 100 && b.get(2) == 9) ? "yes" : "no") << std::endl;
+@expect
+yes
+yes
+@checklist
+- The copy constructor takes const Buffer& and allocates a new array with new[].
+- The values are copied element by element, not just the pointer.
+- The destructor frees the array exactly once per object.
+
+@task cpp-list-delete-value
+@title deleteWithValue and countNodes
+@points 30
+@lesson 06_linked_lists
+@statement
+A singly linked list is built from the struct Node below, and insertAtEnd is already written.
+Write bool deleteWithValue(Node** ptrToHeadPtr, int value): it deletes the FIRST node that holds value and returns true, or returns false when the value is not in the list. It must also work when the node is the head.
+Write int countNodes(Node* head) that returns the number of nodes (0 for an empty list).
+@includes
+#include <iostream>
+@stub
+struct Node {
+    int data;
+    Node* nextPtr;
+};
+
+void insertAtEnd(Node** ptrToHeadPtr, int newData) {
+    Node* newNode = new Node();
+    newNode->data = newData;
+    newNode->nextPtr = nullptr;
+    if (*ptrToHeadPtr == nullptr) {
+        *ptrToHeadPtr = newNode;
+        return;
+    }
+    Node* cur = *ptrToHeadPtr;
+    while (cur->nextPtr != nullptr) {
+        cur = cur->nextPtr;
+    }
+    cur->nextPtr = newNode;
+}
+
+bool deleteWithValue(Node** ptrToHeadPtr, int value) {
+    // your code here
+    return false;
+}
+
+int countNodes(Node* head) {
+    // your code here
+    return 0;
+}
+@solution
+struct Node {
+    int data;
+    Node* nextPtr;
+};
+
+void insertAtEnd(Node** ptrToHeadPtr, int newData) {
+    Node* newNode = new Node();
+    newNode->data = newData;
+    newNode->nextPtr = nullptr;
+    if (*ptrToHeadPtr == nullptr) {
+        *ptrToHeadPtr = newNode;
+        return;
+    }
+    Node* cur = *ptrToHeadPtr;
+    while (cur->nextPtr != nullptr) {
+        cur = cur->nextPtr;
+    }
+    cur->nextPtr = newNode;
+}
+
+bool deleteWithValue(Node** ptrToHeadPtr, int value) {
+    Node* cur = *ptrToHeadPtr;
+    if (cur == nullptr) {
+        return false;
+    }
+    if (cur->data == value) {              // the head holds the value
+        *ptrToHeadPtr = cur->nextPtr;
+        delete cur;
+        return true;
+    }
+    Node* prev = cur;
+    cur = cur->nextPtr;
+    while (cur != nullptr) {
+        if (cur->data == value) {
+            prev->nextPtr = cur->nextPtr;  // unlink, then free
+            delete cur;
+            return true;
+        }
+        prev = cur;
+        cur = cur->nextPtr;
+    }
+    return false;
+}
+
+int countNodes(Node* head) {
+    int count = 0;
+    for (Node* cur = head; cur != nullptr; cur = cur->nextPtr) {
+        count++;
+    }
+    return count;
+}
+@tests
+Node* head = nullptr;
+std::cout << (countNodes(head) == 0 ? "yes" : "no") << std::endl;
+insertAtEnd(&head, 10);
+insertAtEnd(&head, 20);
+insertAtEnd(&head, 30);
+std::cout << (countNodes(head) == 3 ? "yes" : "no") << std::endl;
+std::cout << ((deleteWithValue(&head, 20) && countNodes(head) == 2) ? "yes" : "no") << std::endl;
+std::cout << ((!deleteWithValue(&head, 99) && countNodes(head) == 2) ? "yes" : "no") << std::endl;
+std::cout << ((deleteWithValue(&head, 10) && head != nullptr && head->data == 30) ? "yes" : "no") << std::endl;
+std::cout << ((deleteWithValue(&head, 30) && head == nullptr) ? "yes" : "no") << std::endl;
+@expect
+yes
+yes
+yes
+yes
+yes
+yes
+@checklist
+- The head case changes *ptrToHeadPtr before deleting the node.
+- Keeps a previous pointer so the list stays linked after the node is removed.
+- Returns false for an empty list and for a value that is not found.
+- countNodes never dereferences a null pointer.
