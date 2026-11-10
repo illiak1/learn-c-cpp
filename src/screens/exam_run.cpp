@@ -16,7 +16,6 @@ public:
     // Resets scroll; a new exam starts at task 1, a resumed one keeps its task.
     void onEnter(App& app) override {
         scroll_ = {};
-        confirmUntil_ = 0.0;
         // A new exam starts at task 1; resuming the same exam keeps the task that was open.
         if (app.exam().startedAt != startedAt_) current_ = 0;
         startedAt_ = app.exam().startedAt;
@@ -58,12 +57,7 @@ public:
         fillRound(pill, 20.0f, cbg);
         drawIcon(Icon::Timer, pill.x + 24.0f, pill.y + 20.0f, 18.0f, cfg);
         drawText(Face::Bold, size::kH3, clock, pill.x + 46.0f, pill.y + 8.0f, cfg);
-        const bool confirming = cx.now < confirmUntil_;
-        if (button(confirming ? "Really finish?" : "Finish exam", Rect{col.x + col.w - 160.0f, col.y, 160.0f, 40.0f},
-                   confirming ? ButtonStyle::Danger : ButtonStyle::Secondary, Icon::Flag)) {
-            if (confirming) app.finishExam();
-            else confirmUntil_ = cx.now + 3.0;
-        }
+        if (button("Finish exam", Rect{col.x + col.w - 160.0f, col.y, 160.0f, 40.0f}, ButtonStyle::Secondary, Icon::Flag)) app.requestFinishExam();
         col.space(56.0f);
 
         // Exam rule reminder
@@ -135,7 +129,6 @@ public:
 private:
     int current_ = 0;
     double startedAt_ = -1.0;
-    double confirmUntil_ = 0.0;
 };
 
 }  // namespace

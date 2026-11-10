@@ -27,6 +27,7 @@ void Context::beginFrame() {
     now = GetTime();
     screenW = GetScreenWidth();
     screenH = GetScreenHeight();
+    ++frame;
     cursor = MOUSE_CURSOR_DEFAULT;
     prevInputOrder.swap(inputOrder);
     inputOrder.clear();
@@ -52,6 +53,7 @@ void Context::endFrame() {
 
 // Mouse test restricted to the active clip rectangle.
 bool Context::hovered(Rect r) const {
+    if (modalBlocks && !insideModal) return false;
     if (!CheckCollisionPointRec(mouse, r)) return false;
     return clips_.empty() || CheckCollisionPointRec(mouse, clips_.back());
 }

@@ -70,6 +70,9 @@ public:
     uint32_t focus = 0;       // widget with keyboard focus
     int cursor = MOUSE_CURSOR_DEFAULT;
     int screenW = 0, screenH = 0;
+    bool modalBlocks = false;  // a modal dialog is open: widgets underneath ignore the pointer
+    bool insideModal = false;  // true while the modal itself is being drawn
+    unsigned long frame = 0;   // frame counter
     bool ignoreMouse = false;  // screenshot mode: pretend the pointer is far away
 
     std::unordered_map<uint32_t, InputState> inputs;
@@ -160,6 +163,26 @@ struct ScrollState {
 Rect scrollBegin(ScrollState& s, Rect viewport);
 // Ends it; contentEndY is the y where content stopped drawing.
 void scrollEnd(ScrollState& s, Rect viewport, float contentEndY);
+
+// ---- Modal dialog (modal.cpp) ---------------------------------------------------------------
+struct ModalOpts {
+    std::string title;
+    std::string message;
+    std::string confirmLabel = "Confirm";
+    std::string cancelLabel = "Cancel";
+    bool danger = true;  // confirm button drawn in the danger colour
+};
+enum class ModalResult { None, Confirm, Cancel };
+// Opens a confirmation dialog identified by id. Only one modal can be open; it blocks the UI underneath.
+// The cancel button is the default: Enter and Esc cancel, Tab / arrow keys move the focus.
+void openModal(const std::string& id, const ModalOpts& opts);
+// Closes the modal without a result (e.g. when the page changes).
+void closeModal();
+bool modalOpen();
+// Returns Confirm or Cancel once, after the user answered the modal with this id; None otherwise.
+ModalResult takeModalResult(const std::string& id);
+// Draws the open modal (dimmed backdrop + dialog) on top of everything; call last in the frame.
+void drawModal();
 
 // ---- Text input (textinput.cpp) -------------------------------------------------------------
 struct TextInputOpts {

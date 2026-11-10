@@ -191,6 +191,28 @@ void App::startExam(logic::Exam exam) {
     go(Page::ExamRun);
 }
 
+// Starts the exam at once, or asks before throwing away an exam that is still running.
+void App::beginExam(logic::Exam exam) {
+    if (!exam_.taskIds.empty() && !exam_.finished) {
+        pendingExam_ = std::move(exam);
+        openModal("discard-exam", ModalOpts{"Start a new exam?", "An exam is still running. Starting a new one discards it without a result.",
+                                            "Start new exam", "Keep running", true});
+        return;
+    }
+    startExam(std::move(exam));
+}
+
+// Asks for confirmation before ending the running exam; the clock keeps running meanwhile.
+void App::requestFinishExam() {
+    openModal("finish-exam", ModalOpts{"Finish exam", "Finish the exam now? Unanswered tasks will score 0.", "Finish exam", "Keep working", true});
+}
+
+// Asks for confirmation before erasing answers, streak and exam history.
+void App::requestResetProgress() {
+    openModal("reset-progress", ModalOpts{"Reset progress", "Erase all answers, the streak and the exam history? This cannot be undone.",
+                                          "Reset progress", "Keep progress", true});
+}
+
 // Stops the clock and opens the review.
 void App::finishExam() {
     if (!exam_.finished) {
@@ -205,6 +227,7 @@ void App::finishExam() {
 
 // Switches page and notifies the new screen.
 void App::go(Page page) {
+    closeModal();
     page_ = page;
     screens_[page_]->onEnter(*this);
 }
@@ -291,8 +314,17 @@ void App::frame() {
     const Palette& p = Theme::get().colors();
     BeginDrawing();
     ClearBackground(p.bg);
+    // Answers of dialogs opened in the previous frame.
+    if (takeModalResult("finish-exam") == ModalResult::Confirm) finishExam();
+    if (takeModalResult("discard-exam") == ModalResult::Confirm) startExam(std::move(pendingExam_));
+    if (takeModalResult("reset-progress") == ModalResult::Confirm) {
+        progress_.reset();
+        saveProgress();
+        cx.toast("Progress erased");
+    }
     screens_[page_]->draw(*this, contentArea());
     drawSidebar(Rect{0.0f, 0.0f, metrics::kSidebarW, static_cast<float>(GetScreenHeight())});
+    drawModal();
     cx.endFrame();
     EndDrawing();
 }

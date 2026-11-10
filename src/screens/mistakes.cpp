@@ -70,7 +70,7 @@ public:
             drawText(Face::Bold, size::kH3, std::to_string(failed.size()) + (failed.size() == 1 ? " exam function" : " exam functions") + " to redo",
                      head.x + 22.0f, head.y + 22.0f, p.text);
             if (button("Retry as mini exam", Rect{head.x + head.width - 232.0f, head.y + 14.0f, 210.0f, 42.0f}, ButtonStyle::Primary, Icon::Timer))
-                app.startExam(logic::makeTaskListExam("Retry failed functions", failed));
+                app.beginExam(logic::makeTaskListExam("Retry failed functions", failed));
             for (const std::string& id : failed) {
                 const content::Task* t = tc.findTask(id);
                 if (!t) continue;
@@ -81,7 +81,7 @@ public:
                 drawText(Face::Bold, 16, t->title, r.x + 52.0f, r.y + 8.0f, p.text);
                 drawText(Face::Regular, 14, std::to_string(t->points) + " points", r.x + 52.0f, r.y + 31.0f, p.textMuted);
                 if (button("Redo", Rect{r.x + r.width - 118.0f, r.y + 8.0f, 98.0f, 42.0f}, ButtonStyle::Secondary, Icon::Timer))
-                    app.startExam(logic::makeTaskListExam(t->title, {id}));
+                    app.beginExam(logic::makeTaskListExam(t->title, {id}));
                 Context::get().popId();
             }
         }

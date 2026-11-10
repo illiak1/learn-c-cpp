@@ -99,6 +99,12 @@ public:
 
     // The exam being taken or reviewed.
     void startExam(logic::Exam exam);
+    // Starts an exam; when another one is still running, asks first whether to discard it.
+    void beginExam(logic::Exam exam);
+    // Opens the "Finish the exam now?" dialog (the result is handled in the frame loop).
+    void requestFinishExam();
+    // Opens the "Reset progress?" dialog.
+    void requestResetProgress();
     logic::Exam& exam() { return exam_; }
     // Ends the timer and opens the review page.
     void finishExam();
@@ -128,6 +134,7 @@ private:
     int lessonSection_ = 0;
     Session session_;
     logic::Exam exam_;
+    logic::Exam pendingExam_;  // waits for the "discard the running exam?" answer
     logic::Progress progress_;
     int frameCount_ = 0;
 };

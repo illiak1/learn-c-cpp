@@ -33,7 +33,7 @@ public:
             drawText(Face::Regular, 15, ellipsize(Face::Regular, 15, running.title, r.width - 420.0f) + "  -  " +
                      (running.minutes > 0 ? logic::formatClock(left) + " left" : logic::formatClock(left) + " elapsed"), r.x + 62.0f, r.y + 48.0f, p.textMuted);
             if (button("Resume", Rect{r.x + r.width - 280.0f, r.y + 20.0f, 120.0f, 44.0f}, ButtonStyle::Primary, Icon::Play)) app.go(Page::ExamRun);
-            if (button("Finish", Rect{r.x + r.width - 148.0f, r.y + 20.0f, 128.0f, 44.0f}, ButtonStyle::Secondary, Icon::Flag)) app.finishExam();
+            if (button("Finish", Rect{r.x + r.width - 148.0f, r.y + 20.0f, 128.0f, 44.0f}, ButtonStyle::Secondary, Icon::Flag)) app.requestFinishExam();
         }
 
         // How it works + the exam rule
@@ -78,7 +78,7 @@ public:
         drawText(Face::Regular, 15, "Drawn from " + std::to_string(pool) + " tasks", quick.x + quick.width - 330.0f, quick.y + 30.0f, p.textMuted);
         if (button("Start random exam", Rect{quick.x + quick.width - 210.0f, quick.y + 116.0f, 190.0f, 44.0f}, ButtonStyle::Primary, Icon::Play, pool > 0)) {
             std::mt19937 rng(std::random_device{}());
-            app.startExam(logic::makeRandomExam(tc, count_, minutes_, rng));
+            app.beginExam(logic::makeRandomExam(tc, count_, minutes_, rng));
         }
 
         // Original papers
@@ -101,7 +101,7 @@ public:
             bx += badge(std::to_string(points) + " points", bx, by, p.textMuted, p.surfaceAlt) + 8.0f;
             badge(std::to_string(s.minutes) + " min", bx, by, p.textMuted, p.surfaceAlt);
             if (button("Start", Rect{r.x + r.width - 130.0f, r.y + r.height / 2.0f - 21.0f, 108.0f, 42.0f}, ButtonStyle::Secondary, Icon::Play))
-                app.startExam(logic::makeSetExam(s));
+                app.beginExam(logic::makeSetExam(s));
             Context::get().popId();
         }
 
@@ -119,7 +119,7 @@ public:
             drawText(Face::Bold, 16, ellipsize(Face::Bold, 16, t.title, r.width - 330.0f), r.x + (known ? 50.0f : 22.0f), r.y + 8.0f, p.text);
             drawText(Face::Regular, 13, std::to_string(t.points) + " points", r.x + (known ? 50.0f : 22.0f), r.y + 30.0f, p.textMuted);
             if (button("Practice", Rect{r.x + r.width - 134.0f, r.y + 6.0f, 114.0f, 42.0f}, ButtonStyle::Secondary, Icon::Timer))
-                app.startExam(logic::makeTaskListExam(t.title, {t.id}));
+                app.beginExam(logic::makeTaskListExam(t.title, {t.id}));
             Context::get().popId();
         }
         end(col);

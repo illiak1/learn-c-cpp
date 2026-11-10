@@ -34,15 +34,12 @@ std::string weekdayLetter(const std::string& date) {
 class StatsScreen : public Screen {
 public:
     // Resets scroll and the reset confirmation.
-    void onEnter(App&) override {
-        scroll_ = {};
-        confirmUntil_ = 0.0;
-    }
+    // Resets the scroll position.
+    void onEnter(App&) override { scroll_ = {}; }
 
     // Draws the statistics cards, charts and history.
     void draw(App& app, Rect area) override {
         const Palette& p = Theme::get().colors();
-        Context& cx = Context::get();
         Column col = begin(area);
         pageHeader(col, app, "Statistics", "Your progress in this track.");
         const logic::Stats st = logic::computeStats(app.progress(), app.content(), logic::todayString());
@@ -63,19 +60,8 @@ public:
         drawByLesson(col, st);
         drawExams(col, st);
 
-        // Reset (two clicks)
-        const bool confirming = cx.now < confirmUntil_;
-        if (button(confirming ? "Click again to erase all progress" : "Reset progress", Rect{col.x, col.y, confirming ? 300.0f : 170.0f, 40.0f},
-                   confirming ? ButtonStyle::Danger : ButtonStyle::Ghost, Icon::Refresh)) {
-            if (confirming) {
-                app.progress().reset();
-                app.saveProgress();
-                cx.toast("Progress erased");
-                confirmUntil_ = 0.0;
-            } else {
-                confirmUntil_ = cx.now + 3.0;
-            }
-        }
+        // Reset (asks for confirmation in a dialog)
+        if (button("Reset progress", Rect{col.x, col.y, 170.0f, 40.0f}, ButtonStyle::Ghost, Icon::Refresh)) app.requestResetProgress();
         col.space(56.0f);
         end(col);
     }
@@ -193,7 +179,6 @@ private:
         col.space(16.0f);
     }
 
-    double confirmUntil_ = 0.0;
 };
 
 }  // namespace
