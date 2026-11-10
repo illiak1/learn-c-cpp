@@ -34,6 +34,7 @@ public:
             return;
         }
         exam.marks.resize(tasks.size(), -1);
+        app.commitExam();  // keeps the saved record in step with the marks of the previous frame
 
         pageHeader(col, app, "Exam review");
         const int used = static_cast<int>((exam.finished ? exam.finishedAt : GetTime()) - exam.startedAt);

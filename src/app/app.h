@@ -102,7 +102,7 @@ public:
     logic::Exam& exam() { return exam_; }
     // Ends the timer and opens the review page.
     void finishExam();
-    // Writes the finished exam (score, task results) to the progress file once.
+    // Writes the finished exam (score, per-task scores) to the progress file; calling it again updates the same record.
     void commitExam();
 
     // Persistent progress (exercise history, streak, settings).

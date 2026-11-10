@@ -18,15 +18,24 @@ struct ExerciseRecord {
     std::string lastDate;  // YYYY-MM-DD
 };
 
-// One finished exam.
+// Score of one exam task.
+struct TaskScore {
+    std::string id;
+    int earned = 0;
+    int max = 0;
+};
+
+// One finished exam. `time` and `tasks` are empty for records written by older versions.
 struct ExamRecord {
-    std::string date;
-    std::string track;
+    std::string date;   // YYYY-MM-DD
+    std::string track;  // "c" or "cpp"
     std::string title;
     int earned = 0;
     int total = 0;
     int seconds = 0;
     bool fileRan = true;
+    std::string time;             // HH:MM (local)
+    std::vector<TaskScore> tasks; // per-task scores in exam order
 };
 
 // Activity of one calendar day.
@@ -41,6 +50,8 @@ long dayNumber(const std::string& date);
 std::string dateFromDayNumber(long day);
 // Today's local date as "YYYY-MM-DD".
 std::string todayString();
+// Current local time as "HH:MM".
+std::string nowTimeString();
 
 class Progress {
 public:
@@ -63,7 +74,11 @@ public:
     bool taskResult(const std::string& track, const std::string& id, bool& passed) const;
 
     // Exams
-    void recordExam(const ExamRecord& record);
+    // Appends an exam result and returns its index; updateExam rewrites it later (marks change in the review).
+    int recordExam(const ExamRecord& record);
+    bool updateExam(int index, const ExamRecord& record);
+    // Best earned/total ratio of the track's exams as a percentage (-1 when there are none).
+    int bestExamPercent(const std::string& track) const;
     const std::vector<ExamRecord>& exams() const { return exams_; }
 
     // Lessons: sections the student has opened.
@@ -85,10 +100,13 @@ public:
     // Wipes all progress (settings are kept).
     void reset();
     bool dirty() const { return dirty_; }
+    // Number of unreadable lines met by the last load() (damaged file); the good lines were still used.
+    int badLines() const { return badLines_; }
     // Marks the file as needing a save (after changing the public settings).
     void dirtyFlag() { dirty_ = true; }
 
 private:
+    bool parseLine(const std::string& line);
     void touchDay(const std::string& date, bool counted, bool correct);
 
     std::filesystem::path path_;
@@ -99,6 +117,7 @@ private:
     std::set<std::string> sections_;                    // "track\tlesson\tsection"
     std::map<std::string, std::pair<std::string, int>> lastLesson_;  // track -> (lesson, section)
     mutable bool dirty_ = false;
+    int badLines_ = 0;
 };
 
 }  // namespace logic

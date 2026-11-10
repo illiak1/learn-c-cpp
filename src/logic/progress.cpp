@@ -61,6 +61,20 @@ std::string todayString() {
     return buf;
 }
 
+// Current local time as "HH:MM".
+std::string nowTimeString() {
+    const std::time_t t = std::time(nullptr);
+    std::tm tmv{};
+#if defined(_WIN32)
+    localtime_s(&tmv, &t);
+#else
+    localtime_r(&t, &tmv);
+#endif
+    char buf[16];
+    std::strftime(buf, sizeof buf, "%H:%M", &tmv);
+    return buf;
+}
+
 // ---- Storage --------------------------------------------------------------------------------
 
 namespace {
@@ -97,6 +111,35 @@ std::string clean(std::string s) {
     return s;
 }
 
+// "id:earned/max;id:earned/max" -> task scores (damaged entries are skipped).
+std::vector<TaskScore> parseTaskScores(const std::string& text) {
+    std::vector<TaskScore> out;
+    size_t pos = 0;
+    while (pos < text.size()) {
+        size_t end = text.find(';', pos);
+        if (end == std::string::npos) end = text.size();
+        const std::string item = text.substr(pos, end - pos);
+        pos = end + 1;
+        const size_t colon = item.rfind(':'), slash = item.rfind('/');
+        if (colon == std::string::npos || slash == std::string::npos || slash < colon || colon == 0) continue;
+        out.push_back({item.substr(0, colon), toInt(item.substr(colon + 1, slash - colon - 1)), toInt(item.substr(slash + 1))});
+    }
+    return out;
+}
+
+// Inverse of parseTaskScores.
+std::string formatTaskScores(const std::vector<TaskScore>& tasks) {
+    std::string out;
+    for (const TaskScore& t : tasks) {
+        if (!out.empty()) out += ';';
+        std::string id = t.id;
+        for (char& c : id)
+            if (c == ':' || c == ';' || c == '/' || c == '\t' || c == '\n') c = '_';
+        out += id + ':' + std::to_string(t.earned) + '/' + std::to_string(t.max);
+    }
+    return out;
+}
+
 }  // namespace
 
 // Format (one record per line, tab separated):
@@ -104,12 +147,13 @@ std::string clean(std::string s) {
 //   setting <dark|track> <value>
 //   ex <track> <id> <attempts> <correct> <lastCorrect 0/1> <date>
 //   task <track> <id> <passed 0/1> <date>
-//   exam <date> <track> <title> <earned> <total> <seconds> <fileRan 0/1>
+//   exam <date> <track> <title> <earned> <total> <seconds> <fileRan 0/1> [<HH:MM> <id:earned/max;...>]
 //   day <date> <answered> <correct>
 //   section <track> <lesson> <section>
 //   last <track> <lesson> <section index>
 bool Progress::load(const fs::path& file) {
     path_ = file;
+    badLines_ = 0;
     std::error_code ec;
     if (!fs::exists(file, ec)) return true;
     std::ifstream in(file);
@@ -117,35 +161,62 @@ bool Progress::load(const fs::path& file) {
     std::string line;
     while (std::getline(in, line)) {
         if (!line.empty() && line.back() == '\r') line.pop_back();
-        const auto f = fields(line);
-        if (f.empty()) continue;
-        if (f[0] == "setting" && f.size() >= 3) {
-            if (f[1] == "dark") dark = f[2] == "1";
-            else if (f[1] == "track") track = f[2] == "cpp" ? "cpp" : "c";
-        } else if (f[0] == "ex" && f.size() >= 7) {
-            ExerciseRecord r;
-            r.attempts = toInt(f[3]);
-            r.correct = toInt(f[4]);
-            r.lastCorrect = f[5] == "1";
-            r.lastDate = f[6];
-            exercises_[f[1] + "\t" + f[2]] = r;
-        } else if (f[0] == "task" && f.size() >= 5) {
-            tasks_[f[1] + "\t" + f[2]] = {f[3] == "1", f[4]};
-        } else if (f[0] == "exam" && f.size() >= 8) {
-            exams_.push_back(ExamRecord{f[1], f[2], f[3], toInt(f[4]), toInt(f[5]), toInt(f[6]), f[7] == "1"});
-        } else if (f[0] == "day" && f.size() >= 4) {
-            days_[f[1]] = DayRecord{toInt(f[2]), toInt(f[3])};
-        } else if (f[0] == "section" && f.size() >= 4) {
-            sections_.insert(f[1] + "\t" + f[2] + "\t" + f[3]);
-        } else if (f[0] == "last" && f.size() >= 4) {
-            lastLesson_[f[1]] = {f[2], toInt(f[3])};
-        }
+        if (line.empty()) continue;
+        if (!parseLine(line)) ++badLines_;
     }
     dirty_ = false;
     return true;
 }
 
-// Writes the progress file atomically (temp file then rename).
+// Parses one record; returns false for unknown or damaged lines (they are skipped, never fatal).
+bool Progress::parseLine(const std::string& line) {
+    if (line.size() > 4000) return false;
+    const auto f = fields(line);
+    if (f[0] == "progress") return true;
+    if (f[0] == "setting" && f.size() >= 3) {
+        if (f[1] == "dark") dark = f[2] == "1";
+        else if (f[1] == "track") track = f[2] == "cpp" ? "cpp" : "c";
+        else return false;
+        return true;
+    }
+    if (f[0] == "ex" && f.size() >= 7) {
+        ExerciseRecord r;
+        r.attempts = std::max(0, toInt(f[3]));
+        r.correct = std::clamp(toInt(f[4]), 0, r.attempts);
+        r.lastCorrect = f[5] == "1";
+        r.lastDate = f[6];
+        exercises_[f[1] + "\t" + f[2]] = r;
+        return true;
+    }
+    if (f[0] == "task" && f.size() >= 5) {
+        tasks_[f[1] + "\t" + f[2]] = {f[3] == "1", f[4]};
+        return true;
+    }
+    if (f[0] == "exam" && f.size() >= 8) {
+        // Older files have 8 fields; newer ones append the time of day and the per-task scores.
+        ExamRecord e{f[1], f[2], f[3], toInt(f[4]), toInt(f[5]), std::max(0, toInt(f[6])), f[7] == "1", "", {}};
+        if (f.size() >= 9) e.time = f[8];
+        if (f.size() >= 10) e.tasks = parseTaskScores(f[9]);
+        if (e.track != "c" && e.track != "cpp") return false;
+        exams_.push_back(std::move(e));
+        return true;
+    }
+    if (f[0] == "day" && f.size() >= 4) {
+        if (dayNumber(f[1]) < 0) return false;
+        days_[f[1]] = DayRecord{std::max(0, toInt(f[2])), std::max(0, toInt(f[3]))};
+        return true;
+    }
+    if (f[0] == "section" && f.size() >= 4) {
+        sections_.insert(f[1] + "\t" + f[2] + "\t" + f[3]);
+        return true;
+    }
+    if (f[0] == "last" && f.size() >= 4) {
+        lastLesson_[f[1]] = {f[2], toInt(f[3])};
+        return true;
+    }
+    return false;
+}
+
 bool Progress::save() const {
     if (path_.empty()) return false;
     std::error_code ec;
@@ -162,7 +233,7 @@ bool Progress::save() const {
         for (const auto& [key, t] : tasks_) out << "task\t" << key << "\t" << (t.first ? 1 : 0) << "\t" << t.second << "\n";
         for (const ExamRecord& e : exams_)
             out << "exam\t" << e.date << "\t" << e.track << "\t" << clean(e.title) << "\t" << e.earned << "\t" << e.total << "\t"
-                << e.seconds << "\t" << (e.fileRan ? 1 : 0) << "\n";
+                << e.seconds << "\t" << (e.fileRan ? 1 : 0) << "\t" << clean(e.time) << "\t" << formatTaskScores(e.tasks) << "\n";
         for (const auto& [date, d] : days_) out << "day\t" << date << "\t" << d.answered << "\t" << d.correct << "\n";
         for (const std::string& s : sections_) out << "section\t" << s << "\n";
         for (const auto& [t, l] : lastLesson_) out << "last\t" << t << "\t" << l.first << "\t" << l.second << "\n";
@@ -238,14 +309,30 @@ bool Progress::taskResult(const std::string& tr, const std::string& id, bool& pa
     return true;
 }
 
-// Appends a finished exam to the history.
-void Progress::recordExam(const ExamRecord& record) {
+// Appends a finished exam to the history and returns its index.
+int Progress::recordExam(const ExamRecord& record) {
     exams_.push_back(record);
     touchDay(record.date, false, false);
     dirty_ = true;
+    return static_cast<int>(exams_.size()) - 1;
 }
 
-// Remembers that a lesson section was opened.
+// Replaces an earlier record (the marks of a finished exam can still change in the review).
+bool Progress::updateExam(int index, const ExamRecord& record) {
+    if (index < 0 || index >= static_cast<int>(exams_.size())) return false;
+    exams_[static_cast<size_t>(index)] = record;
+    dirty_ = true;
+    return true;
+}
+
+// Best score (percent of the maximum) over the exams of a track, -1 when none.
+int Progress::bestExamPercent(const std::string& tr) const {
+    int best = -1;
+    for (const ExamRecord& e : exams_)
+        if (e.track == tr && e.total > 0) best = std::max(best, e.earned * 100 / e.total);
+    return best;
+}
+
 void Progress::markSectionRead(const std::string& tr, const std::string& lesson, const std::string& section) {
     if (sections_.insert(tr + "\t" + lesson + "\t" + section).second) dirty_ = true;
 }

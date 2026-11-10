@@ -20,7 +20,10 @@ struct Exam {
     double startedAt = 0.0;             // seconds (caller's clock)
     double finishedAt = 0.0;
     bool finished = false;
-    bool saved = false;                 // result already written to the progress file
+    std::string finishDate;             // YYYY-MM-DD when the exam ended
+    std::string finishTime;             // HH:MM when the exam ended
+    int recordIndex = -1;               // index of this exam's record in the progress file (-1 = not saved yet)
+    std::string recordSig;              // what was last written, so unchanged results are not saved again
     // Review state:
     bool fileRan = true;                // compiled, finished and did not crash
     bool fileAnswered = false;          // student answered the "did it run" question

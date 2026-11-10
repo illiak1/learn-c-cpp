@@ -90,5 +90,5 @@ TEST(task_list_exam_is_untimed_and_unmarked) {
     CHECK_EQ(e.minutes, 0);
     CHECK_EQ(e.marks.size(), 2u);
     CHECK_EQ(static_cast<int>(e.marks[0]), -1);
-    CHECK(!e.saved);
+    CHECK_EQ(e.recordIndex, -1);
 }

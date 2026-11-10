@@ -5,6 +5,7 @@
 #include <cstring>
 
 #include <cstdio>
+#include <filesystem>
 #include <cstdlib>
 #include <random>
 
@@ -150,22 +151,33 @@ int App::mistakeCount() {
     return static_cast<int>(progress_.wrongExercises(trackKey()).size() + progress_.failedTasks(trackKey()).size());
 }
 
-// Records the exam result and the pass/fail state of every marked task (once per exam).
+// Writes the finished exam to the progress file (one record per exam) and keeps it in sync with the review marks.
 void App::commitExam() {
-    if (exam_.saved || !exam_.finished) return;
-    const std::string today = logic::todayString();
+    if (!exam_.finished) return;
     const auto tasks = logic::examTasks(content(), exam_);
-    bool any = exam_.fileAnswered;
-    for (size_t i = 0; i < tasks.size() && i < exam_.marks.size(); ++i) {
-        if (exam_.marks[i] < 0) continue;
-        any = true;
-        progress_.recordTask(trackKey(), tasks[i]->id, exam_.marks[i] == 1, today);
-    }
-    if (!any) return;
     const logic::Score sc = logic::scoreExam(content(), exam_);
-    logic::ExamRecord r{today, trackKey(), exam_.title, sc.earned, sc.total, static_cast<int>(exam_.finishedAt - exam_.startedAt), exam_.fileRan};
-    progress_.recordExam(r);
-    exam_.saved = true;
+    logic::ExamRecord r;
+    r.date = exam_.finishDate;
+    r.time = exam_.finishTime;
+    r.track = trackKey();
+    r.title = exam_.title;
+    r.earned = sc.earned;
+    r.total = sc.total;
+    r.seconds = static_cast<int>(exam_.finishedAt - exam_.startedAt);
+    r.fileRan = exam_.fileRan;
+    std::string sig = std::to_string(sc.earned) + (exam_.fileRan ? "y" : "n");
+    for (size_t i = 0; i < tasks.size(); ++i) {
+        const signed char mark = i < exam_.marks.size() ? exam_.marks[i] : -1;
+        // Unmarked tasks score 0; so does everything when the file did not compile, loop forever or crash.
+        r.tasks.push_back({tasks[i]->id, exam_.fileRan && mark == 1 ? tasks[i]->points : 0, tasks[i]->points});
+        sig += std::to_string(mark);
+    }
+    if (exam_.recordIndex >= 0 && sig == exam_.recordSig) return;
+    for (size_t i = 0; i < tasks.size() && i < exam_.marks.size(); ++i)
+        if (exam_.marks[i] >= 0) progress_.recordTask(trackKey(), tasks[i]->id, exam_.marks[i] == 1, r.date);
+    if (exam_.recordIndex < 0) exam_.recordIndex = progress_.recordExam(r);
+    else progress_.updateExam(exam_.recordIndex, r);
+    exam_.recordSig = sig;
     saveProgress();
 }
 
@@ -173,7 +185,8 @@ void App::commitExam() {
 void App::startExam(logic::Exam exam) {
     exam.startedAt = GetTime();
     exam.finished = false;
-    exam.saved = false;
+    exam.recordIndex = -1;
+    exam.recordSig.clear();
     exam_ = std::move(exam);
     go(Page::ExamRun);
 }
@@ -183,13 +196,15 @@ void App::finishExam() {
     if (!exam_.finished) {
         exam_.finished = true;
         exam_.finishedAt = GetTime();
+        exam_.finishDate = logic::todayString();
+        exam_.finishTime = logic::nowTimeString();
+        commitExam();
     }
     go(Page::ExamReview);
 }
 
-// Switches page; leaving the exam review first stores the finished exam.
+// Switches page and notifies the new screen.
 void App::go(Page page) {
-    if (page_ == Page::ExamReview && page != Page::ExamReview) commitExam();
     page_ = page;
     screens_[page_]->onEnter(*this);
 }
@@ -294,7 +309,14 @@ int App::run() {
     Theme& th = Theme::get();
     th.init((platform::resourceRoot() / "assets").string());
     th.preload();
-    progress_.load(platform::userDataDir() / "progress.txt");
+    const auto progressFile = platform::userDataDir() / "progress.txt";
+    progress_.load(progressFile);
+    if (progress_.badLines() > 0) {
+        // Keep a copy of a damaged file before the next save rewrites it.
+        std::error_code ec;
+        std::filesystem::copy_file(progressFile, progressFile.string() + ".bak", std::filesystem::copy_options::overwrite_existing, ec);
+        std::fprintf(stderr, "progress: %d unreadable line(s) skipped, backup written to progress.txt.bak\n", progress_.badLines());
+    }
     if (!options_.hasTheme) options_.dark = progress_.dark;
     if (!options_.hasTrack) options_.track = progress_.track == "cpp" ? Track::Cpp : Track::C;
     track_ = options_.track;

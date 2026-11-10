@@ -138,3 +138,10 @@ Exam mode builds one source file: all `@includes` (deduplicated), every task's `
 `@main` if present, otherwise one `{ ... }` block per task holding its `@tests`. The student pastes that file into
 Visual Studio, completes the functions and runs the tests. The app never compiles or runs code; the student marks
 each task in the review.
+
+## Progress file (`progress.txt`)
+
+Not content, but stored next to the user's data: a tab-separated text file, one record per line. Exam results are
+`exam<TAB>date<TAB>track<TAB>title<TAB>earned<TAB>total<TAB>seconds<TAB>fileRan[<TAB>HH:MM<TAB>id:earned/max;...]`.
+The last two fields (time of day and per-task scores) were added later; files without them still load. Unreadable
+lines are skipped (the app keeps a `progress.txt.bak` copy of a damaged file) and never stop the app from starting.
