@@ -122,7 +122,7 @@ bool cardButton(const std::string& idStr, Rect& r) {
     return clicked;
 }
 
-float chipWidth(const std::string& label) { return Theme::get().textWidth(Face::Bold, 14, label) + 26.0f; }
+float chipWidth(const std::string& label) { return Theme::get().textWidth(Face::Bold, 14, label) + 36.0f; }
 
 // Filter chip.
 bool chip(const std::string& label, Rect r, bool selected) {

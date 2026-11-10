@@ -58,20 +58,34 @@ public:
         if (button("Start all", Rect{r.x + r.width - 172.0f, r.y + 28.0f, 150.0f, 40.0f}, ButtonStyle::Primary, Icon::Play, !all.empty()))
             app.startSession("All questions", all);
 
-        // One card per lesson
+        // One card per lesson. With a type filter, topics without a matching question are hidden;
+        // topics that have no questions at all say so instead of showing "0 questions".
+        int shown = 0;
         for (const content::Lesson& l : tc.lessons) {
             std::vector<std::string> ids;
-            for (const auto& e : tc.exercises)
-                if (e.lesson == l.id && matches(e, filter_)) ids.push_back(e.id);
+            int total = 0;
+            for (const auto& e : tc.exercises) {
+                if (e.lesson != l.id) continue;
+                ++total;
+                if (matches(e, filter_)) ids.push_back(e.id);
+            }
+            if (filter_ != 0 && ids.empty()) continue;
+            ++shown;
             Rect lr = col.take(84.0f);
             card(lr);
             Context::get().pushId(l.id);
             drawText(Face::Bold, size::kH3, l.title, lr.x + 22.0f, lr.y + 18.0f, p.text);
-            drawText(Face::Regular, 15, std::to_string(ids.size()) + (ids.size() == 1 ? " question" : " questions"), lr.x + 22.0f, lr.y + 48.0f, p.textMuted);
-            if (button("Practice", Rect{lr.x + lr.width - 150.0f, lr.y + 22.0f, 128.0f, 40.0f}, ButtonStyle::Secondary, Icon::Pencil, !ids.empty()))
-                app.startSession(l.title, ids);
+            if (total == 0) {
+                drawText(Face::Regular, 15, "Lessons only", lr.x + 22.0f, lr.y + 48.0f, p.textMuted);
+            } else {
+                drawText(Face::Regular, 15, std::to_string(ids.size()) + (ids.size() == 1 ? " question" : " questions"), lr.x + 22.0f, lr.y + 48.0f, p.textMuted);
+                if (button("Practice", Rect{lr.x + lr.width - 150.0f, lr.y + 22.0f, 128.0f, 40.0f}, ButtonStyle::Secondary, Icon::Pencil, !ids.empty()))
+                    app.startSession(l.title, ids);
+            }
             Context::get().popId();
         }
+        if (shown == 0)
+            col.space(drawParagraph(Face::Regular, size::kBody, "No topic has questions of this type yet.", col.x, col.y, col.w, p.textMuted));
         end(col);
     }
 
