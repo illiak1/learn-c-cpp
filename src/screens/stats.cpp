@@ -145,8 +145,12 @@ private:
             const float x0 = r.x + 22.0f, x1 = x0 + half + 28.0f, y2 = y + 28.0f;
             drawText(Face::Regular, 13, "Read " + std::to_string(l.sectionsRead) + "/" + std::to_string(l.sections), x0, y2 - 2.0f, p.textMuted);
             progressBar(Rect{x0 + 100.0f, y2 + 3.0f, half - 100.0f, 9.0f}, rf, p.accent);
-            drawText(Face::Regular, 13, "Mastered " + std::to_string(l.mastered) + "/" + std::to_string(l.exercises), x1, y2 - 2.0f, p.textMuted);
-            progressBar(Rect{x1 + 126.0f, y2 + 3.0f, half - 126.0f, 9.0f}, mf, p.success);
+            if (l.exercises > 0) {
+                drawText(Face::Regular, 13, "Mastered " + std::to_string(l.mastered) + "/" + std::to_string(l.exercises), x1, y2 - 2.0f, p.textMuted);
+                progressBar(Rect{x1 + 126.0f, y2 + 3.0f, half - 126.0f, 9.0f}, mf, p.success);
+            } else {
+                drawText(Face::Regular, 13, "No questions yet", x1, y2 - 2.0f, p.textMuted);
+            }
             y += 66.0f;
         }
         col.space(16.0f);

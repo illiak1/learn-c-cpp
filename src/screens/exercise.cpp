@@ -60,7 +60,8 @@ public:
             return;
         }
         const content::Exercise* ex = app.content().findExercise(s.ids[s.pos]);
-        if (!ex) {
+        if (!ex) {  // the id is no longer in the content: skip it instead of leaving the page empty
+            s.pos++;
             end(col);
             return;
         }
