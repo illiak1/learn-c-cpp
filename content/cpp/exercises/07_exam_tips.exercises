@@ -41,3 +41,130 @@ You cannot finish a function in time. What is the safest thing to do?
 - Comment out the tests at the bottom
 @explain
 A function that compiles and ends can at worst fail by itself. Half a loop can break the build or never end, and then the whole exam is 0.
+
+@exercise cpp-exam-choice-not-fatal
+@type choice
+@lesson 07_exam_tips
+@difficulty 1
+@prompt
+Which of these costs you the whole exam?
+@choices
+- One function returns a wrong result
+- Two functions return wrong results
+* A program that crashes because a pointer is dereferenced while it is nullptr
+- A function that is correct but written in a different style
+@explain
+A wrong result fails only that function. A compile error, an infinite loop or a crash gives 0 for the whole exam.
+
+@exercise cpp-exam-theory-semicolon
+@type theory
+@lesson 07_exam_tips
+@difficulty 1
+@prompt
+Which character must follow the closing brace of a class definition?
+@answer
+; | a semicolon | semicolon
+@explain
+A missing semicolon after a class is one of the classic compile errors, and a compile error gives 0 for the whole exam.
+
+@exercise cpp-exam-theory-nullptr
+@type theory
+@lesson 07_exam_tips
+@difficulty 1
+@prompt
+What should a pointer hold when it has no target yet, so that you can test it safely before using it?
+@answer
+nullptr | a null pointer | null pointer
+@explain
+Set unused pointers to nullptr and test them before using ->. Dereferencing an invalid pointer is a crash.
+
+@exercise cpp-exam-predict-nullptr
+@type predict
+@lesson 07_exam_tips
+@difficulty 1
+@prompt
+What does this code print?
+@code
+int* p = nullptr;
+if (p == nullptr) {
+    cout << "empty";
+} else {
+    cout << *p;
+}
+cout << endl;
+@answer
+empty
+@explain
+Testing the pointer first avoids the crash: nothing is dereferenced when p is nullptr.
+
+@exercise cpp-exam-fill-placeholder
+@type fill
+@lesson 07_exam_tips
+@difficulty 1
+@prompt
+You have no time to finish isEmpty. Make it compile and end by returning a placeholder value.
+@code
+bool isEmpty() {
+    // not finished yet: keep the file compiling and ending
+    ___ false;
+}
+@answer
+return
+@explain
+A function that compiles and ends can at worst fail by itself. Half a loop can break the build or never end, and that costs the whole exam.
+
+@exercise cpp-exam-bug-list-loop
+@type bug
+@lesson 07_exam_tips
+@difficulty 2
+@prompt
+This code should add up the list, but the program never ends. Click the line of the loop that never finishes (either of the two lines involved is accepted).
+@code
+#include <iostream>
+using namespace std;
+
+struct Node {
+    int data;
+    Node* next;
+};
+
+int main() {
+    Node* second = new Node{2, nullptr};
+    Node* head = new Node{1, second};
+    int sum = 0;
+    Node* cur = head;
+    while (cur != nullptr) {
+        sum += cur->data;
+    }
+    cout << sum << endl;
+    delete second;
+    delete head;
+    return 0;
+}
+@bugline 14 15
+@explain
+cur is never moved to the next node, so cur != nullptr stays true forever. Add cur = cur->next; inside the loop. An infinite loop gives 0 for the whole exam.
+
+@exercise cpp-exam-bug-array-bounds
+@type bug
+@lesson 07_exam_tips
+@difficulty 2
+@prompt
+This code should print the three numbers but reads past the end of the array, which can crash the program. Click the buggy line, then type the corrected line.
+@code
+#include <iostream>
+using namespace std;
+
+int main() {
+    int numbers[3] = {10, 20, 30};
+    for (int i = 0; i <= 3; i++) {
+        cout << numbers[i] << " ";
+    }
+    cout << endl;
+    return 0;
+}
+@bugline 6
+@answer
+for (int i = 0; i < 3; i++) {
+@explain
+The valid indexes are 0, 1 and 2. i <= 3 also reads numbers[3], which is out of bounds.

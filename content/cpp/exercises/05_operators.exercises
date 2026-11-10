@@ -159,3 +159,63 @@ public:
 int
 @explain
 The int parameter is unused; it only distinguishes the postfix form from the prefix form.
+
+@exercise cpp-op-predict-overload
+@type predict
+@lesson 05_operators
+@difficulty 2
+@prompt
+What does this program print? Think about which overload the compiler picks for each call.
+@code
+#include <iostream>
+using namespace std;
+
+void print(int) { cout << "int "; }
+void print(double) { cout << "double "; }
+void print(const char*) { cout << "string "; }
+
+int main() {
+    print(5);
+    print(2.5);
+    print("hi");
+    print('a');
+    cout << endl;
+    return 0;
+}
+@answer
+int double string int
+@explain
+5 is an int, 2.5 a double and "hi" a const char*. A char is promoted to int, so print('a') calls the int version.
+
+@exercise cpp-op-bug-postfix
+@type bug
+@lesson 05_operators
+@difficulty 2
+@prompt
+a++ does not compile, because only the prefix form is declared. Click the buggy line, then type the corrected line.
+@code
+#include <iostream>
+using namespace std;
+
+class Num {
+public:
+    int v;
+    Num(int x) : v(x) { }
+    Num operator++() {
+        Num old = *this;
+        ++v;
+        return old;
+    }
+};
+
+int main() {
+    Num a(1);
+    Num b = a++;
+    cout << b.v << " " << a.v << endl;
+    return 0;
+}
+@bugline 8
+@answer
+Num operator++(int) {
+@explain
+The postfix form needs the unused int parameter; without it the function is the prefix operator.

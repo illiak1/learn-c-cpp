@@ -41,3 +41,120 @@ You cannot finish a function in time. What is the safest thing to do?
 - Comment out the tests at the bottom
 @explain
 A function that compiles and ends can at worst fail by itself. Half a loop can break the build or never end, and then the whole exam is 0.
+
+@exercise c-exam-choice-not-fatal
+@type choice
+@lesson 04_exam_tips
+@difficulty 1
+@prompt
+Which of these costs you the whole exam?
+@choices
+- One function returns a wrong result
+- Two functions return wrong results
+* A loop in one function that never ends
+- A function that returns the right value but is slow to write
+@explain
+A wrong result fails only that function. A compile error, an infinite loop or a crash gives 0 for the whole exam, whichever function it is in.
+
+@exercise c-exam-theory-return
+@type theory
+@lesson 04_exam_tips
+@difficulty 1
+@prompt
+Which statement should every function that returns a value reach before its closing brace, even a function you have not finished?
+@answer
+return | a return statement | return statement | return;
+@hint
+A placeholder such as return 0; keeps the file compiling.
+@explain
+A function that must return a value needs a return on every path. Write the placeholder return first and fill in the logic later.
+
+@exercise c-exam-theory-loop
+@type theory
+@lesson 04_exam_tips
+@difficulty 2
+@prompt
+A for loop is written as  for (int i = 0; i < 5; i--)  . What kind of error is this (name the problem in two or three words)?
+@answer
+infinite loop | an infinite loop | endless loop | never ends | loop never ends
+@explain
+i starts at 0 and gets smaller, so i < 5 stays true forever. An infinite loop gives 0 for the whole exam.
+
+@exercise c-exam-predict-countdown
+@type predict
+@lesson 04_exam_tips
+@difficulty 1
+@prompt
+This loop ends because its variable moves towards the exit. What does it print?
+@code
+int i = 10;
+while (i > 7) {
+    printf("%d ", i);
+    i--;
+}
+printf("\n");
+@answer
+10 9 8
+@explain
+i is printed while it is greater than 7: 10, 9 and 8. Before you submit, check for every loop that the variable moves towards the exit.
+
+@exercise c-exam-fill-placeholder
+@type fill
+@lesson 04_exam_tips
+@difficulty 1
+@prompt
+You have no time to finish sumTo. Make it compile and end by returning a placeholder value.
+@code
+int sumTo(int n) {
+    // not finished yet: keep the file compiling and ending
+    ___ 0;
+}
+@answer
+return
+@explain
+A function that compiles and ends can at worst fail by itself. A half-written body can break the build or never end, and that costs the whole exam.
+
+@exercise c-exam-bug-loop
+@type bug
+@lesson 04_exam_tips
+@difficulty 1
+@prompt
+This program should print 0 1 2 3 4, but it never ends. Click the buggy line, then type the corrected line.
+@code
+#include <stdio.h>
+
+int main() {
+    for (int i = 0; i < 5; i--) {
+        printf("%d ", i);
+    }
+    return 0;
+}
+@bugline 4
+@answer
+for (int i = 0; i < 5; i++) {
+@explain
+i-- moves away from the exit condition, so the loop never ends. In the exam this would give 0 for everything.
+
+@exercise c-exam-bug-semicolon
+@type bug
+@lesson 04_exam_tips
+@difficulty 1
+@prompt
+This file does not compile. Click the buggy line, then type the corrected line.
+@code
+#include <stdio.h>
+
+int square(int x) {
+    int result = x * x
+    return result;
+}
+
+int main() {
+    printf("%d\n", square(4));
+    return 0;
+}
+@bugline 4
+@answer
+int result = x * x;
+@explain
+A missing semicolon is a compile error, and a compile error gives 0 for the whole exam. Compile after every function.
