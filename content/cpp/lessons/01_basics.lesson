@@ -97,7 +97,7 @@ Before call: value = 5
 Inside function: x = 999
 After call:  value = 5
 
-@section 1.17 Pass by reference (c++ only)
+@section 1.4 Pass by reference
 @points
 - C has no reference syntax; there you use pointers (see the Pointers lesson).
 - In C++, a & in the parameter list passes the caller's variable itself; changes inside the function change the original.

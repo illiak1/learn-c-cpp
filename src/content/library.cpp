@@ -2,6 +2,7 @@
 #include "content/library.h"
 
 #include <algorithm>
+#include <cctype>
 #include <fstream>
 #include <set>
 #include <sstream>
@@ -52,6 +53,34 @@ std::string readFile(const fs::path& path) {
     std::ostringstream ss;
     ss << in.rdbuf();
     return ss.str();
+}
+
+// Strips "1.17 ", "3. " or "2) " at the start of a title (but keeps titles such as "2D arrays").
+std::string cleanSectionTitle(const std::string& title) {
+    size_t i = 0;
+    while (i < title.size() && std::isdigit(static_cast<unsigned char>(title[i]))) ++i;
+    if (i == 0) return title;
+    bool dotted = false;
+    while (i + 1 < title.size() && title[i] == '.' && std::isdigit(static_cast<unsigned char>(title[i + 1]))) {
+        dotted = true;
+        ++i;
+        while (i < title.size() && std::isdigit(static_cast<unsigned char>(title[i]))) ++i;
+    }
+    if (i < title.size() && (title[i] == '.' || title[i] == ')')) {
+        dotted = true;
+        ++i;
+    }
+    if (!dotted || i >= title.size() || !std::isspace(static_cast<unsigned char>(title[i]))) return title;
+    while (i < title.size() && std::isspace(static_cast<unsigned char>(title[i]))) ++i;
+    return title.substr(i);
+}
+
+// "<lesson position>.<section position>" from the order of the content.
+std::string sectionNumber(const TrackContent& track, const Lesson& lesson, size_t sectionIndex) {
+    size_t lessonIndex = 0;
+    for (size_t i = 0; i < track.lessons.size(); ++i)
+        if (track.lessons[i].id == lesson.id) lessonIndex = i;
+    return std::to_string(lessonIndex + 1) + "." + std::to_string(sectionIndex + 1);
 }
 
 namespace {

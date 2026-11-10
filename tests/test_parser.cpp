@@ -105,3 +105,31 @@ TEST(shipped_content_is_valid) {
         CHECK(!tc.lessons.empty());
     }
 }
+
+TEST(clean_section_title_strips_leftover_numbers) {
+    CHECK_EQ(cleanSectionTitle("1.17 Pass by reference"), std::string("Pass by reference"));
+    CHECK_EQ(cleanSectionTitle("3. Memory"), std::string("Memory"));
+    CHECK_EQ(cleanSectionTitle("2) Pointers"), std::string("Pointers"));
+    CHECK_EQ(cleanSectionTitle("10.2.1   Deep"), std::string("Deep"));
+    CHECK_EQ(cleanSectionTitle("2D arrays"), std::string("2D arrays"));
+    CHECK_EQ(cleanSectionTitle("5 pointers"), std::string("5 pointers"));
+    CHECK_EQ(cleanSectionTitle("Plain title"), std::string("Plain title"));
+    CHECK_EQ(cleanSectionTitle("1.5"), std::string("1.5"));
+}
+
+TEST(section_numbers_follow_the_order_not_the_ids) {
+    TrackContent tc;
+    for (const char* id : {"intro", "ptr"}) {
+        Lesson l;
+        l.id = id;
+        l.sections.resize(3);
+        l.sections[0].id = "1.1";
+        l.sections[1].id = "1.17";   // odd id copied from the notes
+        l.sections[2].id = "banana";
+        tc.lessons.push_back(l);
+    }
+    CHECK_EQ(sectionNumber(tc, tc.lessons[0], 0), std::string("1.1"));
+    CHECK_EQ(sectionNumber(tc, tc.lessons[0], 1), std::string("1.2"));
+    CHECK_EQ(sectionNumber(tc, tc.lessons[0], 2), std::string("1.3"));
+    CHECK_EQ(sectionNumber(tc, tc.lessons[1], 1), std::string("2.2"));
+}

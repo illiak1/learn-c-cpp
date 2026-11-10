@@ -2,6 +2,7 @@
 #include <algorithm>
 
 #include "app/screens.h"
+#include "content/library.h"
 #include "screens/common.h"
 
 namespace app {
@@ -78,7 +79,7 @@ public:
         // Section chips, wrapped over several rows.
         float x = col.x, y = col.y;
         for (int i = 0; i < sections; ++i) {
-            const std::string& id = lesson->sections[static_cast<size_t>(i)].id;
+            const std::string id = content::sectionNumber(app.content(), *lesson, static_cast<size_t>(i));
             const float w = std::max(52.0f, chipWidth(id));
             if (x + w > col.x + col.w) {
                 x = col.x;
@@ -93,7 +94,7 @@ public:
         app.progress().markSectionRead(app.trackKey(), lesson->id, sec.id);
         app.progress().setLastLesson(app.trackKey(), lesson->id, sel);
         app.saveProgress();
-        col.space(drawParagraph(Face::Bold, size::kH2, sec.id + "  " + sec.title, col.x, col.y, col.w, p.text) + 14.0f);
+        col.space(drawParagraph(Face::Bold, size::kH2, content::sectionNumber(app.content(), *lesson, static_cast<size_t>(sel)) + "  " + content::cleanSectionTitle(sec.title), col.x, col.y, col.w, p.text) + 14.0f);
         drawBlocks(col, sec.blocks, app.track() == Track::Cpp, lesson->id + "/" + sec.id);
 
         // Previous / next

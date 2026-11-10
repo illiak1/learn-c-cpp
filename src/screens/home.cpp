@@ -4,6 +4,7 @@
 #include "app/app.h"
 #include "app/screens.h"
 #include "logic/stats.h"
+#include "content/library.h"
 #include "screens/common.h"
 
 namespace app {
@@ -69,7 +70,7 @@ public:
             if (lesson) {
                 drawText(Face::Bold, size::kH3, ellipsize(Face::Bold, size::kH3, lesson->title, hw - 190.0f), left.x + 20.0f, left.y + 38.0f, p.text);
                 if (resume && section < static_cast<int>(lesson->sections.size()))
-                    drawText(Face::Regular, 14, "Section " + lesson->sections[static_cast<size_t>(section)].id, left.x + 20.0f, left.y + 66.0f, p.textMuted);
+                    drawText(Face::Regular, 14, "Section " + content::sectionNumber(app.content(), *lesson, static_cast<size_t>(section)) + "  " + content::cleanSectionTitle(lesson->sections[static_cast<size_t>(section)].title), left.x + 20.0f, left.y + 66.0f, p.textMuted);
                 if (button(resume ? "Continue" : "Open", Rect{left.x + hw - 138.0f, left.y + 34.0f, 118.0f, 42.0f}, ButtonStyle::Primary, Icon::ChevronRight))
                     app.openLesson(lesson->id, resume ? section : 0);
             }
