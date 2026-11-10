@@ -51,6 +51,36 @@ public:
         drawIcon(Icon::Warning, warn.x + 30.0f, warn.y + warn.height / 2.0f, 22.0f, p.warning);
         drawParagraph(Face::Bold, 15, rule, warn.x + 58.0f, warn.y + 17.0f, warn.width - 76.0f, p.text);
 
+        // Saved results: best score per track and the latest exams of this track
+        col.space(6.0f);
+        drawText(Face::Bold, size::kH2, "Your results", col.x, col.y, p.text);
+        col.space(40.0f);
+        {
+            std::vector<const logic::ExamRecord*> mine;
+            for (auto it = app.progress().exams().rbegin(); it != app.progress().exams().rend() && mine.size() < 5; ++it)
+                if (it->track == app.trackKey()) mine.push_back(&*it);
+            Rect r = col.take(88.0f + std::max<size_t>(1, mine.size()) * 40.0f);
+            card(r);
+            float bx = r.x + 22.0f;
+            for (const char* key : {"c", "cpp"}) {
+                const int best = app.progress().bestExamPercent(key);
+                const std::string label = std::string("Best ") + (std::string(key) == "c" ? "C" : "C++") + ": " + (best < 0 ? "no exam yet" : std::to_string(best) + "%");
+                const bool mineTrack = app.trackKey() == key;
+                bx += badge(label, bx, r.y + 20.0f, best < 0 ? p.textMuted : mineTrack ? p.accent : p.text, best < 0 ? p.surfaceAlt : mineTrack ? p.accentSoft : p.surfaceAlt) + 8.0f;
+            }
+            drawText(Face::Bold, 13, std::string("LATEST ") + trackName(app.track()) + " EXAMS", r.x + 22.0f, r.y + 56.0f, p.textMuted);
+            if (mine.empty()) drawText(Face::Regular, 15, "No exams finished yet in this track.", r.x + 22.0f, r.y + 82.0f, p.textMuted);
+            for (size_t i = 0; i < mine.size(); ++i) {
+                const logic::ExamRecord& e = *mine[i];
+                const float y = r.y + 80.0f + 40.0f * static_cast<float>(i);
+                drawText(Face::Regular, 14, examWhen(e), r.x + 22.0f, y + 3.0f, p.textMuted);
+                drawText(Face::Regular, 15, ellipsize(Face::Regular, 15, e.title, r.width - 470.0f), r.x + 170.0f, y + 2.0f, p.text);
+                const Color c = examColor(p, e);
+                badge(std::to_string(e.earned) + " / " + std::to_string(e.total) + "  (" + std::to_string(examPercent(e)) + "%)", r.x + r.width - 250.0f, y + 1.0f, c, withAlpha(c, 0.14f));
+                drawText(Face::Regular, 13, logic::formatClock(e.seconds), r.x + r.width - 62.0f, y + 4.0f, p.textMuted);
+            }
+        }
+
         // Random exam
         col.space(6.0f);
         drawText(Face::Bold, size::kH2, "Quick exam", col.x, col.y, p.text);

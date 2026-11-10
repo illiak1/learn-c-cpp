@@ -6,6 +6,7 @@
 
 #include "app/app.h"
 #include "content/types.h"
+#include "logic/progress.h"
 
 namespace app {
 
@@ -21,6 +22,13 @@ void drawCode(ui::Column& col, const std::string& id, const std::string& code, b
 
 // Monospace output box (program output); advances the column.
 void drawOutput(ui::Column& col, const std::string& text, const std::string& caption = "");
+
+// Colour of an exam result: green from 70 percent, orange from 40, red below (or when the file did not run).
+Color examColor(const ui::Palette& p, const logic::ExamRecord& e);
+// Whole-number percent of an exam result (0 when the file did not run).
+int examPercent(const logic::ExamRecord& e);
+// "2026-11-10 14:35" (the time is missing in old records).
+std::string examWhen(const logic::ExamRecord& e);
 
 // Small uppercase label.
 void drawLabel(const std::string& text, float x, float y, Color c);

@@ -10,6 +10,18 @@ using namespace ui;
 // Small bold label (section captions, card titles).
 void drawLabel(const std::string& text, float x, float y, Color c) { drawText(Face::Bold, 12, text, x, y, c); }
 
+// Percent score of a record.
+int examPercent(const logic::ExamRecord& e) { return e.total > 0 ? e.earned * 100 / e.total : 0; }
+
+// Traffic-light colour of a result.
+Color examColor(const Palette& p, const logic::ExamRecord& e) {
+    const int pct = examPercent(e);
+    return !e.fileRan ? p.danger : pct >= 70 ? p.success : pct >= 40 ? p.warning : p.danger;
+}
+
+// Date and time of a result.
+std::string examWhen(const logic::ExamRecord& e) { return e.time.empty() ? e.date : e.date + " " + e.time; }
+
 // Title row with track badge, then subtitle.
 void pageHeader(Column& col, App& app, const std::string& title, const std::string& subtitle) {
     const Palette& p = Theme::get().colors();

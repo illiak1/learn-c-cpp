@@ -152,11 +152,12 @@ private:
         col.space(16.0f);
     }
 
-    // Recent exams of this track.
+    // Score trend and history of this track's exams, newest first.
     void drawExams(Column& col, const logic::Stats& st) {
         const Palette& p = Theme::get().colors();
-        const size_t shown = std::min<size_t>(st.exams.size(), 8);
-        Rect r = col.take(64.0f + std::max<size_t>(1, shown) * 44.0f);
+        const size_t shown = std::min<size_t>(st.exams.size(), 10);
+        const bool trend = st.exams.size() >= 2;
+        Rect r = col.take(64.0f + (trend ? 150.0f : 0.0f) + std::max<size_t>(1, shown) * 44.0f);
         card(r);
         drawText(Face::Bold, size::kH3, "Exam history", r.x + 22.0f, r.y + 18.0f, p.text);
         if (st.exams.empty()) {
@@ -164,21 +165,40 @@ private:
             col.space(16.0f);
             return;
         }
+        float y0 = r.y + 58.0f;
+        if (trend) {
+            // Score trend: one bar per exam, oldest on the left (the list below is newest first).
+            drawText(Face::Regular, 13, "Score trend (last " + std::to_string(shown) + " exams, percent of the maximum)", r.x + 22.0f, y0 - 4.0f, p.textMuted);
+            const Rect plot{r.x + 56.0f, y0 + 22.0f, r.width - 90.0f, 80.0f};
+            for (int i = 0; i <= 2; ++i) {
+                const float gy = plot.y + plot.height - plot.height * static_cast<float>(i) / 2.0f;
+                DrawLineEx(Vector2{plot.x, gy}, Vector2{plot.x + plot.width, gy}, 1.0f, withAlpha(p.border, i == 0 ? 1.0f : 0.7f));
+                drawText(Face::Regular, 12, std::to_string(i * 50) + "%", r.x + 18.0f, gy - 8.0f, p.textMuted);
+            }
+            const float slot = plot.width / static_cast<float>(shown);
+            const float barW = std::min(34.0f, slot * 0.6f);
+            for (size_t i = 0; i < shown; ++i) {
+                const logic::ExamRecord& e = st.exams[shown - 1 - i];
+                const float h = std::max(2.0f, plot.height * static_cast<float>(examPercent(e)) / 100.0f);
+                const float cx = plot.x + slot * (static_cast<float>(i) + 0.5f);
+                fillRound(Rect{cx - barW / 2.0f, plot.y + plot.height - h, barW, h}, 4.0f, examColor(p, e));
+                drawCentered(Face::Regular, 11, e.date.size() >= 10 ? e.date.substr(5, 5) : "", Rect{cx - 24.0f, plot.y + plot.height + 4.0f, 48.0f, 14.0f}, p.textMuted);
+            }
+            y0 += 150.0f;
+        }
         for (size_t i = 0; i < shown; ++i) {
             const logic::ExamRecord& e = st.exams[i];
-            const float y = r.y + 58.0f + 44.0f * static_cast<float>(i);
-            drawText(Face::Regular, 14, e.date, r.x + 22.0f, y + 4.0f, p.textMuted);
-            drawText(Face::Regular, 15, ellipsize(Face::Regular, 15, e.title, r.width - 480.0f), r.x + 130.0f, y + 3.0f, p.text);
-            const float frac = e.total ? static_cast<float>(e.earned) / static_cast<float>(e.total) : 0.0f;
-            const Color c = !e.fileRan ? p.danger : frac >= 0.7f ? p.success : frac >= 0.4f ? p.warning : p.danger;
-            std::string score = std::to_string(e.earned) + " / " + std::to_string(e.total);
-            if (!e.fileRan) score += "  (did not run)";
-            badge(score, r.x + r.width - 250.0f, y + 2.0f, c, withAlpha(c, 0.14f));
+            const float y = y0 + 44.0f * static_cast<float>(i);
+            drawText(Face::Regular, 14, examWhen(e), r.x + 22.0f, y + 4.0f, p.textMuted);
+            drawText(Face::Regular, 15, ellipsize(Face::Regular, 15, e.title, r.width - 560.0f), r.x + 170.0f, y + 3.0f, p.text);
+            const Color c = examColor(p, e);
+            std::string score = std::to_string(e.earned) + " / " + std::to_string(e.total) + "  (" + std::to_string(examPercent(e)) + "%)";
+            if (!e.fileRan) score += "  did not run";
+            badge(score, r.x + r.width - 290.0f, y + 2.0f, c, withAlpha(c, 0.14f));
             drawText(Face::Regular, 13, logic::formatClock(e.seconds), r.x + r.width - 62.0f, y + 5.0f, p.textMuted);
         }
         col.space(16.0f);
     }
-
 };
 
 }  // namespace
