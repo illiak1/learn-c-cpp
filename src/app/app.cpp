@@ -17,6 +17,10 @@ namespace app {
 
 using namespace ui;
 
+namespace {
+constexpr float kBottomPadding = 96.0f;  // empty space kept below the last element of every page
+}
+
 // ---- Small helpers --------------------------------------------------------------------------
 
 Section sectionOf(Page page) {
@@ -88,7 +92,8 @@ Column Screen::begin(Rect area) {
     return col;
 }
 
-void Screen::end(const Column& col) { scrollEnd(scroll_, viewport_, col.y + 32.0f); }
+// Ends the scroll view with generous bottom padding so the last button is never flush with the window edge.
+void Screen::end(const Column& col) { scrollEnd(scroll_, viewport_, col.y + kBottomPadding); }
 
 // ---- App ------------------------------------------------------------------------------------
 
