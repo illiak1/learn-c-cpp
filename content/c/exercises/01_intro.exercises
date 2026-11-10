@@ -110,7 +110,7 @@ do { ... } while (condition); runs the body first and tests the condition afterw
 @prompt
 Which character ends every C string? Write it the way it appears in code.
 @answer
-'\0' | \0 | the null terminator | null terminator | the null character | null character
+'\0' | \0 | '\0' character | the null terminator | null terminator | the null character | null character | nul | NUL | null byte
 @hint
 Its value is 0.
 @explain

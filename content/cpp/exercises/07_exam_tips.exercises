@@ -63,7 +63,7 @@ A wrong result fails only that function. A compile error, an infinite loop or a 
 @prompt
 Which character must follow the closing brace of a class definition?
 @answer
-; | a semicolon | semicolon
+; | a semicolon | semicolon | a ;
 @explain
 A missing semicolon after a class is one of the classic compile errors, and a compile error gives 0 for the whole exam.
 

@@ -18,7 +18,7 @@ Memory from new[] must be released with delete[]; plain delete would be undefine
 @prompt
 Which operator allocates memory on the heap and returns a pointer to it?
 @answer
-new | the new operator
+new | the new operator | new operator | operator new
 @explain
 new allocates on the heap; the memory stays until you delete it.
 

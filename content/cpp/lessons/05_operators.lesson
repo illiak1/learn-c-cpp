@@ -92,7 +92,7 @@ Check: volume of Box1 = 6*7*5 = 210; Box2 = 12*13*10 = 1560; Box3 has dimensions
   Box operator+(const Box& b) const;              // member
   Box operator+(const Box& a, const Box& b);      // non-member
 @points
-- Operators like << for streams (cout << obj) cannot be members of your class, because the left operand is the stream. Write them as free functions, declared `friend` if they need access to private fields.
+- Operators like << for streams (cout << obj) cannot be members of your class, because the left operand is the stream. Write them as free functions, declared friend if they need access to private fields.
 
 @section 5.4 Overloading ++ (prefix and postfix) and << for a Clock class
 @text

@@ -18,7 +18,7 @@ An empty list has head == nullptr, and the last node's next pointer is nullptr, 
 @prompt
 A doubly linked node has two pointers besides its data. Name them.
 @answer
-prev and next | previous and next | prevPointer and nextPointer | prev, next | next and prev | next and previous
+prev and next | previous and next | prevPointer and nextPointer | prev, next | previous, next | prevPointer, nextPointer | prev and next pointer | prev and next pointers | previous and next pointer | previous and next pointers | next and prev | next and previous | next, prev | next, previous
 @explain
 prevPointer links to the node before, nextPointer to the node after.
 

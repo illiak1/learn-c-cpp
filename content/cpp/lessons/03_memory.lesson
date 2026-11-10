@@ -178,7 +178,7 @@ how many items? enter item 0: enter item 1: enter item 2: 7
 
 @section 3.7 Dynamic 2D arrays
 @points
-- int** arr2D = new int*[rows];  creates an array of `rows` pointers (their values are not set yet).
+- int** arr2D = new int*[rows];  creates an array of rows pointers (their values are not set yet).
 - A loop then gives every row its own array:  arr2D[row] = new int[cols];
 - Access with arr2D[row][col].
 - Free in reverse order: delete[] each row first, then delete[] arr2D. Freeing arr2D first would lose the row pointers (leak).
@@ -223,7 +223,7 @@ int main() {
 5 6 7 8
 9 10 11 12
 
-@section 3.8 Memory management in c: malloc and free
+@section 3.8 Memory management in C: malloc and free
 @text
 Key points (language C; needs <stdlib.h>):
 @points

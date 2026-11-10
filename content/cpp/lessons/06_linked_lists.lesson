@@ -23,7 +23,7 @@ Operations:
 @points
 - InsertAtEnd: create the node; if the list is empty it becomes the head; otherwise walk to the last node and link the new node after it.
 - PrintList: walk from head to nullptr printing data.
-- DeleteWithValue: remove the first node holding a value. Cases: list empty; the head holds the value (move head forward); value found later (keep a `prev` pointer, set prev->nextPtr = cur->nextPtr, delete cur); value not found.
+- DeleteWithValue: remove the first node holding a value. Cases: list empty; the head holds the value (move head forward); value found later (keep a prev pointer, set prev->nextPtr = cur->nextPtr, delete cur); value not found.
 - DeleteList: walk the list and delete every node (save nextPtr before deleting the node).
 @code cpp
 #include <iostream>
@@ -144,7 +144,7 @@ void PrintList(Node* headPtr);                         // only reads
 - The same list as a class: Node has a constructor; LinkedList keeps head private and offers methods.
 - The destructor calls clear() so all nodes are freed automatically when the list goes out of scope.
 - Because the list owns heap memory it needs a copy constructor and an assignment operator that make a DEEP copy (new nodes with the same values); otherwise two lists would share nodes and delete them twice.
-- operator= first checks `this != &other` (self-assignment), clears the old content, then copies.
+- operator= first checks this != &other (self-assignment), clears the old content, then copies.
 - Methods that do not modify the list are marked const.
 @code cpp
 #include <iostream>

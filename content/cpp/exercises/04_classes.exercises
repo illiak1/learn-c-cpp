@@ -7,7 +7,7 @@
 @prompt
 What is a function that belongs to a class called?
 @answer
-method | a method | member function | a member function
+method | a method | member function | a member function | methods | class method
 @explain
 A method is called on an object (vec.print()) and works on that object's fields.
 

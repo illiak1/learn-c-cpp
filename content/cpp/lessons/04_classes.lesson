@@ -312,7 +312,7 @@ default constructor
 - Use -> to reach members through a pointer:  p->x  (same as (*p).x).
 - new Point() creates an object on the heap and returns its address; it must be freed with delete.
 - Two pointers can point to the same object; deleting it once makes both of them dangling.
-- Inside a method, `this` is a pointer to the current object; this->x is the same as x.
+- Inside a method, this is a pointer to the current object; this->x is the same as x.
 @code cpp
 #include <iostream>
 using namespace std;
@@ -354,7 +354,7 @@ int main() {
 - A static member belongs to the class itself, not to an instance.
 - Access it with ClassName::member (no object needed).
 - A static data member must be defined once outside the class (float Maths::PI = 3.14f;).
-- A static method cannot use `this` or non-static members; using them is a compile error.
+- A static method cannot use this or non-static members; using them is a compile error.
 @code cpp
 #include <iostream>
 using namespace std;

@@ -76,7 +76,7 @@ A function that must return a value needs a return on every path. Write the plac
 @prompt
 A for loop is written as  for (int i = 0; i < 5; i--)  . What kind of error is this (name the problem in two or three words)?
 @answer
-infinite loop | an infinite loop | endless loop | never ends | loop never ends
+infinite loop | an infinite loop | endless loop | an endless loop | infinite | endless | never ends | loop never ends | never-ending loop
 @explain
 i starts at 0 and gets smaller, so i < 5 stays true forever. An infinite loop gives 0 for the whole exam.
 
