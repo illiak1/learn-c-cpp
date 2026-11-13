@@ -41,7 +41,7 @@ public:
             "A wrong result fails only that function. A compile error, an infinite loop or a crash gives 0 for the whole exam.";
         static const char* steps[] = {"1  Start an exam and copy the whole file into Visual Studio.",
                                       "2  Complete the functions and run the tests at the bottom: every correct function prints yes.",
-                                      "3  Come back, finish the exam and mark each function. The review shows the reference solutions."};
+                                      "3  Come back, mark each function as solved or not solved and finish the exam. The review shows the reference solutions."};
         float stepsH = 0.0f;  // steps wrap in narrow windows, so the card height follows the text
         for (const char* s : steps) stepsH += textHeight(Face::Regular, 15, s, col.w - 44.0f) + 2.0f;
         Rect how = col.take(52.0f + stepsH + 14.0f);
@@ -114,7 +114,7 @@ public:
         }
         const std::string drawn = "Drawn from " + std::to_string(pool) + " tasks";
         drawText(Face::Regular, 15, drawn, quick.x + quick.width - 22.0f - Theme::get().textWidth(Face::Regular, 15, drawn), quick.y + 20.0f, p.textMuted);
-        if (button("Start random exam", Rect{quick.x + quick.width - 210.0f, quick.y + (stacked ? 170.0f : 116.0f), 190.0f, 44.0f}, ButtonStyle::Primary, Icon::Play, pool > 0)) {
+        if (button("Start exam", Rect{quick.x + quick.width - 210.0f, quick.y + (stacked ? 170.0f : 116.0f), 190.0f, 44.0f}, ButtonStyle::Primary, Icon::Play, pool > 0)) {
             std::mt19937 rng(std::random_device{}());
             app.beginExam(logic::makeRandomExam(tc, count_, minutes_, rng));
         }

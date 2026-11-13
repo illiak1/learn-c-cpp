@@ -215,8 +215,12 @@ void App::beginExam(logic::Exam exam) {
 }
 
 // Asks for confirmation before ending the running exam; the clock keeps running meanwhile.
+// The code is written and tested in the student's IDE, so the text only talks about the self-check marks.
 void App::requestFinishExam() {
-    openModal("finish-exam", ModalOpts{"Finish exam", "Finish the exam now? Unanswered tasks will score 0.", "Finish exam", "Keep working", true});
+    const bool anySolved = std::count(exam_.marks.begin(), exam_.marks.end(), static_cast<signed char>(1)) > 0;
+    const std::string message = anySolved ? "Finish the exam now? Tasks not marked as solved will not count."
+                                          : "Finish the exam now? No tasks are marked as solved yet.";
+    openModal("finish-exam", ModalOpts{"Finish exam", message + " You can still change the marks in the review.", "Finish exam", "Keep working", true});
 }
 
 // Asks for confirmation before erasing answers, streak and exam history.

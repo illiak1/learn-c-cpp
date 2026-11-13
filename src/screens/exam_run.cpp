@@ -34,6 +34,7 @@ public:
             return;
         }
         current_ = std::clamp(current_, 0, static_cast<int>(tasks.size()) - 1);
+        exam.marks.resize(tasks.size(), -1);
 
         // Clock
         const double elapsed = GetTime() - exam.startedAt;
@@ -80,6 +81,11 @@ public:
                 current_ = static_cast<int>(i);
                 scroll_.offset = 0.0f;
             }
+            // Self-check mark of the task: green dot = solved, red dot = not solved.
+            if (exam.marks[i] >= 0) {
+                DrawCircleV(Vector2{x + w - 5.0f, col.y + 5.0f}, 6.5f, p.bg);
+                DrawCircleV(Vector2{x + w - 5.0f, col.y + 5.0f}, 4.5f, exam.marks[i] == 1 ? p.success : p.danger);
+            }
             x += w + 8.0f;
         }
         col.space(48.0f);
@@ -117,6 +123,8 @@ public:
                                          col.x, col.y, col.w, p.textMuted);
         col.space(hint + 18.0f);
 
+        drawSelfCheck(col, exam, static_cast<size_t>(current_));
+
         // Previous / next
         if (current_ > 0 && button("Previous task", Rect{col.x, col.y, 160.0f, 40.0f}, ButtonStyle::Ghost, Icon::ChevronLeft)) {
             --current_;
@@ -132,6 +140,30 @@ public:
     }
 
 private:
+    // Self-check of one task: the student ran the tests in the IDE and records the result here.
+    // The marks are the same ones the review page shows; clicking the chosen answer again clears it.
+    void drawSelfCheck(Column& col, logic::Exam& exam, size_t index) {
+        const Palette& p = Theme::get().colors();
+        const std::string note = "Ran the tests in your IDE? Mark this function. Tasks not marked as solved do not count.";
+        const float btnW = 136.0f, btnGap = 10.0f;
+        const bool stacked = col.w < 700.0f;  // narrow window: buttons go under the text
+        const float textW = col.w - 44.0f - (stacked ? 0.0f : 2.0f * btnW + btnGap + 20.0f);
+        const float noteH = textHeight(Face::Regular, 15, note, textW);
+        const float bodyH = 46.0f + noteH;
+        Rect r = col.take(stacked ? bodyH + 12.0f + 40.0f + 18.0f : std::max(84.0f, bodyH + 18.0f));
+        signed char& mark = exam.marks[index];
+        tintedCard(r, mark == 1 ? p.successSoft : p.surface, mark == 1 ? withAlpha(p.success, 0.6f) : mark == 0 ? withAlpha(p.danger, 0.6f) : p.border);
+        drawText(Face::Bold, size::kH3, "Self-check", r.x + 22.0f, r.y + 16.0f, p.text);
+        drawParagraph(Face::Regular, 15, note, r.x + 22.0f, r.y + 46.0f, textW, p.textMuted);
+        const float by = stacked ? r.y + bodyH + 12.0f : r.y + (r.height - 40.0f) / 2.0f;
+        const float bx = stacked ? r.x + 22.0f : r.x + r.width - 22.0f - 2.0f * btnW - btnGap;
+        if (button("Solved", Rect{bx, by, btnW, 40.0f}, mark == 1 ? ButtonStyle::Success : ButtonStyle::Secondary, Icon::Check))
+            mark = mark == 1 ? -1 : 1;
+        if (button("Not solved", Rect{bx + btnW + btnGap, by, btnW, 40.0f}, mark == 0 ? ButtonStyle::Danger : ButtonStyle::Secondary, Icon::Cross))
+            mark = mark == 0 ? -1 : 0;
+        col.space(6.0f);
+    }
+
     int current_ = 0;
     double startedAt_ = -1.0;
 };
