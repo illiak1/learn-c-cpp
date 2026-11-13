@@ -259,11 +259,10 @@ void App::drawSidebar(Rect r) {
     DrawRectangleRec(r, p.surface);
     DrawLineEx(Vector2{r.x + r.width - 0.5f, r.y}, Vector2{r.x + r.width - 0.5f, r.y + r.height}, 1.0f, p.border);
 
-    // Logo
+    // Logo: a flat badge that names the selected track
     Rect mark{r.x + 20.0f, r.y + 22.0f, 38.0f, 38.0f};
-    shadowRound(mark, 10.0f, withAlpha(p.accent, 0.3f));
     fillRound(mark, 10.0f, p.accent);
-    drawCentered(Face::Bold, 17, "C++", mark, p.textOnAccent);
+    drawCentered(Face::Bold, track_ == Track::C ? 20 : 17, trackName(track_), mark, p.textOnAccent);
     drawText(Face::Bold, 18, "Exam Trainer", r.x + 70.0f, r.y + 24.0f, p.text);
     drawText(Face::Regular, 13, "C and C++ practice", r.x + 70.0f, r.y + 43.0f, p.textMuted);
 
