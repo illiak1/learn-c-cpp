@@ -97,12 +97,17 @@ public:
         col.space(drawParagraph(Face::Bold, size::kH2, content::sectionNumber(app.content(), *lesson, static_cast<size_t>(sel)) + "  " + content::cleanSectionTitle(sec.title), col.x, col.y, col.w, p.text) + 14.0f);
         drawBlocks(col, sec.blocks, app.track() == Track::Cpp, lesson->id + "/" + sec.id);
 
-        // Previous / next
+        // Previous / next; the last section offers the way back to the topic list instead of "Next"
         col.space(8.0f);
-        if (sel > 0 && button("Previous", Rect{col.x, col.y, 140.0f, 40.0f}, ButtonStyle::Secondary, Icon::ChevronLeft)) sel--;
-        if (sel < sections - 1 &&
-            button("Next section", Rect{col.x + col.w - 170.0f, col.y, 170.0f, 40.0f}, ButtonStyle::Primary, Icon::ChevronRight))
-            sel++;
+        const int shown = sel;
+        if (shown > 0 && button("Previous", Rect{col.x, col.y, 140.0f, 40.0f}, ButtonStyle::Secondary, Icon::ChevronLeft)) sel--;
+        if (shown < sections - 1) {
+            if (button("Next section", Rect{col.x + col.w - 170.0f, col.y, 170.0f, 40.0f}, ButtonStyle::Primary, Icon::ChevronRight)) sel++;
+        } else if (button("Back to Lessons", Rect{col.x + col.w - 200.0f, col.y, 200.0f, 40.0f}, ButtonStyle::Primary, Icon::List)) {
+            app.go(Page::Lessons);
+            end(col);
+            return;
+        }
         col.space(48.0f);
         if (sel != app.lessonSection()) {
             app.setLessonSection(sel);
