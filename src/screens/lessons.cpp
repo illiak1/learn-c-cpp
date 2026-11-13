@@ -17,6 +17,13 @@ public:
     // Draws the lesson list.
     void draw(App& app, Rect area) override {
         const Palette& p = Theme::get().colors();
+        // Answer of the "reset this topic?" dialog opened by a card's Reset button.
+        if (takeModalResult("reset-topic") == ModalResult::Confirm && !resetId_.empty()) {
+            app.progress().resetLesson(app.trackKey(), resetId_);
+            app.saveProgress();
+            Context::get().toast("Topic progress reset");
+            resetId_.clear();
+        }
         Column col = begin(area);
         pageHeader(col, app, "Lessons", "Read the lecture notes topic by topic. Every example is complete and its output is real.");
         const auto& lessons = app.content().lessons;
@@ -26,7 +33,7 @@ public:
             drawCentered(Face::Regular, size::kBody, "No lessons found for this track.", r, p.textMuted);
         }
         // Card layout: number tile, then a text column (title, wrapped summary, progress bar below the text)
-        // and a fixed right column for the "read" badge and the chevron. The card grows with the summary.
+        // and a fixed right column for the "read" badge, the chevron and the Reset button. The card grows with the summary.
         const float textX = 90.0f, rightW = 200.0f;
         int index = 0;
         for (const content::Lesson& l : lessons) {
@@ -46,13 +53,23 @@ public:
             progressBar(Rect{r.x + textX, r.y + std::max(barY, r.height - 24.0f), textW, 6.0f},
                         l.sections.empty() ? 0.0f : static_cast<float>(read) / static_cast<float>(l.sections.size()), p.accent);
             const std::string count = std::to_string(read) + " / " + std::to_string(l.sections.size()) + " read";
-            badge(count, r.x + r.width - badgeWidth(count) - 56.0f, midY - 11.0f, p.textMuted, p.surfaceAlt);
+            badge(count, r.x + r.width - badgeWidth(count) - 56.0f, read > 0 ? midY - 27.0f : midY - 11.0f, p.textMuted, p.surfaceAlt);
             drawIcon(Icon::ChevronRight, r.x + r.width - 30.0f, midY, 18.0f, p.textMuted);
+            // Per-topic reset (only when there is something to reset). Drawn after the card, so a click
+            // on it belongs to the button and does not open the lesson.
+            if (read > 0 && button("Reset", Rect{r.x + r.width - 56.0f - 96.0f, midY + 2.0f, 96.0f, 30.0f}, ButtonStyle::Secondary, Icon::Refresh)) {
+                resetId_ = l.id;
+                openModal("reset-topic", ModalOpts{"Reset topic progress", "Mark all sections of \"" + l.title + "\" as unread? Practice answers and exam results are kept.",
+                                                   "Reset topic", "Keep progress", true});
+            }
             Context::get().popId();
             if (clicked) app.openLesson(l.id, 0);
         }
         end(col);
     }
+
+private:
+    std::string resetId_;  // lesson waiting for the reset confirmation
 };
 
 // Reader for one lesson: header, section chips, section content, previous/next.

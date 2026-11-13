@@ -84,6 +84,8 @@ public:
     // Lessons: sections the student has opened.
     void markSectionRead(const std::string& track, const std::string& lesson, const std::string& section);
     int sectionsRead(const std::string& track, const std::string& lesson) const;
+    // Forgets the opened sections of one lesson (and the "continue" position when it points into it).
+    void resetLesson(const std::string& track, const std::string& lesson);
     void setLastLesson(const std::string& track, const std::string& lesson, int section);
     bool lastLesson(const std::string& track, std::string& lesson, int& section) const;
 

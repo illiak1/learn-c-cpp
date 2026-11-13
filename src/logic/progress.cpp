@@ -346,6 +346,24 @@ int Progress::sectionsRead(const std::string& tr, const std::string& lesson) con
     return n;
 }
 
+// Marks every section of one lesson as unread; answers, exams and the streak are untouched.
+void Progress::resetLesson(const std::string& tr, const std::string& lesson) {
+    const std::string prefix = tr + "\t" + lesson + "\t";
+    for (auto it = sections_.begin(); it != sections_.end();) {
+        if (it->rfind(prefix, 0) == 0) {
+            it = sections_.erase(it);
+            dirty_ = true;
+        } else {
+            ++it;
+        }
+    }
+    const auto last = lastLesson_.find(tr);
+    if (last != lastLesson_.end() && last->second.first == lesson) {
+        lastLesson_.erase(last);
+        dirty_ = true;
+    }
+}
+
 // Remembers the lesson section to continue from.
 void Progress::setLastLesson(const std::string& tr, const std::string& lesson, int section) {
     auto& slot = lastLesson_[tr];

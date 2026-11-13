@@ -257,3 +257,27 @@ TEST(reset_clears_exam_history) {
     CHECK_EQ(p.wrongExercises("c").size(), 0u);
     CHECK_EQ(p.bestExamPercent("c"), -1);
 }
+
+TEST(reset_lesson_clears_only_that_lesson) {
+    Progress p;
+    p.markSectionRead("c", "01_intro", "1.1");
+    p.markSectionRead("c", "01_intro", "1.2");
+    p.markSectionRead("c", "02_pointers", "2.1");
+    p.markSectionRead("cpp", "01_intro", "1.1");
+    p.setLastLesson("c", "01_intro", 1);
+    p.setLastLesson("cpp", "01_intro", 0);
+    p.recordAnswer("c", "q1", true, "2026-11-10");
+    p.resetLesson("c", "01_intro");
+    CHECK_EQ(p.sectionsRead("c", "01_intro"), 0);
+    CHECK_EQ(p.sectionsRead("c", "02_pointers"), 1);
+    CHECK_EQ(p.sectionsRead("cpp", "01_intro"), 1);
+    std::string lesson;
+    int section = 0;
+    CHECK(!p.lastLesson("c", lesson, section));
+    CHECK(p.lastLesson("cpp", lesson, section));
+    CHECK(p.exercise("c", "q1") != nullptr);
+    CHECK(p.dirty());
+    // A lesson that was never opened changes nothing.
+    p.resetLesson("c", "09_missing");
+    CHECK_EQ(p.sectionsRead("c", "02_pointers"), 1);
+}
