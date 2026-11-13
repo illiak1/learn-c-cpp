@@ -341,7 +341,8 @@ void wrapParagraph(Face face, int px, const std::string& para, float width, std:
 const std::vector<std::string>& wrapLines(Face face, int px, const std::string& text, float width) {
     auto& cache = wrapCache();
     if (cache.size() > 4000) cache.clear();
-    WrapKey key{static_cast<int>(face), px, static_cast<int>(width), text};
+    // Keyed by the physical size: the same text wraps differently after a display scale change.
+    WrapKey key{static_cast<int>(face), Theme::get().pixelSize(px), static_cast<int>(width), text};
     auto it = cache.find(key);
     if (it != cache.end()) return it->second;
 

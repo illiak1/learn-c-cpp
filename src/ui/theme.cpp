@@ -1,6 +1,8 @@
 // theme.cpp - palette definitions and the font cache.
 #include "ui/theme.h"
 
+#include <algorithm>
+#include <cmath>
 #include <vector>
 
 namespace ui {
@@ -112,8 +114,18 @@ void Theme::shutdown() {
     fonts_.clear();
 }
 
-// Loads (once) and returns a font of the given face and pixel size.
-const Font& Theme::font(Face face, int px) {
+// Stores the display scale (clamped to a sane range); fonts for the new scale load on first use.
+void Theme::setScale(float s) { scale_ = std::clamp(s, 0.5f, 4.0f); }
+
+// Text size in physical pixels.
+int Theme::pixelSize(int px) const { return std::max(1, static_cast<int>(std::lround(static_cast<float>(px) * scale_))); }
+
+// Nearest physical pixel, expressed in logical coordinates.
+float Theme::snap(float v) const { return std::round(v * scale_) / scale_; }
+
+// Loads (once) and returns a font of the given face, rasterised at the physical pixel size.
+const Font& Theme::font(Face face, int logicalPx) {
+    const int px = pixelSize(logicalPx);
     const auto key = std::make_pair(static_cast<int>(face), px);
     auto it = fonts_.find(key);
     if (it != fonts_.end()) return it->second;
@@ -131,7 +143,7 @@ const Font& Theme::font(Face face, int px) {
 
 // Width of a string in the given face and size.
 float Theme::textWidth(Face face, int px, const std::string& text) {
-    return MeasureTextEx(font(face, px), text.c_str(), static_cast<float>(px), 0).x;
+    return MeasureTextEx(font(face, px), text.c_str(), drawSize(px), 0).x;
 }
 
 // Width of one glyph of the monospace font.
@@ -151,10 +163,11 @@ Color mix(Color a, Color b, float t) {
     return Color{l(a.r, b.r), l(a.g, b.g), l(a.b, b.b), l(a.a, b.a)};
 }
 
-// Draws a string with the themed font; returns the drawn width.
+// Draws a string with the themed font; returns the drawn width. The origin is rounded to a whole
+// screen pixel: with the bilinear filter a glyph drawn between two pixels is smeared over both.
 float drawText(Face face, int px, const std::string& text, float x, float y, Color color) {
     Theme& th = Theme::get();
-    DrawTextEx(th.font(face, px), text.c_str(), Vector2{x, y}, static_cast<float>(px), 0, color);
+    DrawTextEx(th.font(face, px), text.c_str(), Vector2{th.snap(x), th.snap(y)}, th.drawSize(px), 0, color);
     return th.textWidth(face, px, text);
 }
 

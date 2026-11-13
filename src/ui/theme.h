@@ -43,7 +43,7 @@ inline constexpr int kH1 = 34;
 inline constexpr int kCode = 15;
 }  // namespace size
 
-// Owns the palettes and a lazy cache of fonts per (face, pixel size).
+// Owns the palettes and a lazy cache of fonts per (face, physical pixel size).
 class Theme {
 public:
     static Theme& get();
@@ -60,12 +60,23 @@ public:
     void toggleMode() { mode_ = mode_ == ThemeMode::Light ? ThemeMode::Dark : ThemeMode::Light; }
     const Palette& colors() const { return mode_ == ThemeMode::Light ? light_ : dark_; }
 
-    // Returns the font for a face at a pixel size (loaded on first use).
+    // Display scale of the window (1 on a normal screen, 2 on a "retina" one). Fonts are rasterised at
+    // px * scale so that one glyph texel covers exactly one screen pixel.
+    float scale() const { return scale_; }
+    void setScale(float s);
+    // Physical pixel size a logical text size is rasterised at.
+    int pixelSize(int px) const;
+    // Logical size to draw and measure a text size with (pixelSize / scale; equals px when scale is 1).
+    float drawSize(int px) const { return static_cast<float>(pixelSize(px)) / scale_; }
+    // Rounds a logical coordinate to the nearest physical pixel.
+    float snap(float v) const;
+
+    // Returns the font for a face at a logical pixel size (loaded on first use).
     const Font& font(Face face, int px);
     // Measures text width in pixels.
     float textWidth(Face face, int px, const std::string& text);
-    // Height of one line of text at a size.
-    float lineHeight(int px) const { return px * 1.45f; }
+    // Height of one line of text at a size (whole pixels, so every line starts on the pixel grid).
+    float lineHeight(int px) const { return static_cast<float>(static_cast<int>(static_cast<float>(px) * 1.45f + 0.5f)); }
     // Advance of one monospace glyph at a size.
     float monoAdvance(int px);
 
@@ -73,6 +84,7 @@ private:
     Theme();
     std::string assetsDir_;
     ThemeMode mode_ = ThemeMode::Light;
+    float scale_ = 1.0f;
     Palette light_{};
     Palette dark_{};
     std::map<std::pair<int, int>, Font> fonts_;
@@ -82,7 +94,7 @@ private:
 Color withAlpha(Color c, float alpha);
 Color mix(Color a, Color b, float t);
 
-// Draws text with a themed font at a position (top-left), returns its width.
+// Draws text with a themed font at a position (top-left, snapped to the pixel grid), returns its width.
 float drawText(Face face, int px, const std::string& text, float x, float y, Color color);
 
 }  // namespace ui

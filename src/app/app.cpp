@@ -20,7 +20,19 @@ using namespace ui;
 
 namespace {
 constexpr float kBottomPadding = 96.0f;  // empty space kept below the last element of every page
+constexpr int kMinW = 960, kMinH = 600;  // smallest window, in logical pixels
+
+// Applies the minimum window size. The window system counts physical pixels on Windows and X11,
+// so the limit grows with the display scale there; macOS already works in logical points.
+void applyMinSize(float scale) {
+#if defined(__APPLE__)
+    (void)scale;
+    SetWindowMinSize(kMinW, kMinH);
+#else
+    SetWindowMinSize(static_cast<int>(static_cast<float>(kMinW) * scale), static_cast<int>(static_cast<float>(kMinH) * scale));
+#endif
 }
+}  // namespace
 
 // ---- Small helpers --------------------------------------------------------------------------
 
@@ -310,6 +322,12 @@ void App::drawSidebar(Rect r) {
 // One frame: input, sidebar, current page.
 void App::frame() {
     Context& cx = Context::get();
+    // Follow the display scale (it changes when the window moves to another monitor).
+    const float scale = GetWindowScaleDPI().x;
+    if (scale != Theme::get().scale()) {
+        Theme::get().setScale(scale);
+        applyMinSize(Theme::get().scale());
+    }
     cx.beginFrame();
     const Palette& p = Theme::get().colors();
     BeginDrawing();
@@ -331,15 +349,18 @@ void App::frame() {
 
 // Opens the window, loads content and progress, and runs the frame loop until the window closes.
 int App::run() {
-    SetConfigFlags(FLAG_WINDOW_RESIZABLE | FLAG_VSYNC_HINT | FLAG_MSAA_4X_HINT);
+    // High-DPI: the layout stays in logical pixels, Raylib scales the frame and the fonts are rasterised
+    // at the physical size (see Theme::setScale), so text is not stretched on scaled displays.
+    SetConfigFlags(FLAG_WINDOW_RESIZABLE | FLAG_VSYNC_HINT | FLAG_MSAA_4X_HINT | FLAG_WINDOW_HIGHDPI);
     InitWindow(options_.width, options_.height, "Exam Trainer - C and C++");
-    SetWindowMinSize(960, 600);
+    applyMinSize(GetWindowScaleDPI().x);
     SetTargetFPS(60);
     SetExitKey(KEY_NULL);
     Context::get().ignoreMouse = !options_.screenshot.empty();
 
     Theme& th = Theme::get();
     th.init((platform::resourceRoot() / "assets").string());
+    th.setScale(GetWindowScaleDPI().x);
     th.preload();
     const auto progressFile = platform::userDataDir() / "progress.txt";
     progress_.load(progressFile);

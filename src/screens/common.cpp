@@ -65,7 +65,7 @@ void drawOutput(Column& col, const std::string& text, const std::string& caption
     drawText(Face::Bold, 14, caption.empty() ? "Output" : caption, col.x, col.y, p.textMuted);
     col.space(24.0f);
     const int px = size::kCode;
-    const float lh = static_cast<float>(px) * 1.5f;
+    const float lh = static_cast<float>(static_cast<int>(static_cast<float>(px) * 1.5f + 0.5f));
     const size_t lines = static_cast<size_t>(std::count(text.begin(), text.end(), '\n')) + 1;
     Rect r{col.x, col.y, col.w, static_cast<float>(lines) * lh + 24.0f};
     fillRound(r, 10.0f, p.surfaceAlt);

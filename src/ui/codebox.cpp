@@ -29,7 +29,7 @@ std::vector<std::string> splitLines(const std::string& code) {
 }
 
 // Line height used inside code boxes.
-float codeLineHeight(int px) { return static_cast<float>(px) * 1.5f; }
+float codeLineHeight(int px) { return static_cast<float>(static_cast<int>(static_cast<float>(px) * 1.5f + 0.5f)); }
 
 }  // namespace
 
