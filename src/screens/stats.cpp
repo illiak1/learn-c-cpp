@@ -45,14 +45,20 @@ public:
 
         // Top cards
         const float gap = 14.0f;
-        const float cw = (col.w - 3.0f * gap) / 4.0f;
+        const bool grid = (col.w - 3.0f * gap) / 4.0f < 200.0f;  // narrow window: two rows of two
+        const float cw = grid ? (col.w - gap) / 2.0f : (col.w - 3.0f * gap) / 4.0f;
         const float ch = 132.0f;
         const int pct = static_cast<int>(std::lround(st.accuracy() * 100.0));
-        statCard(Rect{col.x, col.y, cw, ch}, Icon::Flame, p.warning, std::to_string(st.streak) + (st.streak == 1 ? " day" : " days"), "STREAK", "Best: " + std::to_string(st.bestStreak) + " days");
-        statCard(Rect{col.x + (cw + gap), col.y, cw, ch}, Icon::Pencil, p.accent, std::to_string(st.attempts), "ANSWERS", std::to_string(st.seen) + " of " + std::to_string(st.exercises) + " questions seen");
-        statCard(Rect{col.x + 2.0f * (cw + gap), col.y, cw, ch}, Icon::Check, p.success, st.attempts ? std::to_string(pct) + "%" : "-", "ACCURACY", std::to_string(st.correct) + " of " + std::to_string(st.attempts) + " correct");
-        statCard(Rect{col.x + 3.0f * (cw + gap), col.y, cw, ch}, Icon::Cross, p.danger, std::to_string(st.mistakes + st.failedTasks), "TO REVIEW", std::to_string(st.mistakes) + " questions, " + std::to_string(st.failedTasks) + " functions");
-        col.space(ch + 22.0f);
+        // Position of the n-th top card in a row of four or in a 2x2 grid.
+        auto cell = [&](int n) {
+            return grid ? Rect{col.x + static_cast<float>(n % 2) * (cw + gap), col.y + static_cast<float>(n / 2) * (ch + gap), cw, ch}
+                        : Rect{col.x + static_cast<float>(n) * (cw + gap), col.y, cw, ch};
+        };
+        statCard(cell(0), Icon::Flame, p.warning, std::to_string(st.streak) + (st.streak == 1 ? " day" : " days"), "STREAK", "Best: " + std::to_string(st.bestStreak) + " days");
+        statCard(cell(1), Icon::Pencil, p.accent, std::to_string(st.attempts), "ANSWERS", std::to_string(st.seen) + " of " + std::to_string(st.exercises) + " questions seen");
+        statCard(cell(2), Icon::Check, p.success, st.attempts ? std::to_string(pct) + "%" : "-", "ACCURACY", std::to_string(st.correct) + " of " + std::to_string(st.attempts) + " correct");
+        statCard(cell(3), Icon::Cross, p.danger, std::to_string(st.mistakes + st.failedTasks), "TO REVIEW", std::to_string(st.mistakes) + " questions, " + std::to_string(st.failedTasks) + " functions");
+        col.space((grid ? 2.0f * ch + gap : ch) + 22.0f);
 
         drawActivity(col, st);
         drawByType(col, st);

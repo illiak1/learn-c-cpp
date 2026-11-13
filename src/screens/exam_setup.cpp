@@ -39,13 +39,16 @@ public:
         // How it works + the exam rule
         const std::string rule =
             "A wrong result fails only that function. A compile error, an infinite loop or a crash gives 0 for the whole exam.";
-        Rect how = col.take(134.0f);
-        card(how);
-        drawText(Face::Bold, size::kH3, "How it works", how.x + 22.0f, how.y + 18.0f, p.text);
         static const char* steps[] = {"1  Start an exam and copy the whole file into Visual Studio.",
                                       "2  Complete the functions and run the tests at the bottom: every correct function prints yes.",
                                       "3  Come back, finish the exam and mark each function. The review shows the reference solutions."};
-        for (int i = 0; i < 3; ++i) drawParagraph(Face::Regular, 15, steps[i], how.x + 22.0f, how.y + 52.0f + 24.0f * static_cast<float>(i), how.width - 44.0f, p.textMuted);
+        float stepsH = 0.0f;  // steps wrap in narrow windows, so the card height follows the text
+        for (const char* s : steps) stepsH += textHeight(Face::Regular, 15, s, col.w - 44.0f) + 2.0f;
+        Rect how = col.take(52.0f + stepsH + 14.0f);
+        card(how);
+        drawText(Face::Bold, size::kH3, "How it works", how.x + 22.0f, how.y + 18.0f, p.text);
+        float stepY = how.y + 52.0f;
+        for (const char* s : steps) stepY += drawParagraph(Face::Regular, 15, s, how.x + 22.0f, stepY, how.width - 44.0f, p.textMuted) + 2.0f;
         Rect warn = col.take(textHeight(Face::Bold, 15, rule, col.w - 76.0f) + 34.0f);
         tintedCard(warn, p.warningSoft, withAlpha(p.warning, 0.5f));
         drawIcon(Icon::Warning, warn.x + 30.0f, warn.y + warn.height / 2.0f, 22.0f, p.warning);
@@ -85,7 +88,12 @@ public:
         col.space(6.0f);
         drawText(Face::Bold, size::kH2, "Quick exam", col.x, col.y, p.text);
         col.space(40.0f);
-        Rect quick = col.take(190.0f);
+        static const int times[] = {30, 45, 60, 90, 0};
+        float timeChipsW = 22.0f;
+        for (int t : times) timeChipsW += chipWidth(t == 0 ? "No limit" : std::to_string(t) + " min") + 6.0f + 8.0f;
+        // In a narrow window the time chips reach the start button: it then gets its own row.
+        const bool stacked = timeChipsW + 8.0f > col.w - 210.0f;
+        Rect quick = col.take(stacked ? 236.0f : 190.0f);
         card(quick);
         const int pool = static_cast<int>(tc.tasks.size());
         drawText(Face::Bold, 15, "Number of functions", quick.x + 22.0f, quick.y + 20.0f, p.textMuted);
@@ -97,7 +105,6 @@ public:
             x += 60.0f;
         }
         drawText(Face::Bold, 15, "Time limit", quick.x + 22.0f, quick.y + 94.0f, p.textMuted);
-        static const int times[] = {30, 45, 60, 90, 0};
         x = quick.x + 22.0f;
         for (int t : times) {
             const std::string label = t == 0 ? "No limit" : std::to_string(t) + " min";
@@ -105,8 +112,9 @@ public:
             if (chip(label, Rect{x, quick.y + 120.0f, w, 32.0f}, minutes_ == t)) minutes_ = t;
             x += w + 8.0f;
         }
-        drawText(Face::Regular, 15, "Drawn from " + std::to_string(pool) + " tasks", quick.x + quick.width - 330.0f, quick.y + 30.0f, p.textMuted);
-        if (button("Start random exam", Rect{quick.x + quick.width - 210.0f, quick.y + 116.0f, 190.0f, 44.0f}, ButtonStyle::Primary, Icon::Play, pool > 0)) {
+        const std::string drawn = "Drawn from " + std::to_string(pool) + " tasks";
+        drawText(Face::Regular, 15, drawn, quick.x + quick.width - 22.0f - Theme::get().textWidth(Face::Regular, 15, drawn), quick.y + 20.0f, p.textMuted);
+        if (button("Start random exam", Rect{quick.x + quick.width - 210.0f, quick.y + (stacked ? 170.0f : 116.0f), 190.0f, 44.0f}, ButtonStyle::Primary, Icon::Play, pool > 0)) {
             std::mt19937 rng(std::random_device{}());
             app.beginExam(logic::makeRandomExam(tc, count_, minutes_, rng));
         }

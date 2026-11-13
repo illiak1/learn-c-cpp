@@ -25,23 +25,30 @@ public:
             card(r);
             drawCentered(Face::Regular, size::kBody, "No lessons found for this track.", r, p.textMuted);
         }
+        // Card layout: number tile, then a text column (title, wrapped summary, progress bar below the text)
+        // and a fixed right column for the "read" badge and the chevron. The card grows with the summary.
+        const float textX = 90.0f, rightW = 200.0f;
         int index = 0;
         for (const content::Lesson& l : lessons) {
-            Rect r = col.take(104.0f);
+            const float textW = col.w - textX - rightW;
+            const float sumH = l.summary.empty() ? 0.0f : textHeight(Face::Regular, 15, l.summary, textW);
+            const float barY = 50.0f + sumH + 10.0f;
+            Rect r = col.take(std::max(104.0f, barY + 6.0f + 18.0f));
             Context::get().pushId(l.id);
             const bool clicked = cardButton("card", r);
-            Context::get().popId();
-            Rect num{r.x + 20.0f, r.y + 26.0f, 52.0f, 52.0f};
+            const float midY = r.y + r.height / 2.0f;
+            Rect num{r.x + 20.0f, midY - 26.0f, 52.0f, 52.0f};
             fillRound(num, 14.0f, p.accentSoft);
             drawCentered(Face::Bold, size::kH2, std::to_string(++index), num, p.accent);
-            drawText(Face::Bold, size::kH3, l.title, r.x + 90.0f, r.y + 22.0f, p.text);
-            drawParagraph(Face::Regular, 15, l.summary, r.x + 90.0f, r.y + 50.0f, r.width - 90.0f - 190.0f, p.textMuted);
+            drawText(Face::Bold, size::kH3, ellipsize(Face::Bold, size::kH3, l.title, textW), r.x + textX, r.y + 22.0f, p.text);
+            drawParagraph(Face::Regular, 15, l.summary, r.x + textX, r.y + 50.0f, textW, p.textMuted);
             const int read = app.progress().sectionsRead(app.trackKey(), l.id);
-            progressBar(Rect{r.x + 90.0f, r.y + r.height - 22.0f, r.width - 190.0f, 6.0f},
+            progressBar(Rect{r.x + textX, r.y + std::max(barY, r.height - 24.0f), textW, 6.0f},
                         l.sections.empty() ? 0.0f : static_cast<float>(read) / static_cast<float>(l.sections.size()), p.accent);
             const std::string count = std::to_string(read) + " / " + std::to_string(l.sections.size()) + " read";
-            badge(count, r.x + r.width - badgeWidth(count) - 56.0f, r.y + 41.0f, p.textMuted, p.surfaceAlt);
-            drawIcon(Icon::ChevronRight, r.x + r.width - 30.0f, r.y + 52.0f, 18.0f, p.textMuted);
+            badge(count, r.x + r.width - badgeWidth(count) - 56.0f, midY - 11.0f, p.textMuted, p.surfaceAlt);
+            drawIcon(Icon::ChevronRight, r.x + r.width - 30.0f, midY, 18.0f, p.textMuted);
+            Context::get().popId();
             if (clicked) app.openLesson(l.id, 0);
         }
         end(col);

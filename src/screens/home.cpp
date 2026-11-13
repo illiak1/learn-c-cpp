@@ -1,4 +1,5 @@
 // home.cpp - dashboard page: welcome card, quick links and the "before the exam" tips.
+#include <algorithm>
 #include <cmath>
 
 #include "app/app.h"
@@ -13,6 +14,11 @@ using namespace ui;
 
 namespace {
 
+// Height a stat tile of the given width needs: the caption wraps in narrow windows.
+float miniStatHeight(float w, const std::string& caption) {
+    return std::max(84.0f, 50.0f + textHeight(Face::Regular, 14, caption, w - 74.0f - 14.0f) + 14.0f);
+}
+
 // Small stat tile: icon, big value and caption.
 void miniStat(Rect r, Icon icon, Color accent, const std::string& value, const std::string& caption) {
     const Palette& p = Theme::get().colors();
@@ -21,7 +27,7 @@ void miniStat(Rect r, Icon icon, Color accent, const std::string& value, const s
     fillRound(ic, 12.0f, withAlpha(accent, 0.14f));
     drawIcon(icon, ic.x + 22.0f, ic.y + 22.0f, 22.0f, accent);
     drawText(Face::Bold, 24, value, r.x + 74.0f, r.y + 16.0f, p.text);
-    drawText(Face::Regular, 14, caption, r.x + 74.0f, r.y + 50.0f, p.textMuted);
+    drawParagraph(Face::Regular, 14, caption, r.x + 74.0f, r.y + 50.0f, r.width - 74.0f - 14.0f, p.textMuted);
 }
 
 class HomeScreen : public Screen {
@@ -47,17 +53,22 @@ public:
         const logic::DayRecord today = app.progress().day(logic::todayString());
         const float sgap = 16.0f;
         const float sw = (col.w - 2.0f * sgap) / 3.0f;
-        miniStat(Rect{col.x, col.y, sw, 84.0f}, Icon::Flame, p.warning, std::to_string(st.streak) + (st.streak == 1 ? " day" : " days"), "current streak");
-        miniStat(Rect{col.x + sw + sgap, col.y, sw, 84.0f}, Icon::Pencil, p.accent, std::to_string(today.answered), "questions answered today");
-        miniStat(Rect{col.x + 2.0f * (sw + sgap), col.y, sw, 84.0f}, Icon::Check, p.success,
+        const float sh = miniStatHeight(sw, "questions answered today");  // the longest caption sets the row height
+        miniStat(Rect{col.x, col.y, sw, sh}, Icon::Flame, p.warning, std::to_string(st.streak) + (st.streak == 1 ? " day" : " days"), "current streak");
+        miniStat(Rect{col.x + sw + sgap, col.y, sw, sh}, Icon::Pencil, p.accent, std::to_string(today.answered), "questions answered today");
+        miniStat(Rect{col.x + 2.0f * (sw + sgap), col.y, sw, sh}, Icon::Check, p.success,
                  st.attempts ? std::to_string(static_cast<int>(std::lround(st.accuracy() * 100.0))) + "%" : "-", "overall accuracy");
-        col.space(84.0f + 18.0f);
+        col.space(sh + 18.0f);
 
         // Continue learning + mistakes
         {
             const float hw = (col.w - sgap) / 2.0f;
-            Rect left{col.x, col.y, hw, 110.0f};
-            Rect right{col.x + hw + sgap, col.y, hw, 110.0f};
+            const float lineW = hw - 20.0f - 150.0f;  // text stops before the button on the right
+            const int mistakes = app.mistakeCount();
+            const std::string mistakeNote = mistakes ? "Replay what you got wrong." : "Nothing to review right now.";
+            const float pairH = std::max(110.0f, 66.0f + textHeight(Face::Regular, 14, mistakeNote, lineW) + 22.0f);
+            Rect left{col.x, col.y, hw, pairH};
+            Rect right{col.x + hw + sgap, col.y, hw, pairH};
             card(left);
             card(right);
             std::string lessonId;
@@ -68,19 +79,18 @@ public:
             if (!lesson && !app.content().lessons.empty()) lesson = &app.content().lessons.front();
             drawLabel(resume ? "CONTINUE LEARNING" : "START LEARNING", left.x + 20.0f, left.y + 16.0f, p.textMuted);
             if (lesson) {
-                drawText(Face::Bold, size::kH3, ellipsize(Face::Bold, size::kH3, lesson->title, hw - 190.0f), left.x + 20.0f, left.y + 38.0f, p.text);
+                drawText(Face::Bold, size::kH3, ellipsize(Face::Bold, size::kH3, lesson->title, lineW), left.x + 20.0f, left.y + 38.0f, p.text);
                 if (resume && section < static_cast<int>(lesson->sections.size()))
-                    drawText(Face::Regular, 14, "Section " + content::sectionNumber(app.content(), *lesson, static_cast<size_t>(section)) + "  " + content::cleanSectionTitle(lesson->sections[static_cast<size_t>(section)].title), left.x + 20.0f, left.y + 66.0f, p.textMuted);
+                    drawText(Face::Regular, 14, ellipsize(Face::Regular, 14, "Section " + content::sectionNumber(app.content(), *lesson, static_cast<size_t>(section)) + "  " + content::cleanSectionTitle(lesson->sections[static_cast<size_t>(section)].title), lineW), left.x + 20.0f, left.y + 66.0f, p.textMuted);
                 if (button(resume ? "Continue" : "Open", Rect{left.x + hw - 138.0f, left.y + 34.0f, 118.0f, 42.0f}, ButtonStyle::Primary, Icon::ChevronRight))
                     app.openLesson(lesson->id, resume ? section : 0);
             }
-            const int mistakes = app.mistakeCount();
             drawLabel("MISTAKES", right.x + 20.0f, right.y + 16.0f, p.textMuted);
             drawText(Face::Bold, size::kH3, mistakes ? std::to_string(mistakes) + " to review" : "All caught up", right.x + 20.0f, right.y + 38.0f, mistakes ? p.danger : p.success);
-            drawText(Face::Regular, 14, mistakes ? "Replay what you got wrong." : "Nothing to review right now.", right.x + 20.0f, right.y + 66.0f, p.textMuted);
+            drawParagraph(Face::Regular, 14, mistakeNote, right.x + 20.0f, right.y + 66.0f, lineW, p.textMuted);
             if (mistakes > 0 && button("Review", Rect{right.x + hw - 138.0f, right.y + 34.0f, 118.0f, 42.0f}, ButtonStyle::Secondary, Icon::Cross))
                 app.go(Page::Mistakes);
-            col.space(110.0f + 18.0f);
+            col.space(pairH + 18.0f);
         }
 
         // Quick links
@@ -92,7 +102,8 @@ public:
         };
         const float gap = 16.0f;
         const float cw = (col.w - 2.0f * gap) / 3.0f;
-        const float ch = 150.0f;
+        float ch = 150.0f;  // grows when a description needs a third line
+        for (const Link& l : links) ch = std::max(ch, 98.0f + textHeight(Face::Regular, 14, l.text, cw - 36.0f) + 14.0f);
         for (int i = 0; i < 3; ++i) {
             Rect r{col.x + static_cast<float>(i) * (cw + gap), col.y, cw, ch};
             const uint32_t id = Context::get().makeId(links[i].title);
@@ -115,7 +126,7 @@ public:
             "A wrong result fails only that function. But a compile error, an infinite loop or a crash gives 0 for "
             "the whole exam - so make sure the file always builds and every loop ends, even if a function is only "
             "half done.";
-        const float th = textHeight(Face::Regular, size::kBody, tips, col.w - 76.0f);
+        const float th = textHeight(Face::Regular, size::kBody, tips, col.w - 86.0f);
         Rect tipR = col.take(th + 70.0f);
         tintedCard(tipR, p.warningSoft, withAlpha(p.warning, 0.5f));
         drawIcon(Icon::Warning, tipR.x + 34.0f, tipR.y + 38.0f, 24.0f, p.warning);

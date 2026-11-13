@@ -85,7 +85,7 @@ public:
             Rect head = col.take(70.0f);
             card(head);
             const signed char m = exam.marks[i];
-            drawText(Face::Bold, size::kH3, std::to_string(i + 1) + ".  " + t.title, head.x + 22.0f, head.y + 12.0f, p.text);
+            drawText(Face::Bold, size::kH3, ellipsize(Face::Bold, size::kH3, std::to_string(i + 1) + ".  " + t.title, head.width - 22.0f - 388.0f), head.x + 22.0f, head.y + 12.0f, p.text);
             float bx = head.x + 22.0f;
             bx += badge(std::to_string(t.points) + " points", bx, head.y + 42.0f, p.textMuted, p.surfaceAlt) + 8.0f;
             if (m == 1) badge("Passed", bx, head.y + 42.0f, p.success, p.successSoft);

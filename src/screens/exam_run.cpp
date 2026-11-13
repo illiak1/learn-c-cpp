@@ -72,6 +72,10 @@ public:
         for (size_t i = 0; i < tasks.size(); ++i) {
             const std::string label = "Task " + std::to_string(i + 1);
             const float w = chipWidth(label) + 4.0f;
+            if (x > col.x && x + w > col.x + col.w) {  // wrap: long papers have more tasks than fit in one row
+                x = col.x;
+                col.space(40.0f);
+            }
             if (chip(label, Rect{x, col.y, w, 32.0f}, static_cast<int>(i) == current_)) {
                 current_ = static_cast<int>(i);
                 scroll_.offset = 0.0f;
@@ -82,8 +86,9 @@ public:
 
         // The current task
         const content::Task& t = *tasks[static_cast<size_t>(current_)];
-        drawText(Face::Bold, size::kH2, t.title, col.x, col.y, p.text);
-        badge(std::to_string(t.points) + " points", col.x + col.w - badgeWidth(std::to_string(t.points) + " points"), col.y + 6.0f, p.accent, p.accentSoft);
+        const float pointsW = badgeWidth(std::to_string(t.points) + " points");
+        drawText(Face::Bold, size::kH2, ellipsize(Face::Bold, size::kH2, t.title, col.w - pointsW - 16.0f), col.x, col.y, p.text);
+        badge(std::to_string(t.points) + " points", col.x + col.w - pointsW, col.y + 6.0f, p.accent, p.accentSoft);
         col.space(40.0f);
         drawLabel("TASK DESCRIPTION", col.x, col.y, p.textMuted);
         col.space(22.0f);
