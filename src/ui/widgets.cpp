@@ -33,7 +33,7 @@ bool button(const std::string& label, Rect r, ButtonStyle style, Icon icon, bool
             fg = p.textOnAccent;
             break;
         case ButtonStyle::Danger:
-            bg = mix(p.danger, mix(p.danger, WHITE, 0.2f), h);
+            bg = held ? mix(p.dangerFill, BLACK, 0.15f) : mix(p.dangerFill, mix(p.dangerFill, WHITE, 0.16f), h);
             fg = WHITE;
             break;
         case ButtonStyle::Success:

@@ -33,7 +33,6 @@ std::string weekdayLetter(const std::string& date) {
 
 class StatsScreen : public Screen {
 public:
-    // Resets scroll and the reset confirmation.
     // Resets the scroll position.
     void onEnter(App&) override { scroll_ = {}; }
 
@@ -60,13 +59,28 @@ public:
         drawByLesson(col, st);
         drawExams(col, st);
 
-        // Reset (asks for confirmation in a dialog)
-        if (button("Reset progress", Rect{col.x, col.y, 170.0f, 40.0f}, ButtonStyle::Ghost, Icon::Refresh)) app.requestResetProgress();
-        col.space(56.0f);
+        drawDangerZone(col, app);
         end(col);
     }
 
 private:
+    // Red-bordered panel that holds the destructive "Reset progress" action (confirmed in a dialog).
+    void drawDangerZone(Column& col, App& app) {
+        const Palette& p = Theme::get().colors();
+        const std::string note = "Erases all answers, the streak, lesson progress and the exam history of both tracks.";
+        const float btnW = 190.0f;
+        const float textW = col.w - 44.0f - btnW - 20.0f;
+        const float noteH = textHeight(Face::Regular, 15, note, textW);
+        col.space(10.0f);
+        Rect r = col.take(std::max(84.0f, 50.0f + noteH + 18.0f));
+        tintedCard(r, mix(p.surface, p.dangerSoft, 0.45f), withAlpha(p.danger, 0.65f));
+        drawIcon(Icon::Warning, r.x + 31.0f, r.y + 28.0f, 17.0f, p.danger);
+        drawText(Face::Bold, size::kH3, "Danger zone", r.x + 48.0f, r.y + 16.0f, p.danger);
+        drawParagraph(Face::Regular, 15, note, r.x + 22.0f, r.y + 48.0f, textW, p.text);
+        if (button("Reset progress", Rect{r.x + r.width - 22.0f - btnW, r.y + (r.height - 42.0f) / 2.0f, btnW, 42.0f}, ButtonStyle::Danger, Icon::Refresh))
+            app.requestResetProgress();
+    }
+
     // Stacked bars (correct + wrong answers) for the last days.
     void drawActivity(Column& col, const logic::Stats& st) {
         const Palette& p = Theme::get().colors();

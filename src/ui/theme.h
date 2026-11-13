@@ -14,6 +14,7 @@ struct Palette {
     Color text, textMuted, textOnAccent;
     Color accent, accentHover, accentPressed, accentSoft;
     Color success, successSoft, danger, dangerSoft, warning, warningSoft;
+    Color dangerFill;  // background of destructive buttons: strong enough for white text in both themes
     Color shadow;
     Color codeBg, codeBorder, codeText, codeLineNo, codeLineHot;
     Color synKeyword, synType, synString, synComment, synNumber, synPreproc;
