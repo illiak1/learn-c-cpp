@@ -12,16 +12,19 @@ using namespace ui;
 
 namespace {
 
-// One big number with a caption inside a card.
-void statCard(Rect r, Icon icon, Color accent, const std::string& value, const std::string& title, const std::string& sub) {
+// One big number (counting up when the page opens) with a caption inside a card; shown as "-" when `have` is false.
+void statCard(Rect r, int index, Icon icon, Color accent, const char* id, float number, const char* suffix, bool have,
+              const std::string& title, const std::string& sub) {
     const Palette& p = Theme::get().colors();
+    Appear appear(index, r);
     card(r);
-    Rect ic{r.x + 18.0f, r.y + 18.0f, 36.0f, 36.0f};
-    fillRound(ic, 10.0f, withAlpha(accent, 0.14f));
-    drawIcon(icon, ic.x + 18.0f, ic.y + 18.0f, 18.0f, accent);
-    drawText(Face::Bold, 13, title, r.x + 64.0f, r.y + 26.0f, p.textMuted);
-    drawText(Face::Bold, 30, value, r.x + 18.0f, r.y + 64.0f, p.text);
-    drawText(Face::Regular, 13, sub, r.x + 18.0f, r.y + 106.0f, p.textMuted);
+    Rect ic{r.x + 18.0f, r.y + 18.0f, 38.0f, 38.0f};
+    fillRound(ic, radius::kMd, withAlpha(accent, 0.14f));
+    drawIcon(icon, ic.x + 19.0f, ic.y + 19.0f, 19.0f, accent);
+    drawText(Face::Bold, size::kLabel, title, r.x + 68.0f, r.y + 28.0f, p.textMuted);
+    const std::string value = have ? std::to_string(static_cast<int>(std::lround(countUp(id, number)))) + suffix : "-";
+    drawText(Face::Bold, 30, value, r.x + 18.0f, r.y + 66.0f, p.text);
+    drawText(Face::Regular, size::kLabel, sub, r.x + 18.0f, r.y + 108.0f, p.textMuted);
 }
 
 // Weekday letter for a "YYYY-MM-DD" date.
@@ -54,11 +57,11 @@ public:
             return grid ? Rect{col.x + static_cast<float>(n % 2) * (cw + gap), col.y + static_cast<float>(n / 2) * (ch + gap), cw, ch}
                         : Rect{col.x + static_cast<float>(n) * (cw + gap), col.y, cw, ch};
         };
-        statCard(cell(0), Icon::Flame, p.warning, std::to_string(st.streak) + (st.streak == 1 ? " day" : " days"), "STREAK", "Best: " + std::to_string(st.bestStreak) + " days");
-        statCard(cell(1), Icon::Pencil, p.accent, std::to_string(st.attempts), "ANSWERS", std::to_string(st.seen) + " of " + std::to_string(st.exercises) + " questions seen");
-        statCard(cell(2), Icon::Check, p.success, st.attempts ? std::to_string(pct) + "%" : "-", "ACCURACY", std::to_string(st.correct) + " of " + std::to_string(st.attempts) + " correct");
-        statCard(cell(3), Icon::Cross, p.danger, std::to_string(st.mistakes + st.failedTasks), "TO REVIEW", std::to_string(st.mistakes) + " questions, " + std::to_string(st.failedTasks) + " functions");
-        col.space((grid ? 2.0f * ch + gap : ch) + 22.0f);
+        statCard(cell(0), 0, Icon::Flame, p.warning, "st-streak", static_cast<float>(st.streak), st.streak == 1 ? " day" : " days", true, "STREAK", "Best: " + std::to_string(st.bestStreak) + " days");
+        statCard(cell(1), 1, Icon::Pencil, p.accent, "st-answers", static_cast<float>(st.attempts), "", true, "ANSWERS", std::to_string(st.seen) + " of " + std::to_string(st.exercises) + " questions seen");
+        statCard(cell(2), 2, Icon::Check, p.success, "st-acc", static_cast<float>(pct), "%", st.attempts > 0, "ACCURACY", std::to_string(st.correct) + " of " + std::to_string(st.attempts) + " correct");
+        statCard(cell(3), 3, Icon::Cross, p.danger, "st-review", static_cast<float>(st.mistakes + st.failedTasks), "", true, "TO REVIEW", std::to_string(st.mistakes) + " questions, " + std::to_string(st.failedTasks) + " functions");
+        col.space((grid ? 2.0f * ch + gap : ch) + 24.0f);
 
         drawActivity(col, st);
         drawByType(col, st);
@@ -79,7 +82,7 @@ private:
         const float noteH = textHeight(Face::Regular, 15, note, textW);
         col.space(10.0f);
         Rect r = col.take(std::max(84.0f, 50.0f + noteH + 18.0f));
-        tintedCard(r, mix(p.surface, p.dangerSoft, 0.45f), withAlpha(p.danger, 0.65f));
+        callout(r, p.danger, mix(p.surface, p.dangerSoft, 0.55f));
         drawIcon(Icon::Warning, r.x + 31.0f, r.y + 28.0f, 17.0f, p.danger);
         drawText(Face::Bold, size::kH3, "Danger zone", r.x + 48.0f, r.y + 16.0f, p.danger);
         drawParagraph(Face::Regular, 15, note, r.x + 22.0f, r.y + 48.0f, textW, p.text);
@@ -87,61 +90,72 @@ private:
             app.requestResetProgress();
     }
 
-    // Stacked bars (correct + wrong answers) for the last days.
+    // Stacked bars (correct + wrong answers) for the last days: rounded bars that grow in, soft gridlines, hover details.
     void drawActivity(Column& col, const logic::Stats& st) {
         const Palette& p = Theme::get().colors();
-        Rect r = col.take(250.0f);
+        Context& cx = Context::get();
+        Rect r = col.take(260.0f);
+        Appear appear(4, r);
         card(r);
         drawText(Face::Bold, size::kH3, "Last " + std::to_string(st.lastDays.size()) + " days", r.x + 22.0f, r.y + 18.0f, p.text);
         // legend
-        const float lx = r.x + r.width - 230.0f;
-        DrawCircleV(Vector2{lx, r.y + 30.0f}, 5.0f, p.success);
-        drawText(Face::Regular, 13, "correct", lx + 12.0f, r.y + 22.0f, p.textMuted);
-        DrawCircleV(Vector2{lx + 88.0f, r.y + 30.0f}, 5.0f, p.danger);
-        drawText(Face::Regular, 13, "wrong", lx + 100.0f, r.y + 22.0f, p.textMuted);
+        const float lx = r.x + r.width - 190.0f;
+        fillRound(Rect{lx, r.y + 24.0f, 10.0f, 10.0f}, 3.0f, p.success);
+        drawText(Face::Regular, size::kLabel, "correct", lx + 16.0f, r.y + 21.0f, p.textMuted);
+        fillRound(Rect{lx + 88.0f, r.y + 24.0f, 10.0f, 10.0f}, 3.0f, p.danger);
+        drawText(Face::Regular, size::kLabel, "wrong", lx + 104.0f, r.y + 21.0f, p.textMuted);
 
         int maxV = 5;
         for (const auto& d : st.lastDays) maxV = std::max(maxV, d.answered);
-        const Rect plot{r.x + 56.0f, r.y + 58.0f, r.width - 84.0f, 146.0f};
+        maxV = (maxV + 1) / 2 * 2;  // even, so the middle gridline has a whole-number label
+        const Rect plot{r.x + 60.0f, r.y + 60.0f, r.width - 90.0f, 146.0f};
         for (int i = 0; i <= 2; ++i) {
             const float y = plot.y + plot.height - plot.height * static_cast<float>(i) / 2.0f;
-            DrawLineEx(Vector2{plot.x, y}, Vector2{plot.x + plot.width, y}, 1.0f, withAlpha(p.border, i == 0 ? 1.0f : 0.7f));
-            drawText(Face::Regular, 12, std::to_string(maxV * i / 2), r.x + 22.0f, y - 8.0f, p.textMuted);
+            DrawLineEx(Vector2{plot.x, y}, Vector2{plot.x + plot.width, y}, 1.0f, withAlpha(p.border, i == 0 ? 1.0f : 0.55f));
+            const std::string tick = std::to_string(maxV * i / 2);
+            drawText(Face::Regular, size::kLabel, tick, plot.x - 12.0f - Theme::get().textWidth(Face::Regular, size::kLabel, tick), y - 9.0f, p.textMuted);
         }
         const size_t n = st.lastDays.size();
         const float slot = n ? plot.width / static_cast<float>(n) : plot.width;
         const float barW = std::min(34.0f, slot * 0.62f);
         for (size_t i = 0; i < n; ++i) {
             const auto& d = st.lastDays[i];
-            const float cx = plot.x + slot * (static_cast<float>(i) + 0.5f);
-            const float hTotal = plot.height * static_cast<float>(d.answered) / static_cast<float>(maxV);
-            const float hRight = plot.height * static_cast<float>(d.correct) / static_cast<float>(maxV);
+            const float cxm = plot.x + slot * (static_cast<float>(i) + 0.5f);
+            cx.pushId(static_cast<int>(i));
+            const float grow = cx.tweenIn(cx.makeId("bar"), 1.0f, 0.6f + 0.02f * static_cast<float>(i), 0.0f);
+            const Rect hit{cxm - slot / 2.0f, plot.y - 6.0f, slot, plot.height + 40.0f};
+            const bool hov = cx.hovered(hit);
+            if (hov) fillRound(hit, radius::kSm, withAlpha(p.surfaceAlt, 0.7f));
+            const float hTotal = plot.height * static_cast<float>(d.answered) / static_cast<float>(maxV) * grow;
+            const float hRight = plot.height * static_cast<float>(d.correct) / static_cast<float>(maxV) * grow;
             if (d.answered > 0) {
-                Rect total{cx - barW / 2.0f, plot.y + plot.height - hTotal, barW, hTotal};
-                fillRound(total, 4.0f, p.danger);
-                if (d.correct > 0) {
-                    Rect good{cx - barW / 2.0f, plot.y + plot.height - hRight, barW, hRight};
-                    fillRound(good, 4.0f, p.success);
-                }
+                fillRound(Rect{cxm - barW / 2.0f, plot.y + plot.height - hTotal, barW, hTotal}, 5.0f, p.danger);
+                if (d.correct > 0) fillRound(Rect{cxm - barW / 2.0f, plot.y + plot.height - hRight, barW, hRight}, 5.0f, p.success);
             }
             const bool today = i + 1 == n;
-            drawCentered(today ? Face::Bold : Face::Regular, 12, weekdayLetter(d.date), Rect{cx - 12.0f, plot.y + plot.height + 6.0f, 24.0f, 16.0f}, today ? p.accent : p.textMuted);
-            drawCentered(Face::Regular, 11, d.date.substr(8, 2), Rect{cx - 12.0f, plot.y + plot.height + 20.0f, 24.0f, 14.0f}, p.textMuted);
+            drawCentered(today ? Face::Bold : Face::Regular, size::kLabel, weekdayLetter(d.date), Rect{cxm - 14.0f, plot.y + plot.height + 7.0f, 28.0f, 17.0f}, today ? p.accent : p.textMuted);
+            drawCentered(Face::Regular, size::kLabel, d.date.substr(8, 2), Rect{cxm - 14.0f, plot.y + plot.height + 23.0f, 28.0f, 17.0f}, p.textMuted);
+            if (hov && d.answered > 0) {
+                const std::string tip = d.date + ": " + std::to_string(d.correct) + " of " + std::to_string(d.answered) + " correct";
+                cx.tooltip(cx.makeId("tip"), Rect{cxm - barW / 2.0f, plot.y + plot.height - hTotal, barW, std::max(hTotal, 4.0f)}, tip.c_str());
+            }
+            cx.popId();
         }
     }
 
     // Accuracy per exercise type.
     void drawByType(Column& col, const logic::Stats& st) {
         const Palette& p = Theme::get().colors();
-        Rect r = col.take(60.0f + 5.0f * 36.0f);
+        Rect r = col.take(64.0f + 5.0f * 38.0f);
+        Appear appear(5, r);
         card(r);
         drawText(Face::Bold, size::kH3, "Accuracy by question type", r.x + 22.0f, r.y + 18.0f, p.text);
         for (int i = 0; i < 5; ++i) {
             const logic::TypeStat& t = st.byType[i];
-            const float y = r.y + 58.0f + 36.0f * static_cast<float>(i);
+            const float y = r.y + 60.0f + 38.0f * static_cast<float>(i);
             drawText(Face::Regular, 15, content::typeName(static_cast<content::ExType>(i)), r.x + 22.0f, y, p.text);
             const float frac = t.attempts ? static_cast<float>(t.correct) / static_cast<float>(t.attempts) : 0.0f;
-            progressBar(Rect{r.x + 220.0f, y + 6.0f, r.width - 520.0f, 10.0f}, frac, frac >= 0.7f ? p.success : frac >= 0.4f ? p.warning : p.danger);
+            progressBar(Rect{r.x + 220.0f, y + 6.0f, r.width - 520.0f, 10.0f}, frac, frac >= 0.7f ? p.success : frac >= 0.4f ? p.warning : p.danger, "type-" + std::to_string(i));
             const std::string label = t.attempts ? std::to_string(static_cast<int>(std::lround(frac * 100.0f))) + "%  (" + std::to_string(t.correct) + "/" + std::to_string(t.attempts) + ")" : "no answers yet";
             drawText(Face::Bold, 14, label, r.x + r.width - 290.0f, y + 1.0f, t.attempts ? p.text : p.textMuted);
             drawText(Face::Regular, 13, std::to_string(t.seen) + "/" + std::to_string(t.exercises) + " seen", r.x + r.width - 110.0f, y + 2.0f, p.textMuted);
@@ -153,10 +167,11 @@ private:
     void drawByLesson(Column& col, const logic::Stats& st) {
         const Palette& p = Theme::get().colors();
         if (st.byLesson.empty()) return;
-        Rect r = col.take(60.0f + static_cast<float>(st.byLesson.size()) * 66.0f);
+        Rect r = col.take(64.0f + static_cast<float>(st.byLesson.size()) * 68.0f);
+        Appear appear(6, r);
         card(r);
         drawText(Face::Bold, size::kH3, "Topics", r.x + 22.0f, r.y + 18.0f, p.text);
-        float y = r.y + 58.0f;
+        float y = r.y + 60.0f;
         const float half = (r.width - 44.0f - 28.0f) / 2.0f;
         for (const logic::LessonStat& l : st.byLesson) {
             drawText(Face::Bold, 15, ellipsize(Face::Bold, 15, l.title, r.width - 44.0f), r.x + 22.0f, y, p.text);
@@ -164,14 +179,14 @@ private:
             const float mf = l.exercises ? static_cast<float>(l.mastered) / static_cast<float>(l.exercises) : 0.0f;
             const float x0 = r.x + 22.0f, x1 = x0 + half + 28.0f, y2 = y + 28.0f;
             drawText(Face::Regular, 13, "Read " + std::to_string(l.sectionsRead) + "/" + std::to_string(l.sections), x0, y2 - 2.0f, p.textMuted);
-            progressBar(Rect{x0 + 100.0f, y2 + 3.0f, half - 100.0f, 9.0f}, rf, p.accent);
+            progressBar(Rect{x0 + 100.0f, y2 + 3.0f, half - 100.0f, 9.0f}, rf, p.accent, "read-" + l.title);
             if (l.exercises > 0) {
                 drawText(Face::Regular, 13, "Mastered " + std::to_string(l.mastered) + "/" + std::to_string(l.exercises), x1, y2 - 2.0f, p.textMuted);
-                progressBar(Rect{x1 + 126.0f, y2 + 3.0f, half - 126.0f, 9.0f}, mf, p.success);
+                progressBar(Rect{x1 + 126.0f, y2 + 3.0f, half - 126.0f, 9.0f}, mf, p.success, "mast-" + l.title);
             } else {
                 drawText(Face::Regular, 13, "No questions yet", x1, y2 - 2.0f, p.textMuted);
             }
-            y += 66.0f;
+            y += 68.0f;
         }
         col.space(16.0f);
     }
@@ -182,6 +197,7 @@ private:
         const size_t shown = std::min<size_t>(st.exams.size(), 10);
         const bool trend = st.exams.size() >= 2;
         Rect r = col.take(64.0f + (trend ? 150.0f : 0.0f) + std::max<size_t>(1, shown) * 44.0f);
+        Appear appear(7, r);
         card(r);
         drawText(Face::Bold, size::kH3, "Exam history", r.x + 22.0f, r.y + 18.0f, p.text);
         if (st.exams.empty()) {
@@ -196,17 +212,19 @@ private:
             const Rect plot{r.x + 56.0f, y0 + 22.0f, r.width - 90.0f, 80.0f};
             for (int i = 0; i <= 2; ++i) {
                 const float gy = plot.y + plot.height - plot.height * static_cast<float>(i) / 2.0f;
-                DrawLineEx(Vector2{plot.x, gy}, Vector2{plot.x + plot.width, gy}, 1.0f, withAlpha(p.border, i == 0 ? 1.0f : 0.7f));
-                drawText(Face::Regular, 12, std::to_string(i * 50) + "%", r.x + 18.0f, gy - 8.0f, p.textMuted);
+                DrawLineEx(Vector2{plot.x, gy}, Vector2{plot.x + plot.width, gy}, 1.0f, withAlpha(p.border, i == 0 ? 1.0f : 0.55f));
+                const std::string tick = std::to_string(i * 50) + "%";
+                drawText(Face::Regular, size::kLabel, tick, plot.x - 10.0f - Theme::get().textWidth(Face::Regular, size::kLabel, tick), gy - 9.0f, p.textMuted);
             }
             const float slot = plot.width / static_cast<float>(shown);
             const float barW = std::min(34.0f, slot * 0.6f);
             for (size_t i = 0; i < shown; ++i) {
                 const logic::ExamRecord& e = st.exams[shown - 1 - i];
-                const float h = std::max(2.0f, plot.height * static_cast<float>(examPercent(e)) / 100.0f);
+                const float grow = Context::get().tweenIn(Context::get().makeId("trend" + std::to_string(i)), 1.0f, 0.6f, 0.0f);
+                const float h = std::max(3.0f, plot.height * static_cast<float>(examPercent(e)) / 100.0f * grow);
                 const float cx = plot.x + slot * (static_cast<float>(i) + 0.5f);
-                fillRound(Rect{cx - barW / 2.0f, plot.y + plot.height - h, barW, h}, 4.0f, examColor(p, e));
-                drawCentered(Face::Regular, 11, e.date.size() >= 10 ? e.date.substr(5, 5) : "", Rect{cx - 24.0f, plot.y + plot.height + 4.0f, 48.0f, 14.0f}, p.textMuted);
+                fillRound(Rect{cx - barW / 2.0f, plot.y + plot.height - h, barW, h}, 5.0f, examColor(p, e));
+                drawCentered(Face::Regular, size::kLabel, e.date.size() >= 10 ? e.date.substr(5, 5) : "", Rect{cx - 26.0f, plot.y + plot.height + 5.0f, 52.0f, 17.0f}, p.textMuted);
             }
             y0 += 150.0f;
         }
