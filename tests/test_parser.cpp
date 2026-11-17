@@ -106,6 +106,25 @@ TEST(shipped_content_is_valid) {
     }
 }
 
+// Every topic except "Before the exam" must have at least 3 exercises of each of the five types.
+TEST(every_topic_has_three_questions_per_type) {
+    const ExType types[] = {ExType::Theory, ExType::Choice, ExType::Fill, ExType::Predict, ExType::Bug};
+    const char* typeNames[] = {"theory", "choice", "fill", "predict", "bug"};
+    for (const char* name : {"c", "cpp"}) {
+        TrackContent tc = loadTrack("content", name);
+        for (const Lesson& l : tc.lessons) {
+            if (l.title == "Before the exam") continue;
+            for (int t = 0; t < 5; ++t) {
+                int n = 0;
+                for (const Exercise& e : tc.exercises)
+                    if (e.lesson == l.id && e.type == types[t]) ++n;
+                if (n < 3) std::cerr << "  [" << name << "] " << l.id << ": only " << n << " " << typeNames[t] << "\n";
+                CHECK(n >= 3);
+            }
+        }
+    }
+}
+
 TEST(clean_section_title_strips_leftover_numbers) {
     CHECK_EQ(cleanSectionTitle("1.17 Pass by reference"), std::string("Pass by reference"));
     CHECK_EQ(cleanSectionTitle("3. Memory"), std::string("Memory"));
