@@ -308,13 +308,33 @@ void shadowRound(Rect r, float radiusPx, const ShadowStyle& style, float strengt
     }
 }
 
-// Gradient built from stacked rounded layers: the top layer is the shortest, so the colour fades downwards.
+// Rounded rectangle with a true vertical gradient: a triangle fan from the centre over the outline, with the colour
+// of every vertex taken from its height (colour is linear in y, so the interpolation is exact). Opaque colours only.
 void fillRoundGradient(Rect r, float radiusPx, Color top, Color bottom) {
-    const int n = std::clamp(static_cast<int>(r.height / 9.0f), 2, 5);
+    if (r.width <= 0.0f || r.height <= 0.0f) return;
+    const float rad = std::min({radiusPx, r.width / 2.0f, r.height / 2.0f});
+    constexpr int kSeg = 6;  // arc segments per corner
+    Vector2 pts[4 * (kSeg + 1)];
+    int n = 0;
+    // Corner centres in clockwise order starting at the top-left; each arc covers 90 degrees.
+    const Vector2 centres[4] = {{r.x + rad, r.y + rad}, {r.x + r.width - rad, r.y + rad},
+                                {r.x + r.width - rad, r.y + r.height - rad}, {r.x + rad, r.y + r.height - rad}};
+    for (int c = 0; c < 4; ++c) {
+        const float start = 180.0f + 90.0f * static_cast<float>(c);
+        for (int i = 0; i <= kSeg; ++i) {
+            const float a = (start + 90.0f * static_cast<float>(i) / static_cast<float>(kSeg)) * 3.14159265f / 180.0f;
+            pts[n++] = Vector2{centres[c].x + std::cos(a) * rad, centres[c].y + std::sin(a) * rad};
+        }
+    }
+    auto colourAt = [&](float y) { return mix(top, bottom, (y - r.y) / r.height); };
+    const Vector2 mid{r.x + r.width / 2.0f, r.y + r.height / 2.0f};
+    const Color midColour = colourAt(mid.y);
     for (int i = 0; i < n; ++i) {
-        const float k = static_cast<float>(i) / static_cast<float>(n - 1);
-        const float h = r.height * (1.0f - 0.55f * k);
-        fillRound(Rect{r.x, r.y, r.width, h}, std::min(radiusPx, h / 2.0f), mix(bottom, top, k));
+        const Vector2 a = pts[i], b = pts[(i + 1) % n];
+        // Raylib wants counter-clockwise triangles (negative cross product in screen coordinates).
+        const float cross = (a.x - mid.x) * (b.y - mid.y) - (a.y - mid.y) * (b.x - mid.x);
+        if (cross < 0.0f) DrawTriangleGradient(mid, a, b, midColour, colourAt(a.y), colourAt(b.y));
+        else DrawTriangleGradient(mid, b, a, midColour, colourAt(b.y), colourAt(a.y));
     }
 }
 
@@ -599,11 +619,11 @@ float drawParagraph(Face face, int px, const std::string& text, float x, float y
     return cy - y;
 }
 
-// Draws one line centred inside a rectangle.
+// Draws one line centred inside a rectangle (optically: the middle of the letters, not of the line box).
 void drawCentered(Face face, int px, const std::string& text, Rect r, Color c) {
     Theme& th = Theme::get();
     const float w = th.textWidth(face, px, text);
-    drawText(face, px, text, r.x + (r.width - w) / 2.0f, r.y + (r.height - static_cast<float>(px) * 1.2f) / 2.0f + static_cast<float>(px) * 0.05f, c);
+    drawText(face, px, text, r.x + (r.width - w) / 2.0f, r.y + r.height / 2.0f - th.textMidline(face, px), c);
 }
 
 // Cuts a string to fit a width, adding "..." when needed (cached; the reference stays valid for the frame).

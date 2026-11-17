@@ -173,6 +173,7 @@ void Theme::shutdown() {
 void Theme::setScale(float s) {
     scale_ = std::clamp(s, 0.5f, 4.0f);
     widths_.clear();
+    midlines_.clear();
 }
 
 // Text size in physical pixels.
@@ -213,6 +214,21 @@ float Theme::textWidth(Face face, int px, const char* text) {
 
 // Width of a string in the given face and size.
 float Theme::textWidth(Face face, int px, const std::string& text) { return textWidth(face, px, text.c_str()); }
+
+// Optical middle of the letters below the top of the text line.
+float Theme::textMidline(Face face, int px) {
+    const uint64_t key = (static_cast<uint64_t>(face) << 32) | static_cast<uint64_t>(px);
+    auto it = midlines_.find(key);
+    if (it != midlines_.end()) return it->second;
+    const Font& f = font(face, px);
+    auto centre = [&](int cp) {
+        const int i = GetGlyphIndex(f, cp);
+        return (static_cast<float>(f.glyphs[i].offsetY) + f.recs[i].height / 2.0f) / scale_;
+    };
+    float mid = drawSize(px) * 0.5f;  // fallback for the default font
+    if (f.glyphs != nullptr && f.recs != nullptr && f.glyphCount > 0) mid = (centre('H') + centre('x')) / 2.0f;
+    return midlines_.emplace(key, mid).first->second;
+}
 
 // Width of one glyph of the monospace font.
 float Theme::monoAdvance(int px) { return textWidth(Face::Mono, px, "M"); }

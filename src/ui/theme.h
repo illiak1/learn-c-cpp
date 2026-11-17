@@ -140,6 +140,9 @@ public:
     float textWidth(Face face, int px, const char* text);
     // Height of one line of text at a size (whole pixels, so every line starts on the pixel grid).
     float lineHeight(int px) const { return static_cast<float>(static_cast<int>(static_cast<float>(px) * 1.5f + 0.5f)); }
+    // Distance from the top of a text line to the optical middle of its letters (average of capitals and lower-case x),
+    // so a label can be centred by its letters. Measured from the rasterised glyphs, cached per (face, size).
+    float textMidline(Face face, int px);
     // Advance of one monospace glyph at a size.
     float monoAdvance(int px);
 
@@ -155,6 +158,7 @@ private:
     Palette active_{};
     std::unordered_map<uint64_t, Font> fonts_;
     std::unordered_map<uint64_t, float> widths_;
+    std::unordered_map<uint64_t, float> midlines_;
 };
 
 // Type roles: a face and a size. Screens pick a role instead of a loose number.

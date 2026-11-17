@@ -60,50 +60,55 @@ bool button(const std::string& label, Rect r, ButtonStyle style, Icon icon, bool
     const Rect b{r.x, r.y + lift, r.width, r.height};
     const float rad = radius::kMd;
 
+    // Every state is one opaque rounded shape: a flat colour or a smooth two-colour gradient. (Translucent colours must
+    // not be used here: stacked translucent layers show up as bands.)
     Color top{}, bottom{}, fg{}, border{0, 0, 0, 0};
-    bool gradient = true;
+    bool gradient = false;
     float shadowK = 1.0f;
     switch (style) {
         case ButtonStyle::Primary:
-            top = mix(mix(p.accent, p.accentHover, 0.55f), p.accentHover, h);
-            bottom = mix(p.accent, p.accentPressed, 0.25f * (1.0f - h));
-            if (pr > 0.0f) {
-                top = mix(top, p.accentPressed, pr);
-                bottom = mix(bottom, p.accentPressed, pr);
-            }
+            gradient = true;
+            top = mix(p.accent, p.accentHover, 0.30f + 0.5f * h);
+            bottom = mix(p.accent, p.accentHover, 0.5f * h);
             fg = p.textOnAccent;
             break;
         case ButtonStyle::Danger:
-            top = mix(mix(p.dangerFill, WHITE, 0.10f), mix(p.dangerFill, WHITE, 0.2f), h);
-            bottom = mix(p.dangerFill, BLACK, 0.08f);
-            if (pr > 0.0f) top = bottom = mix(p.dangerFill, BLACK, 0.2f);
+            gradient = true;
+            top = mix(p.dangerFill, WHITE, 0.08f + 0.10f * h);
+            bottom = mix(p.dangerFill, WHITE, 0.10f * h);
             fg = WHITE;
             break;
         case ButtonStyle::Success:
-            top = mix(mix(p.successFill, WHITE, 0.10f), mix(p.successFill, WHITE, 0.2f), h);
-            bottom = mix(p.successFill, BLACK, 0.08f);
-            if (pr > 0.0f) top = bottom = mix(p.successFill, BLACK, 0.2f);
+            gradient = true;
+            top = mix(p.successFill, WHITE, 0.08f + 0.10f * h);
+            bottom = mix(p.successFill, WHITE, 0.10f * h);
             fg = WHITE;
             break;
         case ButtonStyle::Secondary:
-            gradient = false;
-            top = bottom = mix(mix(p.surface, p.surfaceHover, h * 0.6f), p.surfaceHover, pr * 0.5f);
+            top = bottom = mix(p.surface, p.surfaceHover, h * 0.7f);
             fg = p.text;
             border = mix(p.borderStrong, p.accent, h * 0.35f);
             shadowK = 0.45f;
             break;
         case ButtonStyle::Ghost:
-            gradient = false;
-            top = bottom = mix(withAlpha(p.surfaceAlt, 0.7f), p.surfaceHover, h);
+            top = bottom = mix(mix(p.surface, p.surfaceAlt, 0.8f), p.surfaceHover, h);
             fg = mix(p.textMuted, p.text, h);
             shadowK = 0.0f;
             break;
     }
-    if (!enabled) {
-        top = withAlpha(top, 0.45f);
-        bottom = withAlpha(bottom, 0.45f);
-        fg = withAlpha(fg, 0.6f);
-        border = withAlpha(border, 0.5f);
+    if (pr > 0.0f && enabled) {  // pressed: a flat, darker version of the style
+        const Color base = style == ButtonStyle::Primary ? p.accentPressed
+                         : style == ButtonStyle::Danger  ? mix(p.dangerFill, BLACK, 0.2f)
+                         : style == ButtonStyle::Success ? mix(p.successFill, BLACK, 0.2f)
+                                                         : mix(p.surfaceHover, p.surfaceAlt, 0.5f);
+        top = mix(top, base, pr);
+        bottom = mix(bottom, base, pr);
+    }
+    if (!enabled) {  // disabled: opaque quiet fill with a readable muted label, never a faded copy of the style
+        gradient = false;
+        top = bottom = p.surfaceAlt;
+        fg = p.textMuted;
+        border = p.border;
         shadowK = 0.0f;
     }
     if (shadowK > 0.0f) shadowRound(b, rad, shadow::kButton, shadowK * (1.0f + 0.8f * h) * (1.0f - 0.6f * pr));
@@ -121,7 +126,7 @@ bool button(const std::string& label, Rect r, ButtonStyle style, Icon icon, bool
         drawIcon(icon, x + iconSz / 2.0f, b.y + b.height / 2.0f, iconSz, fg);
         x += iconSz + gap;
     }
-    if (!label.empty()) drawText(Face::Bold, kButtonFont, label, x, b.y + (b.height - static_cast<float>(kButtonFont) * 1.2f) / 2.0f, fg);
+    if (!label.empty()) drawText(Face::Bold, kButtonFont, label, x, b.y + b.height / 2.0f - th.textMidline(Face::Bold, kButtonFont), fg);
     return (in.clicked || kbClick) && enabled;
 }
 
