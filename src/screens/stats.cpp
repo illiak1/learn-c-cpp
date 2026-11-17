@@ -23,8 +23,8 @@ void statCard(Rect r, int index, Icon icon, Color accent, const char* id, float 
     drawIcon(icon, ic.x + 19.0f, ic.y + 19.0f, 19.0f, accent);
     drawText(Face::Bold, size::kLabel, title, r.x + 68.0f, r.y + 28.0f, p.textMuted);
     const std::string value = have ? std::to_string(static_cast<int>(std::lround(countUp(id, number)))) + suffix : "-";
-    drawText(Face::Bold, 30, value, r.x + 18.0f, r.y + 66.0f, p.text);
-    drawText(Face::Regular, size::kLabel, sub, r.x + 18.0f, r.y + 108.0f, p.textMuted);
+    drawText(Face::Bold, size::kStat, value, r.x + 18.0f, r.y + 64.0f, p.text);
+    drawText(Face::Regular, size::kLabel, ellipsize(Face::Regular, size::kLabel, sub, r.width - 36.0f), r.x + 18.0f, r.y + 112.0f, p.textMuted);
 }
 
 // Weekday letter for a "YYYY-MM-DD" date.
@@ -50,7 +50,7 @@ public:
         const float gap = 14.0f;
         const bool grid = (col.w - 3.0f * gap) / 4.0f < 200.0f;  // narrow window: two rows of two
         const float cw = grid ? (col.w - gap) / 2.0f : (col.w - 3.0f * gap) / 4.0f;
-        const float ch = 132.0f;
+        const float ch = 138.0f;
         const int pct = static_cast<int>(std::lround(st.accuracy() * 100.0));
         // Position of the n-th top card in a row of four or in a 2x2 grid.
         auto cell = [&](int n) {
@@ -79,13 +79,13 @@ private:
         const std::string note = "Erases all answers, the streak, lesson progress and the exam history of both tracks.";
         const float btnW = 190.0f;
         const float textW = col.w - 44.0f - btnW - 20.0f;
-        const float noteH = textHeight(Face::Regular, 15, note, textW);
+        const float noteH = textHeight(Face::Regular, size::kBodySm, note, textW);
         col.space(10.0f);
-        Rect r = col.take(std::max(84.0f, 50.0f + noteH + 18.0f));
+        Rect r = col.take(std::max(88.0f, 54.0f + noteH + 20.0f));
         callout(r, p.danger, mix(p.surface, p.dangerSoft, 0.55f));
         drawIcon(Icon::Warning, r.x + 31.0f, r.y + 28.0f, 17.0f, p.danger);
         drawText(Face::Bold, size::kH3, "Danger zone", r.x + 48.0f, r.y + 16.0f, p.danger);
-        drawParagraph(Face::Regular, 15, note, r.x + 22.0f, r.y + 48.0f, textW, p.text);
+        drawParagraph(Face::Regular, size::kBodySm, note, r.x + 22.0f, r.y + 52.0f, textW, p.text);
         if (button("Reset progress", Rect{r.x + r.width - 22.0f - btnW, r.y + (r.height - 42.0f) / 2.0f, btnW, 42.0f}, ButtonStyle::Danger, Icon::Refresh))
             app.requestResetProgress();
     }
@@ -153,12 +153,12 @@ private:
         for (int i = 0; i < 5; ++i) {
             const logic::TypeStat& t = st.byType[i];
             const float y = r.y + 60.0f + 38.0f * static_cast<float>(i);
-            drawText(Face::Regular, 15, content::typeName(static_cast<content::ExType>(i)), r.x + 22.0f, y, p.text);
+            drawText(Face::Regular, size::kBodySm, content::typeName(static_cast<content::ExType>(i)), r.x + 22.0f, y, p.text);
             const float frac = t.attempts ? static_cast<float>(t.correct) / static_cast<float>(t.attempts) : 0.0f;
             progressBar(Rect{r.x + 220.0f, y + 6.0f, r.width - 520.0f, 10.0f}, frac, frac >= 0.7f ? p.success : frac >= 0.4f ? p.warning : p.danger, "type-" + std::to_string(i));
             const std::string label = t.attempts ? std::to_string(static_cast<int>(std::lround(frac * 100.0f))) + "%  (" + std::to_string(t.correct) + "/" + std::to_string(t.attempts) + ")" : "no answers yet";
-            drawText(Face::Bold, 14, label, r.x + r.width - 290.0f, y + 1.0f, t.attempts ? p.text : p.textMuted);
-            drawText(Face::Regular, 13, std::to_string(t.seen) + "/" + std::to_string(t.exercises) + " seen", r.x + r.width - 110.0f, y + 2.0f, p.textMuted);
+            drawText(Face::Bold, size::kSmall, label, r.x + r.width - 290.0f, y + 1.0f, t.attempts ? p.text : p.textMuted);
+            drawText(Face::Regular, size::kLabel, std::to_string(t.seen) + "/" + std::to_string(t.exercises) + " seen", r.x + r.width - 110.0f, y + 2.0f, p.textMuted);
         }
         col.space(16.0f);
     }
@@ -174,17 +174,17 @@ private:
         float y = r.y + 60.0f;
         const float half = (r.width - 44.0f - 28.0f) / 2.0f;
         for (const logic::LessonStat& l : st.byLesson) {
-            drawText(Face::Bold, 15, ellipsize(Face::Bold, 15, l.title, r.width - 44.0f), r.x + 22.0f, y, p.text);
+            drawText(Face::Bold, size::kBodySm, ellipsize(Face::Bold, size::kBodySm, l.title, r.width - 44.0f), r.x + 22.0f, y, p.text);
             const float rf = l.sections ? static_cast<float>(l.sectionsRead) / static_cast<float>(l.sections) : 0.0f;
             const float mf = l.exercises ? static_cast<float>(l.mastered) / static_cast<float>(l.exercises) : 0.0f;
             const float x0 = r.x + 22.0f, x1 = x0 + half + 28.0f, y2 = y + 28.0f;
-            drawText(Face::Regular, 13, "Read " + std::to_string(l.sectionsRead) + "/" + std::to_string(l.sections), x0, y2 - 2.0f, p.textMuted);
+            drawText(Face::Regular, size::kLabel, "Read " + std::to_string(l.sectionsRead) + "/" + std::to_string(l.sections), x0, y2 - 2.0f, p.textMuted);
             progressBar(Rect{x0 + 100.0f, y2 + 3.0f, half - 100.0f, 9.0f}, rf, p.accent, "read-" + l.title);
             if (l.exercises > 0) {
-                drawText(Face::Regular, 13, "Mastered " + std::to_string(l.mastered) + "/" + std::to_string(l.exercises), x1, y2 - 2.0f, p.textMuted);
+                drawText(Face::Regular, size::kLabel, "Mastered " + std::to_string(l.mastered) + "/" + std::to_string(l.exercises), x1, y2 - 2.0f, p.textMuted);
                 progressBar(Rect{x1 + 126.0f, y2 + 3.0f, half - 126.0f, 9.0f}, mf, p.success, "mast-" + l.title);
             } else {
-                drawText(Face::Regular, 13, "No questions yet", x1, y2 - 2.0f, p.textMuted);
+                drawText(Face::Regular, size::kLabel, "No questions yet", x1, y2 - 2.0f, p.textMuted);
             }
             y += 68.0f;
         }
@@ -208,7 +208,7 @@ private:
         float y0 = r.y + 58.0f;
         if (trend) {
             // Score trend: one bar per exam, oldest on the left (the list below is newest first).
-            drawText(Face::Regular, 13, "Score trend (last " + std::to_string(shown) + " exams, percent of the maximum)", r.x + 22.0f, y0 - 4.0f, p.textMuted);
+            drawText(Face::Regular, size::kLabel, "Score trend (last " + std::to_string(shown) + " exams, percent of the maximum)", r.x + 22.0f, y0 - 4.0f, p.textMuted);
             const Rect plot{r.x + 56.0f, y0 + 22.0f, r.width - 90.0f, 80.0f};
             for (int i = 0; i <= 2; ++i) {
                 const float gy = plot.y + plot.height - plot.height * static_cast<float>(i) / 2.0f;
@@ -231,13 +231,13 @@ private:
         for (size_t i = 0; i < shown; ++i) {
             const logic::ExamRecord& e = st.exams[i];
             const float y = y0 + 44.0f * static_cast<float>(i);
-            drawText(Face::Regular, 14, examWhen(e), r.x + 22.0f, y + 4.0f, p.textMuted);
-            drawText(Face::Regular, 15, ellipsize(Face::Regular, 15, e.title, r.width - 560.0f), r.x + 170.0f, y + 3.0f, p.text);
+            drawText(Face::Regular, size::kSmall, examWhen(e), r.x + 22.0f, y + 4.0f, p.textMuted);
+            drawText(Face::Regular, size::kBodySm, ellipsize(Face::Regular, size::kBodySm, e.title, r.width - 560.0f), r.x + 170.0f, y + 3.0f, p.text);
             const Color c = examColor(p, e);
             std::string score = std::to_string(e.earned) + " / " + std::to_string(e.total) + "  (" + std::to_string(examPercent(e)) + "%)";
             if (!e.fileRan) score += "  did not run";
             badge(score, r.x + r.width - 290.0f, y + 2.0f, c, withAlpha(c, 0.14f));
-            drawText(Face::Regular, 13, logic::formatClock(e.seconds), r.x + r.width - 62.0f, y + 5.0f, p.textMuted);
+            drawText(Face::Regular, size::kLabel, logic::formatClock(e.seconds), r.x + r.width - 62.0f, y + 5.0f, p.textMuted);
         }
         col.space(16.0f);
     }

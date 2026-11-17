@@ -118,15 +118,18 @@ bool button(const std::string& label, Rect r, ButtonStyle style, Icon icon, bool
     if (in.kbFocused) focusRing(b, rad);
 
     const float iconSz = 17.0f;
-    const float textW = th.textWidth(Face::Bold, kButtonFont, label);
     const float gap = icon != Icon::None && !label.empty() ? 8.0f : 0.0f;
+    // A label that does not fit (narrow button, large text) is shortened instead of running over the edge.
+    const float room = b.width - 2.0f * 12.0f - (icon != Icon::None ? iconSz : 0.0f) - gap;
+    const std::string& shown = th.textWidth(Face::Bold, kButtonFont, label) > room ? ellipsize(Face::Bold, kButtonFont, label, room) : label;
+    const float textW = th.textWidth(Face::Bold, kButtonFont, shown);
     const float total = (icon != Icon::None ? iconSz : 0.0f) + gap + textW;
     float x = b.x + (b.width - total) / 2.0f;
     if (icon != Icon::None) {
         drawIcon(icon, x + iconSz / 2.0f, b.y + b.height / 2.0f, iconSz, fg);
         x += iconSz + gap;
     }
-    if (!label.empty()) drawText(Face::Bold, kButtonFont, label, x, b.y + b.height / 2.0f - th.textMidline(Face::Bold, kButtonFont), fg);
+    if (!shown.empty()) drawText(Face::Bold, kButtonFont, shown, x, b.y + b.height / 2.0f - th.textMidline(Face::Bold, kButtonFont), fg);
     return (in.clicked || kbClick) && enabled;
 }
 
@@ -365,7 +368,7 @@ float badgeWidth(const std::string& text) { return Theme::get().textWidth(Face::
 // Small rounded pill label.
 float badge(const std::string& text, float x, float y, Color fg, Color bg) {
     const float w = badgeWidth(text);
-    Rect r{x, y, w, 23.0f};
+    Rect r{x, y, w, 24.0f};
     fillRound(r, r.height / 2.0f, bg);
     drawCentered(Face::Bold, size::kLabel, text, r, fg);
     return w;

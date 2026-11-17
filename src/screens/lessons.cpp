@@ -38,9 +38,9 @@ public:
         int index = 0;
         for (const content::Lesson& l : lessons) {
             const float textW = col.w - textX - rightW;
-            const float sumH = l.summary.empty() ? 0.0f : textHeight(Face::Regular, 15, l.summary, textW);
-            const float barY = 50.0f + sumH + 10.0f;
-            Rect r = col.take(std::max(108.0f, barY + 6.0f + 20.0f));
+            const float sumH = l.summary.empty() ? 0.0f : textHeight(Face::Regular, size::kBodySm, l.summary, textW);
+            const float barY = 56.0f + sumH + 10.0f;
+            Rect r = col.take(std::max(112.0f, barY + 6.0f + 22.0f));
             Appear appear(index, r);
             Context::get().pushId(l.id);
             const bool clicked = cardButton("card", r);
@@ -49,7 +49,7 @@ public:
             fillRoundGradient(num, radius::kLg - 2.0f, mix(p.accentSoft, p.accent, 0.1f), p.accentSoft);
             drawCentered(Face::Bold, size::kH2, std::to_string(++index), num, p.accent);
             drawText(Face::Bold, size::kH3, ellipsize(Face::Bold, size::kH3, l.title, textW), r.x + textX, r.y + 22.0f, p.text);
-            drawParagraph(Face::Regular, 15, l.summary, r.x + textX, r.y + 50.0f, textW, p.textMuted);
+            drawParagraph(Face::Regular, size::kBodySm, l.summary, r.x + textX, r.y + 54.0f, textW, p.textMuted);
             const int read = app.progress().sectionsRead(app.trackKey(), l.id);
             progressBar(Rect{r.x + textX, r.y + std::max(barY, r.height - 24.0f), textW, 6.0f},
                         l.sections.empty() ? 0.0f : static_cast<float>(read) / static_cast<float>(l.sections.size()), p.accent, "bar");

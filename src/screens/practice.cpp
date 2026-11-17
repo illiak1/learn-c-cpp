@@ -53,11 +53,11 @@ public:
         // Mixed sessions
         const std::string avail = std::to_string(all.size()) + " questions available with this filter";
         const float availW = col.w - 22.0f - 346.0f;  // text stops before the two buttons
-        Rect r = col.take(std::max(96.0f, 52.0f + textHeight(Face::Regular, 15, avail, availW) + 22.0f));
+        Rect r = col.take(std::max(102.0f, 56.0f + textHeight(Face::Regular, size::kBodySm, avail, availW) + 22.0f));
         Appear apMix(0, r);
         cardRaised(r);
         drawText(Face::Bold, size::kH3, "Mixed practice", r.x + 22.0f, r.y + 20.0f, p.text);
-        drawParagraph(Face::Regular, 15, avail, r.x + 22.0f, r.y + 52.0f, availW, p.textMuted);
+        drawParagraph(Face::Regular, size::kBodySm, avail, r.x + 22.0f, r.y + 56.0f, availW, p.textMuted);
         if (button("Random 10", Rect{r.x + r.width - 330.0f, r.y + (r.height - 40.0f) / 2.0f, 140.0f, 40.0f}, ButtonStyle::Secondary, Icon::Refresh, !all.empty())) {
             std::vector<std::string> pick = all;
             std::shuffle(pick.begin(), pick.end(), std::mt19937(std::random_device{}()));
@@ -80,16 +80,16 @@ public:
             }
             if (filter_ != 0 && ids.empty()) continue;
             ++shown;
-            Rect lr = col.take(88.0f);
+            Rect lr = col.take(94.0f);
             Appear apTopic(1 + shown, lr);
             card(lr);
             Context::get().pushId(l.id);
             drawText(Face::Bold, size::kH3, ellipsize(Face::Bold, size::kH3, l.title, lr.width - 22.0f - 166.0f), lr.x + 22.0f, lr.y + 18.0f, p.text);
             if (total == 0) {
-                drawText(Face::Regular, 15, "Lessons only", lr.x + 22.0f, lr.y + 48.0f, p.textMuted);
+                drawText(Face::Regular, size::kBodySm, "Lessons only", lr.x + 22.0f, lr.y + 52.0f, p.textMuted);
             } else {
-                drawText(Face::Regular, 15, std::to_string(ids.size()) + (ids.size() == 1 ? " question" : " questions"), lr.x + 22.0f, lr.y + 48.0f, p.textMuted);
-                if (button("Practice", Rect{lr.x + lr.width - 150.0f, lr.y + 22.0f, 128.0f, 40.0f}, ButtonStyle::Secondary, Icon::Pencil, !ids.empty()))
+                drawText(Face::Regular, size::kBodySm, std::to_string(ids.size()) + (ids.size() == 1 ? " question" : " questions"), lr.x + 22.0f, lr.y + 52.0f, p.textMuted);
+                if (button("Practice", Rect{lr.x + lr.width - 150.0f, lr.y + 27.0f, 128.0f, 40.0f}, ButtonStyle::Secondary, Icon::Pencil, !ids.empty()))
                     app.startSession(l.title, ids);
             }
             Context::get().popId();

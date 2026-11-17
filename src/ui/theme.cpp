@@ -156,11 +156,16 @@ void Theme::setAccent(Accent a) {
 // Remembers where the fonts live; fonts themselves load lazily.
 void Theme::init(const std::string& assetsDir) { assetsDir_ = assetsDir; }
 
-// Loads the sizes used by the screens up front.
+// Loads the sizes used by the screens up front (every size token and the few derived sizes: token + 1, kH1 + 6).
 void Theme::preload() {
-    for (int px : {13, 14, 15, 16, 17, 20}) font(Face::Regular, px);
-    for (int px : {13, 14, 15, 16, 17, 18, 20, 21, 24, 25, 30, 34, 40, 44}) font(Face::Bold, px);
-    for (int px : {14, 15}) font(Face::Mono, px);
+    const int sizes[] = {size::kLabel, size::kLabel + 1, size::kSmall, size::kSmall + 1, size::kBodySm, size::kButton, size::kBody,
+                         size::kH3,    size::kH3 + 1,    size::kH2,    size::kH1,        size::kH1 + 6,  size::kValue,
+                         size::kStat,  size::kDisplay};
+    for (int px : sizes) {
+        font(Face::Regular, px);
+        font(Face::Bold, px);
+    }
+    for (int px : {size::kCode - 1, size::kCode}) font(Face::Mono, px);
 }
 
 // Unloads every cached font.

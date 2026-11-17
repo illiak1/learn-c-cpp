@@ -28,7 +28,7 @@ void pageHeader(Column& col, App& app, const std::string& title, const std::stri
     drawText(type::kTitle, title, col.x, col.y, p.text);
     const std::string label = std::string(trackName(app.track())) + " track";
     badge(label, col.x + col.w - badgeWidth(label), col.y + 12.0f, p.textOnAccent, p.accent);
-    col.space(48.0f);
+    col.space(52.0f);
     if (!subtitle.empty())
         col.space(drawParagraph(Face::Regular, size::kBody, subtitle, col.x, col.y, std::min(col.w, metrics::kProseMaxW), p.textMuted) + 20.0f);
     else

@@ -86,16 +86,19 @@ inline constexpr float kScreen = 0.22f;
 inline constexpr float kStagger = 0.04f;
 }  // namespace motion
 
-// Text sizes used across the UI. Nothing is smaller than kLabel.
+// Text sizes used across the UI. Nothing is smaller than kLabel; line heights are whole pixels (Theme::lineHeight).
 namespace size {
-inline constexpr int kLabel = 13;    // uppercase labels, badges, axis ticks
-inline constexpr int kSmall = 14;    // captions
-inline constexpr int kBodySm = 15;   // secondary body text
-inline constexpr int kButton = 16;
-inline constexpr int kBody = 17;     // running text
-inline constexpr int kH3 = 20;       // card titles
-inline constexpr int kH2 = 25;       // section headings
-inline constexpr int kH1 = 34;       // page titles
+inline constexpr int kLabel = 14;    // uppercase labels, badges, axis ticks
+inline constexpr int kSmall = 15;    // captions
+inline constexpr int kBodySm = 16;   // secondary body text
+inline constexpr int kButton = 17;
+inline constexpr int kBody = 18;     // running text
+inline constexpr int kH3 = 22;       // card titles
+inline constexpr int kH2 = 27;       // section headings
+inline constexpr int kH1 = 36;       // page titles
+inline constexpr int kValue = 28;    // numbers on the Home tiles
+inline constexpr int kStat = 32;     // numbers on the Statistics cards
+inline constexpr int kDisplay = 46;  // the big score of the exam review
 inline constexpr int kCode = 15;
 }  // namespace size
 

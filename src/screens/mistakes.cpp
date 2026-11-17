@@ -59,7 +59,7 @@ public:
                     const std::string info = std::to_string(rec->correct) + "/" + std::to_string(rec->attempts) + " correct";
                     badge(info, r.x + 28.0f + badgeWidth(content::typeName(e->type)), r.y + 11.0f, p.textMuted, p.surfaceAlt);
                 }
-                drawText(Face::Regular, 15, ellipsize(Face::Regular, 15, e->prompt, r.width - 190.0f), r.x + 18.0f, r.y + 36.0f, p.text);
+                drawText(Face::Regular, size::kBodySm, ellipsize(Face::Regular, size::kBodySm, e->prompt, r.width - 190.0f), r.x + 18.0f, r.y + 38.0f, p.text);
                 if (button("Practice", Rect{r.x + r.width - 128.0f, r.y + 12.0f, 108.0f, 42.0f}, ButtonStyle::Secondary, Icon::Pencil))
                     app.startSession("Mistakes", {id});
                 Context::get().popId();
@@ -78,12 +78,12 @@ public:
             for (const std::string& id : failed) {
                 const content::Task* t = tc.findTask(id);
                 if (!t) continue;
-                Rect r = col.take(60.0f);
+                Rect r = col.take(62.0f);
                 card(r);
                 Context::get().pushId(id);
                 drawIcon(Icon::Cross, r.x + 28.0f, r.y + 30.0f, 16.0f, p.danger);
-                drawText(Face::Bold, 16, t->title, r.x + 52.0f, r.y + 8.0f, p.text);
-                drawText(Face::Regular, 14, std::to_string(t->points) + " points", r.x + 52.0f, r.y + 31.0f, p.textMuted);
+                drawText(Face::Bold, size::kButton, ellipsize(Face::Bold, size::kButton, t->title, r.width - 52.0f - 128.0f), r.x + 52.0f, r.y + 8.0f, p.text);
+                drawText(Face::Regular, size::kSmall, std::to_string(t->points) + " points", r.x + 52.0f, r.y + 33.0f, p.textMuted);
                 if (button("Redo", Rect{r.x + r.width - 118.0f, r.y + 8.0f, 98.0f, 42.0f}, ButtonStyle::Secondary, Icon::Timer))
                     app.beginExam(logic::makeTaskListExam(t->title, {id}));
                 Context::get().popId();

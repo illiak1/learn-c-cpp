@@ -16,7 +16,7 @@ namespace {
 
 // Height a stat tile of the given width needs: the caption wraps in narrow windows.
 float miniStatHeight(float w, const std::string& caption) {
-    return std::max(84.0f, 50.0f + textHeight(Face::Regular, 14, caption, w - 74.0f - 14.0f) + 14.0f);
+    return std::max(92.0f, 54.0f + textHeight(Face::Regular, size::kSmall, caption, w - 74.0f - 14.0f) + 16.0f);
 }
 
 // Small stat tile: icon, big value and caption.
@@ -26,8 +26,8 @@ void miniStat(Rect r, Icon icon, Color accent, const std::string& value, const s
     Rect ic{r.x + 16.0f, r.y + 20.0f, 44.0f, 44.0f};
     fillRound(ic, radius::kMd + 2.0f, withAlpha(accent, 0.14f));
     drawIcon(icon, ic.x + 22.0f, ic.y + 22.0f, 22.0f, accent);
-    drawText(Face::Bold, 24, value, r.x + 74.0f, r.y + 14.0f, p.text);
-    drawParagraph(Face::Regular, size::kSmall, caption, r.x + 74.0f, r.y + 48.0f, r.width - 74.0f - 14.0f, p.textMuted);
+    drawText(Face::Bold, size::kValue, value, r.x + 74.0f, r.y + 14.0f, p.text);
+    drawParagraph(Face::Regular, size::kSmall, caption, r.x + 74.0f, r.y + 54.0f, r.width - 74.0f - 14.0f, p.textMuted);
 }
 
 class HomeScreen : public Screen {
@@ -42,7 +42,7 @@ public:
         drawText(type::kTitle, "Welcome back", col.x, col.y, p.text);
         const float bw = badgeWidth(std::string(trackName(t)) + " track");
         badge(std::string(trackName(t)) + " track", col.x + col.w - bw, col.y + 12.0f, p.textOnAccent, p.accent);
-        col.space(48.0f);
+        col.space(52.0f);
         const std::string sub = t == Track::C
             ? "Prepare for the C coding exam: loops, arrays, strings and functions."
             : "Prepare for the C++ coding exam: pointers, memory, classes and linked lists.";
@@ -80,7 +80,7 @@ public:
             const float lineW = hw - 20.0f - 150.0f;  // text stops before the button on the right
             const int mistakes = app.mistakeCount();
             const std::string mistakeNote = mistakes ? "Replay what you got wrong." : "Nothing to review right now.";
-            const float pairH = std::max(110.0f, 66.0f + textHeight(Face::Regular, 14, mistakeNote, lineW) + 22.0f);
+            const float pairH = std::max(120.0f, 74.0f + textHeight(Face::Regular, size::kSmall, mistakeNote, lineW) + 20.0f);
             Rect left{col.x, col.y, hw, pairH};
             Rect right{col.x + hw + sgap, col.y, hw, pairH};
             Appear apPair(3, Rect{col.x, col.y, col.w, pairH});
@@ -96,13 +96,13 @@ public:
             if (lesson) {
                 drawText(Face::Bold, size::kH3, ellipsize(Face::Bold, size::kH3, lesson->title, lineW), left.x + 20.0f, left.y + 38.0f, p.text);
                 if (resume && section < static_cast<int>(lesson->sections.size()))
-                    drawText(Face::Regular, 14, ellipsize(Face::Regular, 14, "Section " + content::sectionNumber(app.content(), *lesson, static_cast<size_t>(section)) + "  " + content::cleanSectionTitle(lesson->sections[static_cast<size_t>(section)].title), lineW), left.x + 20.0f, left.y + 66.0f, p.textMuted);
+                    drawText(Face::Regular, size::kSmall, ellipsize(Face::Regular, size::kSmall, "Section " + content::sectionNumber(app.content(), *lesson, static_cast<size_t>(section)) + "  " + content::cleanSectionTitle(lesson->sections[static_cast<size_t>(section)].title), lineW), left.x + 20.0f, left.y + 74.0f, p.textMuted);
                 if (button(resume ? "Continue" : "Open", Rect{left.x + hw - 138.0f, left.y + 34.0f, 118.0f, 42.0f}, ButtonStyle::Primary, Icon::ChevronRight))
                     app.openLesson(lesson->id, resume ? section : 0);
             }
             drawLabel("MISTAKES", right.x + 20.0f, right.y + 16.0f, p.textMuted);
             drawText(Face::Bold, size::kH3, mistakes ? std::to_string(mistakes) + " to review" : "All caught up", right.x + 20.0f, right.y + 38.0f, mistakes ? p.danger : p.success);
-            drawParagraph(Face::Regular, 14, mistakeNote, right.x + 20.0f, right.y + 66.0f, lineW, p.textMuted);
+            drawParagraph(Face::Regular, size::kSmall, mistakeNote, right.x + 20.0f, right.y + 74.0f, lineW, p.textMuted);
             if (mistakes > 0 && button("Review", Rect{right.x + hw - 138.0f, right.y + 34.0f, 118.0f, 42.0f}, ButtonStyle::Secondary, Icon::Cross))
                 app.go(Page::Mistakes);
             col.space(pairH + 18.0f);
@@ -118,7 +118,7 @@ public:
         const float gap = 16.0f;
         const float cw = (col.w - 2.0f * gap) / 3.0f;
         float ch = 156.0f;  // grows when a description needs a third line
-        for (const Link& l : links) ch = std::max(ch, 102.0f + textHeight(Face::Regular, size::kSmall, l.text, cw - 36.0f) + 18.0f);
+        for (const Link& l : links) ch = std::max(ch, 106.0f + textHeight(Face::Regular, size::kSmall, l.text, cw - 36.0f) + 18.0f);
         for (int i = 0; i < 3; ++i) {
             Rect r{col.x + static_cast<float>(i) * (cw + gap), col.y, cw, ch};
             Appear ap(4 + i, r);
@@ -128,8 +128,8 @@ public:
             Rect badgeR{r.x + 18.0f, r.y + 18.0f, 42.0f, 42.0f};
             fillRoundGradient(badgeR, radius::kMd + 1.0f, mix(p.accentSoft, p.accent, 0.12f), p.accentSoft);
             drawIcon(links[i].icon, badgeR.x + 21.0f, badgeR.y + 21.0f, 20.0f, p.accent);
-            drawText(Face::Bold, size::kH3, links[i].title, r.x + 18.0f, r.y + 72.0f, p.text);
-            drawParagraph(Face::Regular, size::kSmall, links[i].text, r.x + 18.0f, r.y + 102.0f, r.width - 36.0f, p.textMuted);
+            drawText(Face::Bold, size::kH3, links[i].title, r.x + 18.0f, r.y + 70.0f, p.text);
+            drawParagraph(Face::Regular, size::kSmall, links[i].text, r.x + 18.0f, r.y + 104.0f, r.width - 36.0f, p.textMuted);
             if (clicked) app.go(links[i].page);
         }
         col.space(ch + 24.0f);
@@ -140,12 +140,12 @@ public:
             "the whole exam - so make sure the file always builds and every loop ends, even if a function is only "
             "half done.";
         const float th = textHeight(Face::Regular, size::kBody, tips, col.w - 86.0f);
-        Rect tipR = col.take(th + 70.0f);
+        Rect tipR = col.take(th + 78.0f);
         Appear apTip(7, tipR);
         callout(tipR, p.warning, p.warningSoft);
-        drawIcon(Icon::Warning, tipR.x + 36.0f, tipR.y + 38.0f, 24.0f, p.warning);
+        drawIcon(Icon::Warning, tipR.x + 36.0f, tipR.y + 40.0f, 24.0f, p.warning);
         drawText(Face::Bold, size::kH3, "Before the exam", tipR.x + 62.0f, tipR.y + 20.0f, p.text);
-        drawParagraph(Face::Regular, size::kBody, tips, tipR.x + 62.0f, tipR.y + 50.0f, tipR.width - 86.0f, p.text);
+        drawParagraph(Face::Regular, size::kBody, tips, tipR.x + 62.0f, tipR.y + 54.0f, tipR.width - 86.0f, p.text);
         end(col);
     }
 };

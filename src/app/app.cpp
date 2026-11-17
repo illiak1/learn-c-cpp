@@ -270,8 +270,8 @@ void App::drawSidebar(Rect r) {
     Rect mark{r.x + 20.0f, r.y + 22.0f, 40.0f, 40.0f};
     fillRoundGradient(mark, radius::kMd + 2.0f, mix(p.accent, WHITE, 0.2f), p.accent);
     strokeRound(mark, radius::kMd + 2.0f, 1.0f, withAlpha(WHITE, 0.18f));
-    drawCentered(Face::Bold, track_ == Track::C ? 21 : 17, trackName(track_), mark, p.textOnAccent);
-    drawText(Face::Bold, 18, "Exam Trainer", r.x + 72.0f, r.y + 23.0f, p.text);
+    drawCentered(Face::Bold, track_ == Track::C ? size::kH3 : size::kButton, trackName(track_), mark, p.textOnAccent);
+    drawText(Face::Bold, size::kBody, "Exam Trainer", r.x + 72.0f, r.y + 23.0f, p.text);
     drawText(Face::Regular, size::kLabel, "C and C++ practice", r.x + 72.0f, r.y + 45.0f, p.textMuted);
 
     // Track toggle

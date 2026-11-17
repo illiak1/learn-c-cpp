@@ -47,11 +47,11 @@ public:
         }
 
         // Top bar: back link, session title, progress
-        if (button("Practice", Rect{col.x, col.y, 120.0f, 34.0f}, ButtonStyle::Secondary, Icon::ChevronLeft)) app.go(Page::Practice);
+        if (button("Practice", Rect{col.x, col.y, 134.0f, 36.0f}, ButtonStyle::Secondary, Icon::ChevronLeft)) app.go(Page::Practice);
         const bool finished = s.pos >= s.ids.size();
         const std::string counter = finished ? "Finished" : "Question " + std::to_string(s.pos + 1) + " of " + std::to_string(s.ids.size());
-        drawText(Face::Bold, size::kBodySm, s.label() + "  \xC2\xB7  " + counter, col.x + 136.0f, col.y + 7.0f, p.textMuted);
-        col.space(46.0f);
+        drawText(Face::Bold, size::kBodySm, s.label() + "  \xC2\xB7  " + counter, col.x + 150.0f, col.y + 18.0f - Theme::get().textMidline(Face::Bold, size::kBodySm), p.textMuted);
+        col.space(48.0f);
         progressBar(Rect{col.x, col.y, col.w, 8.0f}, static_cast<float>(std::min(s.pos, s.ids.size())) / static_cast<float>(s.ids.size()), p.accent, "session-bar");
         col.space(30.0f);
 
@@ -338,7 +338,7 @@ private:
         const int clicked = codeBox("ex-code", Rect{col.x, col.y, col.w, h}, ex.code, co);
         if (clicked >= 0 && !a.checked) a.bugLine = clicked + 1;
         col.space(h + 10.0f);
-        drawText(Face::Regular, 15, a.bugLine > 0 ? "Selected line " + std::to_string(a.bugLine) : "Click the line that contains the bug.",
+        drawText(Face::Regular, size::kBodySm, a.bugLine > 0 ? "Selected line " + std::to_string(a.bugLine) : "Click the line that contains the bug.",
                  col.x, col.y, a.bugLine > 0 ? p.danger : p.textMuted);
         col.space(28.0f);
         if (!ex.answers.empty()) {
@@ -421,8 +421,8 @@ private:
             card(row, false);
             const Color c = r == 1 ? p.success : r == 0 ? p.danger : p.textMuted;
             drawIcon(r == 1 ? Icon::Check : r == 0 ? Icon::Cross : Icon::Flag, row.x + 26.0f, row.y + h / 2.0f, 16.0f, c);
-            drawText(Face::Regular, 15, ellipsize(Face::Regular, 15, e->prompt, row.width - 140.0f), row.x + 50.0f, row.y + 13.0f, p.text);
-            badge(r == 1 ? "Correct" : r == 0 ? "Wrong" : "Skipped", row.x + row.width - 90.0f, row.y + 12.0f, c, r == 1 ? p.successSoft : r == 0 ? p.dangerSoft : p.surfaceAlt);
+            drawText(Face::Regular, size::kBodySm, ellipsize(Face::Regular, size::kBodySm, e->prompt, row.width - 140.0f), row.x + 50.0f, row.y + 15.0f, p.text);
+            badge(r == 1 ? "Correct" : r == 0 ? "Wrong" : "Skipped", row.x + row.width - 90.0f, row.y + 13.0f, c, r == 1 ? p.successSoft : r == 0 ? p.dangerSoft : p.surfaceAlt);
             if (r != 1) wrong.push_back(e->id);
             col.space(h + 8.0f);
         }

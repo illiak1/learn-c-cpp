@@ -50,11 +50,11 @@ public:
         // Header card: exam title and task counter, clock pill, finish button and a bar with the time left
         const content::Task& cur = *tasks[static_cast<size_t>(current_)];
         const float finishW = 150.0f, pillW = 136.0f;
-        Rect hdr = col.take(timed ? 104.0f : 88.0f);
+        Rect hdr = col.take(timed ? 110.0f : 92.0f);
         cardRaised(hdr);
         const float titleW = hdr.width - 44.0f - finishW - pillW - 24.0f;
         drawText(Face::Bold, size::kH2, ellipsize(Face::Bold, size::kH2, exam.title, titleW), hdr.x + 22.0f, hdr.y + 14.0f, p.text);
-        drawText(Face::Regular, size::kSmall, "Task " + std::to_string(current_ + 1) + " of " + std::to_string(tasks.size()) + "  \xC2\xB7  " + std::to_string(cur.points) + " points", hdr.x + 22.0f, hdr.y + 50.0f, p.textMuted);
+        drawText(Face::Regular, size::kSmall, "Task " + std::to_string(current_ + 1) + " of " + std::to_string(tasks.size()) + "  \xC2\xB7  " + std::to_string(cur.points) + " points", hdr.x + 22.0f, hdr.y + 54.0f, p.textMuted);
         const std::string clock = timed ? logic::formatClock(remaining) : logic::formatClock(static_cast<int>(elapsed));
         const bool low = timed && remaining < 300;
         const bool critical = timed && remaining < 60;
@@ -63,20 +63,21 @@ public:
         Rect pill{hdr.x + hdr.width - 22.0f - finishW - 12.0f - pillW, hdr.y + 14.0f, pillW, 42.0f};
         fillRound(pill, pill.height / 2.0f, cbg);
         drawIcon(Icon::Timer, pill.x + 26.0f, pill.y + 21.0f, 19.0f, cfg);
-        drawText(Face::Bold, size::kH3 + 1, clock, pill.x + 48.0f, pill.y + 8.0f, cfg);
+        drawText(Face::Bold, size::kH3 + 1, clock, pill.x + 48.0f, pill.y + pill.height / 2.0f - Theme::get().textMidline(Face::Bold, size::kH3 + 1), cfg);
         if (button("Finish exam", Rect{hdr.x + hdr.width - 22.0f - finishW, hdr.y + 14.0f, finishW, 42.0f}, ButtonStyle::Secondary, Icon::Flag)) app.requestFinishExam();
         if (timed) {
             const float total = static_cast<float>(exam.minutes * 60);
-            progressBar(Rect{hdr.x + 22.0f, hdr.y + hdr.height - 26.0f, hdr.width - 44.0f, 8.0f}, std::clamp(static_cast<float>(remaining) / total, 0.0f, 1.0f), cfg, "exam-time");
+            progressBar(Rect{hdr.x + 22.0f, hdr.y + hdr.height - 28.0f, hdr.width - 44.0f, 8.0f}, std::clamp(static_cast<float>(remaining) / total, 0.0f, 1.0f), cfg, "exam-time");
         }
         col.space(4.0f);
 
-        // Exam rule reminder
-        Rect warn = col.take(48.0f);
+        // Exam rule reminder (wraps in narrow windows instead of being cut off)
+        const std::string rule = "A compile error, an infinite loop or a crash gives 0 for the whole exam. A wrong result fails only that function.";
+        const float ruleH = textHeight(Face::Regular, size::kSmall, rule, col.w - 80.0f);
+        Rect warn = col.take(std::max(48.0f, ruleH + 26.0f));
         callout(warn, p.warning, p.warningSoft);
-        drawIcon(Icon::Warning, warn.x + 30.0f, warn.y + 24.0f, 18.0f, p.warning);
-        drawText(Face::Regular, size::kSmall, ellipsize(Face::Regular, size::kSmall, "A compile error, an infinite loop or a crash gives 0 for the whole exam. A wrong result fails only that function.", warn.width - 80.0f),
-                 warn.x + 54.0f, warn.y + 14.0f, p.text);
+        drawIcon(Icon::Warning, warn.x + 30.0f, warn.y + warn.height / 2.0f, 18.0f, p.warning);
+        drawParagraph(Face::Regular, size::kSmall, rule, warn.x + 54.0f, warn.y + (warn.height - ruleH) / 2.0f, warn.width - 80.0f, p.text);
 
         // Task chips (one group: they share the sliding highlight)
         float x = col.x;
@@ -128,7 +129,7 @@ public:
             cx.toast("Full exam copied - paste it into your IDE");
         }
         col.space(60.0f);
-        const float hint = drawParagraph(Face::Regular, 15,
+        const float hint = drawParagraph(Face::Regular, size::kBodySm,
                                          "The file has all " + std::to_string(tasks.size()) + " functions with empty bodies and the tests at the bottom. "
                                          "Run it in your IDE: a correct function prints yes.",
                                          col.x, col.y, col.w, p.textMuted);
@@ -159,15 +160,15 @@ private:
         const float btnW = 136.0f, btnGap = 10.0f;
         const bool stacked = col.w < 700.0f;  // narrow window: buttons go under the text
         const float textW = col.w - 44.0f - (stacked ? 0.0f : 2.0f * btnW + btnGap + 20.0f);
-        const float noteH = textHeight(Face::Regular, 15, note, textW);
-        const float bodyH = 46.0f + noteH;
+        const float noteH = textHeight(Face::Regular, size::kBodySm, note, textW);
+        const float bodyH = 52.0f + noteH;
         Rect r = col.take(stacked ? bodyH + 12.0f + 40.0f + 18.0f : std::max(84.0f, bodyH + 18.0f));
         signed char& mark = exam.marks[index];
         if (mark == 1) callout(r, p.success, p.successSoft);
         else if (mark == 0) callout(r, p.danger, p.dangerSoft);
         else card(r);
         drawText(Face::Bold, size::kH3, "Self-check", r.x + 22.0f, r.y + 16.0f, p.text);
-        drawParagraph(Face::Regular, 15, note, r.x + 22.0f, r.y + 46.0f, textW, p.textMuted);
+        drawParagraph(Face::Regular, size::kBodySm, note, r.x + 22.0f, r.y + 50.0f, textW, p.textMuted);
         const float by = stacked ? r.y + bodyH + 12.0f : r.y + (r.height - 40.0f) / 2.0f;
         const float bx = stacked ? r.x + 22.0f : r.x + r.width - 22.0f - 2.0f * btnW - btnGap;
         if (button("Solved", Rect{bx, by, btnW, 40.0f}, mark == 1 ? ButtonStyle::Success : ButtonStyle::Secondary, Icon::Check))
