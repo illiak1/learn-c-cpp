@@ -21,6 +21,7 @@ struct Attempt {
     int bugLine = 0;                   // find the bug: 1-based clicked line
     std::string fix;                   // find the bug: typed correction
     bool checked = false;
+    double checkedAt = 0.0;            // time of the check (drives the flash and shake)
     bool hint = false;
     logic::Result result;
 };
@@ -49,10 +50,10 @@ public:
         if (button("Practice", Rect{col.x, col.y, 120.0f, 34.0f}, ButtonStyle::Secondary, Icon::ChevronLeft)) app.go(Page::Practice);
         const bool finished = s.pos >= s.ids.size();
         const std::string counter = finished ? "Finished" : "Question " + std::to_string(s.pos + 1) + " of " + std::to_string(s.ids.size());
-        drawText(Face::Bold, 15, s.label() + "  -  " + counter, col.x + 132.0f, col.y + 8.0f, p.textMuted);
-        col.space(42.0f);
-        progressBar(Rect{col.x, col.y, col.w, 8.0f}, static_cast<float>(std::min(s.pos, s.ids.size())) / static_cast<float>(s.ids.size()), p.accent);
-        col.space(28.0f);
+        drawText(Face::Bold, size::kBodySm, s.label() + "  \xC2\xB7  " + counter, col.x + 136.0f, col.y + 7.0f, p.textMuted);
+        col.space(46.0f);
+        progressBar(Rect{col.x, col.y, col.w, 8.0f}, static_cast<float>(std::min(s.pos, s.ids.size())) / static_cast<float>(s.ids.size()), p.accent, "session-bar");
+        col.space(30.0f);
 
         if (finished) {
             drawSummary(app, col, s);
@@ -90,9 +91,15 @@ private:
         const std::string diff = ex.difficulty == 1 ? "Easy" : ex.difficulty == 2 ? "Medium" : "Hard";
         badge(diff, bx, col.y, p.textMuted, p.surfaceAlt);
         col.space(34.0f);
-        col.space(drawParagraph(Face::Bold, size::kH3 + 1, ex.prompt, col.x, col.y, col.w, p.text) + 16.0f);
+        col.space(drawParagraph(Face::Bold, size::kH3 + 1, ex.prompt, col.x, col.y, std::min(col.w, 800.0f), p.text) + 18.0f);
 
         const bool locked = a.checked;
+        // A wrong answer makes the answer area shake for a moment; a flash of green or red fades out after checking.
+        Context& cxs = Context::get();
+        const float sinceCheck = locked ? static_cast<float>(cxs.now - a.checkedAt) : 99.0f;
+        const float shake = locked && !a.result.correct ? shakeOffset(sinceCheck) : 0.0f;
+        const float areaTop = col.y;
+        if (shake != 0.0f) pushOffset(shake, 0.0f);
         switch (ex.type) {
             case ExType::Theory: {
                 drawLabel("YOUR ANSWER", col.x, col.y, p.textMuted);
@@ -111,6 +118,7 @@ private:
             case ExType::Predict: {
                 CodeBoxOpts co;
                 co.cpp = cpp;
+                co.title = cpp ? "C++" : "C";
                 const float h = codeBoxHeight(ex.code, co);
                 codeBox("ex-code", Rect{col.x, col.y, col.w, h}, ex.code, co);
                 col.space(h + 18.0f);
@@ -134,6 +142,12 @@ private:
                 drawBug(col, ex, cpp);
                 break;
         }
+        if (shake != 0.0f) popOffset();
+        if (locked && sinceCheck < 0.55f) {
+            const float fade = 1.0f - sinceCheck / 0.55f;
+            fillRound(Rect{col.x - 8.0f, areaTop - 8.0f, col.w + 16.0f, col.y - areaTop + 6.0f}, radius::kLg,
+                      withAlpha(a.result.correct ? p.success : p.danger, 0.20f * fade));
+        }
 
         // Action row
         const bool can = canCheck(ex);
@@ -141,7 +155,7 @@ private:
         const bool ctrlEnter = (IsKeyDown(KEY_LEFT_CONTROL) || IsKeyDown(KEY_RIGHT_CONTROL)) && IsKeyPressed(KEY_ENTER);
         if (!locked && can && (submit_ || ctrlEnter)) doCheck(app, s, ex);
         submit_ = false;
-        if (locked && IsKeyPressed(KEY_ENTER) && Context::get().focus == 0) {
+        if (locked && IsKeyPressed(KEY_ENTER) && Context::get().focus == 0 && Context::get().kbFocus == 0) {
             s.pos++;
             loadedId_.clear();
             scroll_.offset = 0.0f;
@@ -157,8 +171,8 @@ private:
             if (a.hint && !ex.hint.empty()) {
                 const float h = textHeight(Face::Regular, size::kBody, ex.hint, col.w - 40.0f) + 28.0f;
                 Rect r{col.x, col.y, col.w, h};
-                tintedCard(r, p.warningSoft, withAlpha(p.warning, 0.45f));
-                drawParagraph(Face::Regular, size::kBody, "Hint: " + ex.hint, r.x + 20.0f, r.y + 14.0f, r.width - 40.0f, p.text);
+                callout(r, p.warning, p.warningSoft);
+                drawParagraph(Face::Regular, size::kBody, "Hint: " + ex.hint, r.x + 24.0f, r.y + 14.0f, r.width - 44.0f, p.text);
                 col.space(h + 14.0f);
             }
         } else {
@@ -208,6 +222,7 @@ private:
             case ExType::Bug: a.result = logic::checkBug(ex, a.bugLine, a.fix); break;
         }
         a.checked = true;
+        a.checkedAt = Context::get().now;
         s.results[s.pos] = a.result.correct ? 1 : 0;
         app.progress().recordAnswer(app.trackKey(), ex.id, a.result.correct, logic::todayString());
         app.saveProgress();
@@ -239,8 +254,13 @@ private:
                 cx.cursor = MOUSE_CURSOR_POINTING_HAND;
                 if (cx.pressed) a.choice = static_cast<int>(i);
             }
-            fillRound(r, 11.0f, hov && !sel ? p.surfaceAlt : fill);
-            strokeRound(r, 11.0f, sel || (a.checked && c.correct) ? 2.0f : 1.0f, border);
+            cx.pushId(static_cast<int>(i));
+            const float hv = cx.anim(cx.makeId("choice"), hov ? 1.0f : 0.0f);
+            cx.popId();
+            const float rad = radius::kMd + 1.0f;
+            if (!a.checked) shadowRound(r, rad, shadow::kCard, 0.5f + 0.7f * hv);
+            fillRound(r, rad, hov && !sel ? mix(p.surface, p.surfaceAlt, hv) : fill);
+            strokeRound(r, rad, sel || (a.checked && c.correct) ? 2.0f : 1.0f, sel || a.checked ? border : mix(p.border, p.accent, hv * 0.5f));
             const Vector2 ctr{r.x + 30.0f, r.y + h / 2.0f};
             DrawCircleLinesV(ctr, 10.0f, a.checked && c.correct ? p.success : sel ? (a.checked ? p.danger : p.accent) : p.borderStrong);
             if (a.checked && c.correct) drawIcon(Icon::Check, ctr.x, ctr.y, 13.0f, p.success);
@@ -283,6 +303,7 @@ private:
         }
         CodeBoxOpts co;
         co.cpp = cpp;
+        co.title = cpp ? "C++" : "C";
         const float h = codeBoxHeight(display, co);
         const Rect box{col.x, col.y, col.w, h};
         codeBox("ex-code", box, display, co);
@@ -309,6 +330,7 @@ private:
         Attempt& a = attempt_;
         CodeBoxOpts co;
         co.cpp = cpp;
+        co.title = cpp ? "C++" : "C";
         co.clickableLines = !a.checked;
         co.selectedLine = a.bugLine - 1;
         co.highlightLine = a.checked ? ex.bugLines.front() - 1 : -1;
@@ -360,14 +382,15 @@ private:
         }
         if (!ex.explanation.empty()) body += (body.empty() ? "" : "\n\n") + ex.explanation;
         const std::string title = a.result.correct ? "Correct!" : "Not quite";
-        const float h = 54.0f + (body.empty() ? 0.0f : textHeight(Face::Regular, size::kBody, body, col.w - 72.0f) + 6.0f);
+        const float h = 62.0f + (body.empty() ? 0.0f : textHeight(Face::Regular, size::kBody, body, col.w - 96.0f) + 4.0f);
         Rect r{col.x, col.y, col.w, h};
         const Color accent = a.result.correct ? p.success : p.danger;
-        tintedCard(r, a.result.correct ? p.successSoft : p.dangerSoft, withAlpha(accent, 0.6f));
-        drawIcon(a.result.correct ? Icon::Check : Icon::Cross, r.x + 34.0f, r.y + 30.0f, 22.0f, accent);
-        drawText(Face::Bold, size::kH3, title, r.x + 60.0f, r.y + 18.0f, accent);
-        if (!body.empty()) drawParagraph(Face::Regular, size::kBody, body, r.x + 60.0f, r.y + 50.0f, r.width - 84.0f, p.text);
-        col.space(h + 16.0f);
+        callout(r, accent, a.result.correct ? p.successSoft : p.dangerSoft);
+        fillRound(Rect{r.x + 20.0f, r.y + 14.0f, 36.0f, 36.0f}, 18.0f, withAlpha(accent, 0.16f));
+        drawIcon(a.result.correct ? Icon::Check : Icon::Cross, r.x + 38.0f, r.y + 32.0f, 18.0f, accent);
+        drawText(Face::Bold, size::kH3, title, r.x + 70.0f, r.y + 20.0f, accent);
+        if (!body.empty()) drawParagraph(Face::Regular, size::kBody, body, r.x + 70.0f, r.y + 54.0f, r.width - 96.0f, p.text);
+        col.space(h + 18.0f);
     }
 
     // End of a session: score, per-question list and follow-up buttons.
@@ -378,19 +401,23 @@ private:
             if (r >= 0) ++answered;
             if (r == 1) ++right;
         }
-        Rect hero = col.take(120.0f);
-        card(hero);
-        drawText(Face::Bold, size::kH1 + 6, std::to_string(right) + " / " + std::to_string(s.ids.size()), hero.x + 28.0f, hero.y + 22.0f, right == static_cast<int>(s.ids.size()) ? p.success : p.accent);
-        drawText(Face::Regular, size::kBody, "answered correctly (" + std::to_string(answered) + " answered)", hero.x + 28.0f, hero.y + 78.0f, p.textMuted);
-        progressBar(Rect{hero.x + hero.width - 330.0f, hero.y + 52.0f, 290.0f, 12.0f}, s.ids.empty() ? 0.0f : static_cast<float>(right) / static_cast<float>(s.ids.size()), p.success);
+        Rect hero = col.take(144.0f);
+        cardRaised(hero);
+        const float frac = s.ids.empty() ? 0.0f : static_cast<float>(right) / static_cast<float>(s.ids.size());
+        const Color heroColor = right == static_cast<int>(s.ids.size()) ? p.success : p.accent;
+        progressRing(hero.x + 82.0f, hero.y + 72.0f, 50.0f, 11.0f, frac, heroColor, "summary-ring");
+        drawCentered(Face::Bold, size::kH3, std::to_string(static_cast<int>(frac * 100.0f + 0.5f)) + "%", Rect{hero.x + 32.0f, hero.y + 22.0f, 100.0f, 100.0f}, p.text);
+        drawText(Face::Bold, size::kH1 + 6, std::to_string(right) + " / " + std::to_string(s.ids.size()), hero.x + 160.0f, hero.y + 34.0f, heroColor);
+        drawText(Face::Regular, size::kBody, "answered correctly (" + std::to_string(answered) + " answered)", hero.x + 160.0f, hero.y + 88.0f, p.textMuted);
 
         std::vector<std::string> wrong;
         for (size_t i = 0; i < s.ids.size(); ++i) {
             const content::Exercise* e = app.content().findExercise(s.ids[i]);
             if (!e) continue;
             const signed char r = s.results[i];
-            const float h = 46.0f;
+            const float h = 50.0f;
             Rect row{col.x, col.y, col.w, h};
+            Appear apRow(static_cast<int>(i) + 1, row);
             card(row, false);
             const Color c = r == 1 ? p.success : r == 0 ? p.danger : p.textMuted;
             drawIcon(r == 1 ? Icon::Check : r == 0 ? Icon::Cross : Icon::Flag, row.x + 26.0f, row.y + h / 2.0f, 16.0f, c);
