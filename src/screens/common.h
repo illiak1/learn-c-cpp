@@ -21,7 +21,7 @@ void drawCode(ui::Column& col, const std::string& id, const std::string& code, b
               bool warn = false, bool plain = false);
 
 // Monospace output box (program output); advances the column.
-void drawOutput(ui::Column& col, const std::string& text, const std::string& caption = "");
+void drawOutput(ui::Column& col, const std::string& text, const std::string& caption = "", const std::string& id = "output");
 
 // Colour of an exam result: green from 70 percent, orange from 40, red below (or when the file did not run).
 Color examColor(const ui::Palette& p, const logic::ExamRecord& e);

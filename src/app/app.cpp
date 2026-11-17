@@ -2,6 +2,7 @@
 #include "app/app.h"
 
 #include <algorithm>
+#include <cmath>
 #include <cstring>
 
 #include <cstdio>
@@ -54,7 +55,6 @@ Section sectionOf(Page page) {
 
 const char* trackName(Track t) { return t == Track::C ? "C" : "C++"; }
 
-Color trackColor(Track t) { return t == Track::C ? Color{37, 99, 235, 255} : Color{139, 70, 232, 255}; }
 
 // Parses --dark, --cpp, --page=NAME and --screenshot=FILE.
 Options parseArgs(int argc, char** argv) {
@@ -132,6 +132,7 @@ void App::registerScreens() {
 void App::setTrack(Track t) {
     if (t == track_) return;
     track_ = t;
+    Theme::get().setAccent(t == Track::C ? Accent::C : Accent::Cpp);
     progress_.track = trackKey();
     saveProgress();
     go(Page::Home);
@@ -245,6 +246,7 @@ void App::finishExam() {
 // Switches page and notifies the new screen.
 void App::go(Page page) {
     closeModal();
+    Context::get().enterPage();
     page_ = page;
     screens_[page_]->onEnter(*this);
 }
@@ -256,24 +258,25 @@ Rect App::contentArea() const {
     return Rect{metrics::kSidebarW, 0.0f, w - metrics::kSidebarW, h};
 }
 
-// Left navigation: logo, track toggle, page list, theme switch.
+// Left navigation: logo, track toggle, page list with a sliding active pill, theme switch.
 void App::drawSidebar(Rect r) {
     Context& cx = Context::get();
     Theme& th = Theme::get();
     const Palette& p = th.colors();
-    DrawRectangleRec(r, p.surface);
+    DrawRectangleRec(r, p.sidebar);
     DrawLineEx(Vector2{r.x + r.width - 0.5f, r.y}, Vector2{r.x + r.width - 0.5f, r.y + r.height}, 1.0f, p.border);
 
-    // Logo: a flat badge that names the selected track
-    Rect mark{r.x + 20.0f, r.y + 22.0f, 38.0f, 38.0f};
-    fillRound(mark, 10.0f, p.accent);
-    drawCentered(Face::Bold, track_ == Track::C ? 20 : 17, trackName(track_), mark, p.textOnAccent);
-    drawText(Face::Bold, 18, "Exam Trainer", r.x + 70.0f, r.y + 24.0f, p.text);
-    drawText(Face::Regular, 13, "C and C++ practice", r.x + 70.0f, r.y + 43.0f, p.textMuted);
+    // Logo: a gradient badge in the track colour that names the selected track
+    Rect mark{r.x + 20.0f, r.y + 22.0f, 40.0f, 40.0f};
+    fillRoundGradient(mark, radius::kMd + 2.0f, mix(p.accent, WHITE, 0.2f), p.accent);
+    strokeRound(mark, radius::kMd + 2.0f, 1.0f, withAlpha(WHITE, 0.18f));
+    drawCentered(Face::Bold, track_ == Track::C ? 21 : 17, trackName(track_), mark, p.textOnAccent);
+    drawText(Face::Bold, 18, "Exam Trainer", r.x + 72.0f, r.y + 23.0f, p.text);
+    drawText(Face::Regular, size::kLabel, "C and C++ practice", r.x + 72.0f, r.y + 45.0f, p.textMuted);
 
     // Track toggle
-    drawText(Face::Bold, 12, "TRACK", r.x + 20.0f, r.y + 82.0f, p.textMuted);
-    const int sel = tabs(Rect{r.x + 16.0f, r.y + 102.0f, r.width - 32.0f, 42.0f}, {"C", "C++"}, track_ == Track::C ? 0 : 1);
+    drawText(Face::Bold, size::kLabel, "TRACK", r.x + 22.0f, r.y + 86.0f, p.textMuted);
+    const int sel = tabs(Rect{r.x + 16.0f, r.y + 108.0f, r.width - 32.0f, 42.0f}, {"C", "C++"}, track_ == Track::C ? 0 : 1);
     if (sel != (track_ == Track::C ? 0 : 1)) setTrack(sel == 0 ? Track::C : Track::Cpp);
 
     // Navigation items
@@ -286,36 +289,44 @@ void App::drawSidebar(Rect r) {
         {"Mistakes", Icon::Cross, Section::Mistakes, Page::Mistakes},
         {"Statistics", Icon::Chart, Section::Stats, Page::Stats},
     };
-    drawText(Face::Bold, 12, "LEARN", r.x + 20.0f, r.y + 170.0f, p.textMuted);
-    float y = r.y + 192.0f;
+    drawText(Face::Bold, size::kLabel, "LEARN", r.x + 22.0f, r.y + 176.0f, p.textMuted);
+    const float top = r.y + 200.0f, pitch = 46.0f, rowH = 42.0f;
+    int activeIdx = 0;
+    for (int i = 0; i < 6; ++i)
+        if (sectionOf(page_) == items[i].section) activeIdx = i;
+    // The pill and its accent bar glide to the active row.
+    const float pillY = cx.tween(cx.makeId("nav-pill"), top + pitch * static_cast<float>(activeIdx), motion::kBase);
+    const Rect pill{r.x + 12.0f, pillY, r.width - 24.0f, rowH};
+    fillRound(pill, radius::kMd, p.accentSoft);
+    fillRound(Rect{pill.x, pill.y + 10.0f, 4.0f, rowH - 20.0f}, 2.0f, p.accent);
+    float y = top;
     for (const Item& it : items) {
-        Rect row{r.x + 12.0f, y, r.width - 24.0f, 42.0f};
-        const bool active = sectionOf(page_) == it.section;
+        Rect row{r.x + 12.0f, y, r.width - 24.0f, rowH};
         const uint32_t id = cx.makeId(it.label);
         const bool hov = cx.hovered(row);
         if (hov) cx.cursor = MOUSE_CURSOR_POINTING_HAND;
         const float h = cx.anim(id, hov ? 1.0f : 0.0f);
-        if (active) fillRound(row, 10.0f, p.accentSoft);
-        else if (h > 0.0f) fillRound(row, 10.0f, withAlpha(p.surfaceAlt, h));
-        const Color fg = active ? p.accent : mix(p.textMuted, p.text, h);
-        drawIcon(it.icon, row.x + 22.0f, row.y + row.height / 2.0f, 19.0f, fg);
-        drawText(active ? Face::Bold : Face::Regular, 16, it.label, row.x + 46.0f, row.y + 11.0f, fg);
+        const float cov = std::clamp(1.0f - std::fabs(pill.y - row.y) / pitch, 0.0f, 1.0f);
+        if (h > 0.0f) fillRound(row, radius::kMd, withAlpha(p.surfaceHover, h * (1.0f - cov) * 0.8f));
+        const Color fg = mix(mix(p.textMuted, p.text, h), p.accent, cov);
+        drawIcon(it.icon, row.x + 26.0f, row.y + row.height / 2.0f, 19.0f, fg);
+        drawText(cov > 0.5f ? Face::Bold : Face::Regular, size::kButton, it.label, row.x + 50.0f, row.y + 10.0f, fg);
         if (it.section == Section::Mistakes) {
             const int n = mistakeCount();
-            if (n > 0) badge(std::to_string(n), row.x + row.width - badgeWidth(std::to_string(n)) - 10.0f, row.y + 10.0f, WHITE, p.danger);
+            if (n > 0) badge(std::to_string(n), row.x + row.width - badgeWidth(std::to_string(n)) - 10.0f, row.y + 10.0f, WHITE, p.dangerFill);
         }
         if (hov && cx.pressed && page_ != it.page) go(it.page);
-        y += 46.0f;
+        y += pitch;
     }
 
     // Theme switch at the bottom
-    const Rect foot{r.x + 12.0f, r.y + r.height - 62.0f, r.width - 24.0f, 46.0f};
-    fillRound(foot, 10.0f, p.surfaceAlt);
+    const Rect foot{r.x + 12.0f, r.y + r.height - 66.0f, r.width - 24.0f, 50.0f};
+    fillRound(foot, radius::kMd, p.surfaceAlt);
     const bool dark = th.mode() == ThemeMode::Dark;
-    drawIcon(dark ? Icon::Moon : Icon::Sun, foot.x + 22.0f, foot.y + foot.height / 2.0f, 18.0f, p.textMuted, p.surfaceAlt);
-    drawText(Face::Regular, 15, dark ? "Dark theme" : "Light theme", foot.x + 44.0f, foot.y + 13.0f, p.text);
+    drawIcon(dark ? Icon::Moon : Icon::Sun, foot.x + 24.0f, foot.y + foot.height / 2.0f, 18.0f, p.textMuted, p.surfaceAlt);
+    drawText(Face::Regular, size::kBodySm, dark ? "Dark theme" : "Light theme", foot.x + 46.0f, foot.y + 14.0f, p.text);
     bool v = dark;
-    if (toggleSwitch("theme-switch", Rect{foot.x + foot.width - 56.0f, foot.y + 11.0f, 42.0f, 24.0f}, v)) {
+    if (toggleSwitch("theme-switch", Rect{foot.x + foot.width - 56.0f, foot.y + 13.0f, 42.0f, 24.0f}, v)) {
         th.setMode(v ? ThemeMode::Dark : ThemeMode::Light);
         progress_.dark = v;
         progress_.dirtyFlag();
@@ -344,7 +355,19 @@ void App::frame() {
         saveProgress();
         cx.toast("Progress erased");
     }
-    screens_[page_]->draw(*this, contentArea());
+    // Page transition: the content slides up a few pixels while a veil of the background colour fades out.
+    const float pt = cx.pageProgress();
+    const Rect area = contentArea();
+    if (pt < 1.0f) {
+        cx.pushClip(area);
+        pushOffset(0.0f, (1.0f - pt) * 10.0f);
+    }
+    screens_[page_]->draw(*this, area);
+    if (pt < 1.0f) {
+        popOffset();
+        DrawRectangleRec(area, withAlpha(p.bg, 1.0f - pt));
+        cx.popClip();
+    }
     drawSidebar(Rect{0.0f, 0.0f, metrics::kSidebarW, static_cast<float>(GetScreenHeight())});
     drawModal();
     cx.endFrame();
@@ -377,6 +400,7 @@ int App::run() {
     if (!options_.hasTheme) options_.dark = progress_.dark;
     if (!options_.hasTrack) options_.track = progress_.track == "cpp" ? Track::Cpp : Track::C;
     track_ = options_.track;
+    th.setAccent(track_ == Track::C ? Accent::C : Accent::Cpp);
     th.setMode(options_.dark ? ThemeMode::Dark : ThemeMode::Light);
     // Load both tracks and report problems on the console.
     const auto root = platform::resourceRoot() / "content";

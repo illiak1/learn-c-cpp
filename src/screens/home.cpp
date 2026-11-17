@@ -24,10 +24,10 @@ void miniStat(Rect r, Icon icon, Color accent, const std::string& value, const s
     const Palette& p = Theme::get().colors();
     card(r);
     Rect ic{r.x + 16.0f, r.y + 20.0f, 44.0f, 44.0f};
-    fillRound(ic, 12.0f, withAlpha(accent, 0.14f));
+    fillRound(ic, radius::kMd + 2.0f, withAlpha(accent, 0.14f));
     drawIcon(icon, ic.x + 22.0f, ic.y + 22.0f, 22.0f, accent);
-    drawText(Face::Bold, 24, value, r.x + 74.0f, r.y + 16.0f, p.text);
-    drawParagraph(Face::Regular, 14, caption, r.x + 74.0f, r.y + 50.0f, r.width - 74.0f - 14.0f, p.textMuted);
+    drawText(Face::Bold, 24, value, r.x + 74.0f, r.y + 14.0f, p.text);
+    drawParagraph(Face::Regular, size::kSmall, caption, r.x + 74.0f, r.y + 48.0f, r.width - 74.0f - 14.0f, p.textMuted);
 }
 
 class HomeScreen : public Screen {
@@ -39,14 +39,14 @@ public:
 
         // Header
         const Track t = app.track();
-        drawText(Face::Bold, size::kH1, "Welcome back", col.x, col.y, p.text);
+        drawText(type::kTitle, "Welcome back", col.x, col.y, p.text);
         const float bw = badgeWidth(std::string(trackName(t)) + " track");
-        badge(std::string(trackName(t)) + " track", col.x + col.w - bw, col.y + 10.0f, WHITE, trackColor(t));
-        col.space(46.0f);
+        badge(std::string(trackName(t)) + " track", col.x + col.w - bw, col.y + 12.0f, p.textOnAccent, p.accent);
+        col.space(48.0f);
         const std::string sub = t == Track::C
             ? "Prepare for the C coding exam: loops, arrays, strings and functions."
             : "Prepare for the C++ coding exam: pointers, memory, classes and linked lists.";
-        col.space(drawParagraph(Face::Regular, size::kBody, sub, col.x, col.y, col.w, p.textMuted) + 18.0f);
+        col.space(drawParagraph(Face::Regular, size::kBody, sub, col.x, col.y, std::min(col.w, metrics::kProseMaxW), p.textMuted) + 22.0f);
 
         // Stats strip
         const logic::Stats st = logic::computeStats(app.progress(), app.content(), logic::todayString(), 7);
@@ -54,10 +54,24 @@ public:
         const float sgap = 16.0f;
         const float sw = (col.w - 2.0f * sgap) / 3.0f;
         const float sh = miniStatHeight(sw, "questions answered today");  // the longest caption sets the row height
-        miniStat(Rect{col.x, col.y, sw, sh}, Icon::Flame, p.warning, std::to_string(st.streak) + (st.streak == 1 ? " day" : " days"), "current streak");
-        miniStat(Rect{col.x + sw + sgap, col.y, sw, sh}, Icon::Pencil, p.accent, std::to_string(today.answered), "questions answered today");
-        miniStat(Rect{col.x + 2.0f * (sw + sgap), col.y, sw, sh}, Icon::Check, p.success,
-                 st.attempts ? std::to_string(static_cast<int>(std::lround(st.accuracy() * 100.0))) + "%" : "-", "overall accuracy");
+        const int streakShown = static_cast<int>(std::lround(countUp("home-streak", static_cast<float>(st.streak))));
+        const int todayShown = static_cast<int>(std::lround(countUp("home-today", static_cast<float>(today.answered))));
+        const int accShown = static_cast<int>(std::lround(countUp("home-acc", static_cast<float>(std::lround(st.accuracy() * 100.0)))));
+        {
+            const Rect a{col.x, col.y, sw, sh};
+            Appear ap(0, a);
+            miniStat(a, Icon::Flame, p.warning, std::to_string(streakShown) + (st.streak == 1 ? " day" : " days"), "current streak");
+        }
+        {
+            const Rect a{col.x + sw + sgap, col.y, sw, sh};
+            Appear ap(1, a);
+            miniStat(a, Icon::Pencil, p.accent, std::to_string(todayShown), "questions answered today");
+        }
+        {
+            const Rect a{col.x + 2.0f * (sw + sgap), col.y, sw, sh};
+            Appear ap(2, a);
+            miniStat(a, Icon::Check, p.success, st.attempts ? std::to_string(accShown) + "%" : "-", "overall accuracy");
+        }
         col.space(sh + 18.0f);
 
         // Continue learning + mistakes
@@ -69,7 +83,8 @@ public:
             const float pairH = std::max(110.0f, 66.0f + textHeight(Face::Regular, 14, mistakeNote, lineW) + 22.0f);
             Rect left{col.x, col.y, hw, pairH};
             Rect right{col.x + hw + sgap, col.y, hw, pairH};
-            card(left);
+            Appear apPair(3, Rect{col.x, col.y, col.w, pairH});
+            cardRaised(left);
             card(right);
             std::string lessonId;
             int section = 0;
@@ -102,22 +117,20 @@ public:
         };
         const float gap = 16.0f;
         const float cw = (col.w - 2.0f * gap) / 3.0f;
-        float ch = 150.0f;  // grows when a description needs a third line
-        for (const Link& l : links) ch = std::max(ch, 98.0f + textHeight(Face::Regular, 14, l.text, cw - 36.0f) + 14.0f);
+        float ch = 156.0f;  // grows when a description needs a third line
+        for (const Link& l : links) ch = std::max(ch, 102.0f + textHeight(Face::Regular, size::kSmall, l.text, cw - 36.0f) + 18.0f);
         for (int i = 0; i < 3; ++i) {
             Rect r{col.x + static_cast<float>(i) * (cw + gap), col.y, cw, ch};
-            const uint32_t id = Context::get().makeId(links[i].title);
-            const bool hov = Context::get().hovered(r);
-            if (hov) Context::get().cursor = MOUSE_CURSOR_POINTING_HAND;
-            const float h = Context::get().anim(id, hov ? 1.0f : 0.0f);
-            card(Rect{r.x, r.y - 3.0f * h, r.width, r.height});
-            r.y -= 3.0f * h;
-            Rect badgeR{r.x + 18.0f, r.y + 18.0f, 40.0f, 40.0f};
-            fillRound(badgeR, 11.0f, p.accentSoft);
-            drawIcon(links[i].icon, badgeR.x + 20.0f, badgeR.y + 20.0f, 20.0f, p.accent);
-            drawText(Face::Bold, size::kH3, links[i].title, r.x + 18.0f, r.y + 70.0f, p.text);
-            drawParagraph(Face::Regular, 14, links[i].text, r.x + 18.0f, r.y + 98.0f, r.width - 36.0f, p.textMuted);
-            if (hov && Context::get().pressed) app.go(links[i].page);
+            Appear ap(4 + i, r);
+            Context::get().pushId(links[i].title);
+            const bool clicked = cardButton("link", r);  // moves r up by the hover lift
+            Context::get().popId();
+            Rect badgeR{r.x + 18.0f, r.y + 18.0f, 42.0f, 42.0f};
+            fillRoundGradient(badgeR, radius::kMd + 1.0f, mix(p.accentSoft, p.accent, 0.12f), p.accentSoft);
+            drawIcon(links[i].icon, badgeR.x + 21.0f, badgeR.y + 21.0f, 20.0f, p.accent);
+            drawText(Face::Bold, size::kH3, links[i].title, r.x + 18.0f, r.y + 72.0f, p.text);
+            drawParagraph(Face::Regular, size::kSmall, links[i].text, r.x + 18.0f, r.y + 102.0f, r.width - 36.0f, p.textMuted);
+            if (clicked) app.go(links[i].page);
         }
         col.space(ch + 24.0f);
 
@@ -128,8 +141,9 @@ public:
             "half done.";
         const float th = textHeight(Face::Regular, size::kBody, tips, col.w - 86.0f);
         Rect tipR = col.take(th + 70.0f);
-        tintedCard(tipR, p.warningSoft, withAlpha(p.warning, 0.5f));
-        drawIcon(Icon::Warning, tipR.x + 34.0f, tipR.y + 38.0f, 24.0f, p.warning);
+        Appear apTip(7, tipR);
+        callout(tipR, p.warning, p.warningSoft);
+        drawIcon(Icon::Warning, tipR.x + 36.0f, tipR.y + 38.0f, 24.0f, p.warning);
         drawText(Face::Bold, size::kH3, "Before the exam", tipR.x + 62.0f, tipR.y + 20.0f, p.text);
         drawParagraph(Face::Regular, size::kBody, tips, tipR.x + 62.0f, tipR.y + 50.0f, tipR.width - 86.0f, p.text);
         end(col);

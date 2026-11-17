@@ -25,8 +25,6 @@ enum class Section { Home, Lessons, Practice, Exam, Mistakes, Stats };
 
 Section sectionOf(Page page);
 const char* trackName(Track t);
-// Accent colour used for the track badge.
-Color trackColor(Track t);
 
 class App;
 
