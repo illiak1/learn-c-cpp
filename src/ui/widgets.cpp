@@ -213,6 +213,15 @@ bool chip(const std::string& label, Rect r, bool selected) {
         g.lastFrame = cx.frame;
     }
     if (selected) {
+        // The selection moved to this chip during this frame (the click came after the group's first chip was drawn):
+        // start the slide here, from where the pill currently is.
+        if (g.valid && g.sel != id && !g.sliding) {
+            g.sel = id;
+            g.from = g.cur;
+            g.since = cx.now;
+            g.sliding = true;
+            fillRoundGradient(g.cur, g.cur.height / 2.0f, mix(p.accent, p.accentHover, 0.5f), p.accent);
+        }
         g.next = r;
         g.nextSel = id;
         g.hasNext = true;
