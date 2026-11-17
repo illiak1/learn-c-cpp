@@ -47,29 +47,40 @@ public:
             return;
         }
 
-        // Title row: exam title, clock, finish button
-        drawText(Face::Bold, size::kH2, ellipsize(Face::Bold, size::kH2, exam.title, col.w - 330.0f), col.x, col.y + 4.0f, p.text);
+        // Header card: exam title and task counter, clock pill, finish button and a bar with the time left
+        const content::Task& cur = *tasks[static_cast<size_t>(current_)];
+        const float finishW = 150.0f, pillW = 136.0f;
+        Rect hdr = col.take(timed ? 104.0f : 88.0f);
+        cardRaised(hdr);
+        const float titleW = hdr.width - 44.0f - finishW - pillW - 24.0f;
+        drawText(Face::Bold, size::kH2, ellipsize(Face::Bold, size::kH2, exam.title, titleW), hdr.x + 22.0f, hdr.y + 14.0f, p.text);
+        drawText(Face::Regular, size::kSmall, "Task " + std::to_string(current_ + 1) + " of " + std::to_string(tasks.size()) + "  \xC2\xB7  " + std::to_string(cur.points) + " points", hdr.x + 22.0f, hdr.y + 50.0f, p.textMuted);
         const std::string clock = timed ? logic::formatClock(remaining) : logic::formatClock(static_cast<int>(elapsed));
         const bool low = timed && remaining < 300;
         const bool critical = timed && remaining < 60;
         const Color cfg = critical ? p.danger : low ? p.warning : p.accent;
         const Color cbg = critical ? p.dangerSoft : low ? p.warningSoft : p.accentSoft;
-        Rect pill{col.x + col.w - 300.0f, col.y, 130.0f, 40.0f};
-        fillRound(pill, 20.0f, cbg);
-        drawIcon(Icon::Timer, pill.x + 24.0f, pill.y + 20.0f, 18.0f, cfg);
-        drawText(Face::Bold, size::kH3, clock, pill.x + 46.0f, pill.y + 8.0f, cfg);
-        if (button("Finish exam", Rect{col.x + col.w - 160.0f, col.y, 160.0f, 40.0f}, ButtonStyle::Secondary, Icon::Flag)) app.requestFinishExam();
-        col.space(56.0f);
+        Rect pill{hdr.x + hdr.width - 22.0f - finishW - 12.0f - pillW, hdr.y + 14.0f, pillW, 42.0f};
+        fillRound(pill, pill.height / 2.0f, cbg);
+        drawIcon(Icon::Timer, pill.x + 26.0f, pill.y + 21.0f, 19.0f, cfg);
+        drawText(Face::Bold, size::kH3 + 1, clock, pill.x + 48.0f, pill.y + 8.0f, cfg);
+        if (button("Finish exam", Rect{hdr.x + hdr.width - 22.0f - finishW, hdr.y + 14.0f, finishW, 42.0f}, ButtonStyle::Secondary, Icon::Flag)) app.requestFinishExam();
+        if (timed) {
+            const float total = static_cast<float>(exam.minutes * 60);
+            progressBar(Rect{hdr.x + 22.0f, hdr.y + hdr.height - 26.0f, hdr.width - 44.0f, 8.0f}, std::clamp(static_cast<float>(remaining) / total, 0.0f, 1.0f), cfg, "exam-time");
+        }
+        col.space(4.0f);
 
         // Exam rule reminder
-        Rect warn = col.take(44.0f);
-        tintedCard(warn, p.warningSoft, withAlpha(p.warning, 0.5f));
-        drawIcon(Icon::Warning, warn.x + 26.0f, warn.y + 22.0f, 18.0f, p.warning);
-        drawText(Face::Regular, 14, ellipsize(Face::Regular, 14, "A compile error, an infinite loop or a crash gives 0 for the whole exam. A wrong result fails only that function.", warn.width - 70.0f),
-                 warn.x + 50.0f, warn.y + 13.0f, p.text);
+        Rect warn = col.take(48.0f);
+        callout(warn, p.warning, p.warningSoft);
+        drawIcon(Icon::Warning, warn.x + 30.0f, warn.y + 24.0f, 18.0f, p.warning);
+        drawText(Face::Regular, size::kSmall, ellipsize(Face::Regular, size::kSmall, "A compile error, an infinite loop or a crash gives 0 for the whole exam. A wrong result fails only that function.", warn.width - 80.0f),
+                 warn.x + 54.0f, warn.y + 14.0f, p.text);
 
-        // Task chips
+        // Task chips (one group: they share the sliding highlight)
         float x = col.x;
+        Context::get().pushId("tasks");
         for (size_t i = 0; i < tasks.size(); ++i) {
             const std::string label = "Task " + std::to_string(i + 1);
             const float w = chipWidth(label) + 4.0f;
@@ -77,7 +88,7 @@ public:
                 x = col.x;
                 col.space(40.0f);
             }
-            if (chip(label, Rect{x, col.y, w, 32.0f}, static_cast<int>(i) == current_)) {
+            if (chip(label, Rect{x, col.y, w, 34.0f}, static_cast<int>(i) == current_)) {
                 current_ = static_cast<int>(i);
                 scroll_.offset = 0.0f;
             }
@@ -88,19 +99,19 @@ public:
             }
             x += w + 8.0f;
         }
-        col.space(48.0f);
+        Context::get().popId();
+        col.space(52.0f);
 
         // The current task
         const content::Task& t = *tasks[static_cast<size_t>(current_)];
         const float pointsW = badgeWidth(std::to_string(t.points) + " points");
         drawText(Face::Bold, size::kH2, ellipsize(Face::Bold, size::kH2, t.title, col.w - pointsW - 16.0f), col.x, col.y, p.text);
         badge(std::to_string(t.points) + " points", col.x + col.w - pointsW, col.y + 6.0f, p.accent, p.accentSoft);
-        col.space(40.0f);
-        drawLabel("TASK DESCRIPTION", col.x, col.y, p.textMuted);
-        col.space(22.0f);
+        col.space(44.0f);
         CodeBoxOpts o;
         o.lineNumbers = false;
         o.plain = true;
+        o.title = "Task description";
         const float h = codeBoxHeight(t.statement, o);
         codeBox("statement", Rect{col.x, col.y, col.w, h}, t.statement, o);
         col.space(h + 18.0f);
@@ -152,7 +163,9 @@ private:
         const float bodyH = 46.0f + noteH;
         Rect r = col.take(stacked ? bodyH + 12.0f + 40.0f + 18.0f : std::max(84.0f, bodyH + 18.0f));
         signed char& mark = exam.marks[index];
-        tintedCard(r, mark == 1 ? p.successSoft : p.surface, mark == 1 ? withAlpha(p.success, 0.6f) : mark == 0 ? withAlpha(p.danger, 0.6f) : p.border);
+        if (mark == 1) callout(r, p.success, p.successSoft);
+        else if (mark == 0) callout(r, p.danger, p.dangerSoft);
+        else card(r);
         drawText(Face::Bold, size::kH3, "Self-check", r.x + 22.0f, r.y + 16.0f, p.text);
         drawParagraph(Face::Regular, 15, note, r.x + 22.0f, r.y + 46.0f, textW, p.textMuted);
         const float by = stacked ? r.y + bodyH + 12.0f : r.y + (r.height - 40.0f) / 2.0f;

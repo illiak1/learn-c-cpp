@@ -27,8 +27,8 @@ public:
             const double elapsed = GetTime() - running.startedAt;
             const int left = running.minutes > 0 ? static_cast<int>(running.minutes * 60 - elapsed) : static_cast<int>(elapsed);
             Rect r = col.take(84.0f);
-            tintedCard(r, p.accentSoft, withAlpha(p.accent, 0.5f));
-            drawIcon(Icon::Timer, r.x + 34.0f, r.y + 42.0f, 24.0f, p.accent);
+            callout(r, p.accent, p.accentSoft);
+            drawIcon(Icon::Timer, r.x + 36.0f, r.y + 42.0f, 24.0f, p.accent);
             drawText(Face::Bold, size::kH3, "Exam in progress", r.x + 62.0f, r.y + 16.0f, p.text);
             drawText(Face::Regular, 15, ellipsize(Face::Regular, 15, running.title, r.width - 420.0f) + "  -  " +
                      (running.minutes > 0 ? logic::formatClock(left) + " left" : logic::formatClock(left) + " elapsed"), r.x + 62.0f, r.y + 48.0f, p.textMuted);
@@ -45,13 +45,14 @@ public:
         float stepsH = 0.0f;  // steps wrap in narrow windows, so the card height follows the text
         for (const char* s : steps) stepsH += textHeight(Face::Regular, 15, s, col.w - 44.0f) + 2.0f;
         Rect how = col.take(52.0f + stepsH + 14.0f);
+        Appear apHow(0, how);
         card(how);
         drawText(Face::Bold, size::kH3, "How it works", how.x + 22.0f, how.y + 18.0f, p.text);
         float stepY = how.y + 52.0f;
         for (const char* s : steps) stepY += drawParagraph(Face::Regular, 15, s, how.x + 22.0f, stepY, how.width - 44.0f, p.textMuted) + 2.0f;
         Rect warn = col.take(textHeight(Face::Bold, 15, rule, col.w - 76.0f) + 34.0f);
-        tintedCard(warn, p.warningSoft, withAlpha(p.warning, 0.5f));
-        drawIcon(Icon::Warning, warn.x + 30.0f, warn.y + warn.height / 2.0f, 22.0f, p.warning);
+        callout(warn, p.warning, p.warningSoft);
+        drawIcon(Icon::Warning, warn.x + 32.0f, warn.y + warn.height / 2.0f, 22.0f, p.warning);
         drawParagraph(Face::Bold, 15, rule, warn.x + 58.0f, warn.y + 17.0f, warn.width - 76.0f, p.text);
 
         // Saved results: best score per track and the latest exams of this track
@@ -94,24 +95,29 @@ public:
         // In a narrow window the time chips reach the start button: it then gets its own row.
         const bool stacked = timeChipsW + 8.0f > col.w - 210.0f;
         Rect quick = col.take(stacked ? 236.0f : 190.0f);
-        card(quick);
+        Appear apQuick(1, quick);
+        cardRaised(quick);
         const int pool = static_cast<int>(tc.tasks.size());
         drawText(Face::Bold, 15, "Number of functions", quick.x + 22.0f, quick.y + 20.0f, p.textMuted);
         static const int counts[] = {3, 5, 8};
         float x = quick.x + 22.0f;
+        Context::get().pushId("count");
         for (int c : counts) {
             const std::string label = std::to_string(c);
-            if (chip(label, Rect{x, quick.y + 46.0f, 52.0f, 32.0f}, count_ == c)) count_ = c;
+            if (chip(label, Rect{x, quick.y + 46.0f, 52.0f, 34.0f}, count_ == c)) count_ = c;
             x += 60.0f;
         }
+        Context::get().popId();
         drawText(Face::Bold, 15, "Time limit", quick.x + 22.0f, quick.y + 94.0f, p.textMuted);
         x = quick.x + 22.0f;
+        Context::get().pushId("time");
         for (int t : times) {
             const std::string label = t == 0 ? "No limit" : std::to_string(t) + " min";
             const float w = chipWidth(label) + 6.0f;
-            if (chip(label, Rect{x, quick.y + 120.0f, w, 32.0f}, minutes_ == t)) minutes_ = t;
+            if (chip(label, Rect{x, quick.y + 120.0f, w, 34.0f}, minutes_ == t)) minutes_ = t;
             x += w + 8.0f;
         }
+        Context::get().popId();
         const std::string drawn = "Drawn from " + std::to_string(pool) + " tasks";
         drawText(Face::Regular, 15, drawn, quick.x + quick.width - 22.0f - Theme::get().textWidth(Face::Regular, 15, drawn), quick.y + 20.0f, p.textMuted);
         if (button("Start exam", Rect{quick.x + quick.width - 210.0f, quick.y + (stacked ? 170.0f : 116.0f), 190.0f, 44.0f}, ButtonStyle::Primary, Icon::Play, pool > 0)) {
@@ -130,6 +136,7 @@ public:
                 if (const content::Task* t = tc.findTask(id)) points += t->points;
             const float dh = s.description.empty() ? 0.0f : textHeight(Face::Regular, 15, s.description, col.w - 250.0f);
             Rect r = col.take(78.0f + dh);
+            Appear apSet(2, r);
             card(r);
             Context::get().pushId(s.id);
             drawText(Face::Bold, size::kH3, s.title, r.x + 22.0f, r.y + 18.0f, p.text);

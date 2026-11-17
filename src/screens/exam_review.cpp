@@ -46,20 +46,22 @@ public:
         // Score
         const logic::Score sc = logic::scoreExam(tc, exam);
         const bool zero = !exam.fileRan;
-        Rect hero = col.take(128.0f);
-        card(hero);
+        Rect hero = col.take(144.0f);
+        Appear apHero(0, hero);
+        cardRaised(hero);
         const float pct = sc.total > 0 ? static_cast<float>(sc.earned) / static_cast<float>(sc.total) : 0.0f;
         const Color scoreColor = zero ? p.danger : pct >= 0.7f ? p.success : pct >= 0.4f ? p.warning : p.danger;
-        drawText(Face::Bold, 44, std::to_string(sc.earned) + " / " + std::to_string(sc.total), hero.x + 28.0f, hero.y + 20.0f, scoreColor);
+        progressRing(hero.x + 82.0f, hero.y + 72.0f, 50.0f, 11.0f, pct, scoreColor, "review-ring");
+        drawCentered(Face::Bold, size::kH3, std::to_string(static_cast<int>(pct * 100.0f + 0.5f)) + "%", Rect{hero.x + 32.0f, hero.y + 22.0f, 100.0f, 100.0f}, scoreColor);
+        drawText(Face::Bold, 44, std::to_string(sc.earned) + " / " + std::to_string(sc.total), hero.x + 160.0f, hero.y + 26.0f, scoreColor);
         const int marked = static_cast<int>(std::count_if(exam.marks.begin(), exam.marks.end(), [](signed char m) { return m >= 0; }));
         drawText(Face::Regular, size::kBody, std::to_string(sc.passed) + " of " + std::to_string(sc.tasks) + " functions passed  -  " +
-                 std::to_string(marked) + " marked", hero.x + 28.0f, hero.y + 84.0f, p.textMuted);
-        progressBar(Rect{hero.x + hero.width - 330.0f, hero.y + 50.0f, 290.0f, 12.0f}, pct, scoreColor);
-        drawText(Face::Bold, size::kH3, std::to_string(static_cast<int>(pct * 100.0f + 0.5f)) + "%", hero.x + hero.width - 330.0f, hero.y + 70.0f, scoreColor);
+                 std::to_string(marked) + " marked", hero.x + 160.0f, hero.y + 88.0f, p.textMuted);
 
         // Step 1: did the file run?
         Rect gate = col.take(exam.fileRan ? 136.0f : 168.0f);
-        tintedCard(gate, exam.fileRan ? p.surface : p.dangerSoft, exam.fileRan ? p.border : p.danger);
+        if (exam.fileRan) card(gate);
+        else callout(gate, p.danger, p.dangerSoft);
         drawText(Face::Bold, size::kH3, "1. Did the whole file compile and run to the end?", gate.x + 22.0f, gate.y + 18.0f, p.text);
         drawParagraph(Face::Regular, 15, "Be honest: a compile error, an infinite loop or a crash gives 0 for the whole exam, even if some functions were right.",
                       gate.x + 22.0f, gate.y + 48.0f, gate.width - 44.0f, p.textMuted);
@@ -83,6 +85,7 @@ public:
             const bool open = open_.count(static_cast<int>(i)) > 0;
             cx.pushId(static_cast<int>(i));
             Rect head = col.take(70.0f);
+            Appear apHead(static_cast<int>(i) + 1, head);
             card(head);
             const signed char m = exam.marks[i];
             drawText(Face::Bold, size::kH3, ellipsize(Face::Bold, size::kH3, std::to_string(i + 1) + ".  " + t.title, head.width - 22.0f - 388.0f), head.x + 22.0f, head.y + 12.0f, p.text);
@@ -92,7 +95,7 @@ public:
             else if (m == 0) badge("Failed", bx, head.y + 42.0f, p.danger, p.dangerSoft);
             if (button("Passed", Rect{head.x + head.width - 372.0f, head.y + 14.0f, 112.0f, 42.0f}, m == 1 ? ButtonStyle::Success : ButtonStyle::Secondary, Icon::Check)) exam.marks[i] = 1;
             if (button("Failed", Rect{head.x + head.width - 252.0f, head.y + 14.0f, 112.0f, 42.0f}, m == 0 ? ButtonStyle::Danger : ButtonStyle::Secondary, Icon::Cross)) exam.marks[i] = 0;
-            if (button(open ? "Hide" : "Solution", Rect{head.x + head.width - 132.0f, head.y + 14.0f, 112.0f, 42.0f}, ButtonStyle::Ghost, Icon::Eye)) {
+            if (button(open ? "Hide" : "Solution", Rect{head.x + head.width - 132.0f, head.y + 14.0f, 112.0f, 42.0f}, ButtonStyle::Secondary, Icon::Eye)) {
                 if (open) open_.erase(static_cast<int>(i));
                 else open_.insert(static_cast<int>(i));
             }
@@ -128,8 +131,8 @@ private:
             float h = 50.0f;
             for (const std::string& c : t.checklist) h += textHeight(Face::Regular, 15, c, w - 30.0f) + 6.0f;
             Rect r{col.x, col.y, col.w, h};
-            tintedCard(r, p.accentSoft, withAlpha(p.accent, 0.3f));
-            drawText(Face::Bold, 15, "A correct answer...", r.x + 22.0f, r.y + 16.0f, p.accent);
+            callout(r, p.accent, p.accentSoft);
+            drawText(Face::Bold, size::kBodySm, "A correct answer...", r.x + 26.0f, r.y + 16.0f, p.accent);
             float y = r.y + 44.0f;
             for (const std::string& c : t.checklist) {
                 drawIcon(Icon::Check, r.x + 30.0f, y + 11.0f, 14.0f, p.accent);
