@@ -145,8 +145,9 @@ void App::openLesson(const std::string& lessonId, int section) {
 }
 
 // Starts a practice session on the exercise page.
-void App::startSession(const std::string& title, std::vector<std::string> ids) {
+void App::startSession(const std::string& title, std::vector<std::string> ids, bool retry) {
     session_.title = title;
+    session_.retry = retry;
     session_.ids = std::move(ids);
     session_.pos = 0;
     session_.results.assign(session_.ids.size(), -1);

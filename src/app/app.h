@@ -89,12 +89,15 @@ public:
 
     // A practice session: an ordered list of exercise ids the student works through.
     struct Session {
-        std::string title;
+        std::string title;  // base title, never changed by retries
+        bool retry = false;  // true when the session replays the wrong answers of the previous one
         std::vector<std::string> ids;
         size_t pos = 0;
         std::vector<signed char> results;  // per question: -1 not answered, 0 wrong, 1 correct
+        // Label shown on the question page, built fresh from the base title ("Mistakes - retry").
+        std::string label() const { return retry ? title + " - retry" : title; }
     };
-    void startSession(const std::string& title, std::vector<std::string> ids);
+    void startSession(const std::string& title, std::vector<std::string> ids, bool retry = false);
     Session& session() { return session_; }
 
     // The exam being taken or reviewed.

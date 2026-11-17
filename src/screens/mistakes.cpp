@@ -57,7 +57,7 @@ public:
                 }
                 drawText(Face::Regular, 15, ellipsize(Face::Regular, 15, e->prompt, r.width - 190.0f), r.x + 18.0f, r.y + 36.0f, p.text);
                 if (button("Practice", Rect{r.x + r.width - 128.0f, r.y + 12.0f, 108.0f, 42.0f}, ButtonStyle::Secondary, Icon::Pencil))
-                    app.startSession("Mistake", {id});
+                    app.startSession("Mistakes", {id});
                 Context::get().popId();
             }
         }
