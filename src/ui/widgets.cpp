@@ -46,7 +46,7 @@ bool button(const std::string& label, Rect r, ButtonStyle style, Icon icon, bool
             border = p.borderStrong;
             break;
         case ButtonStyle::Ghost:
-            bg = withAlpha(p.surfaceAlt, h);
+            bg = withAlpha(p.surfaceAlt, 0.55f + 0.45f * h);
             fg = mix(p.textMuted, p.text, h);
             break;
     }

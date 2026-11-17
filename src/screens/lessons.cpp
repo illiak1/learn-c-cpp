@@ -90,7 +90,7 @@ public:
         const int sections = static_cast<int>(lesson->sections.size());
         int sel = std::clamp(app.lessonSection(), 0, sections - 1);
 
-        if (button("Lessons", Rect{col.x, col.y, 112.0f, 34.0f}, ButtonStyle::Ghost, Icon::ChevronLeft)) app.go(Page::Lessons);
+        if (button("Lessons", Rect{col.x, col.y, 112.0f, 34.0f}, ButtonStyle::Secondary, Icon::ChevronLeft)) app.go(Page::Lessons);
         std::vector<std::string> topicIds;
         for (const auto& e : app.content().exercises)
             if (e.lesson == lesson->id) topicIds.push_back(e.id);

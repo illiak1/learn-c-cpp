@@ -126,7 +126,7 @@ public:
         drawSelfCheck(col, exam, static_cast<size_t>(current_));
 
         // Previous / next
-        if (current_ > 0 && button("Previous task", Rect{col.x, col.y, 160.0f, 40.0f}, ButtonStyle::Ghost, Icon::ChevronLeft)) {
+        if (current_ > 0 && button("Previous task", Rect{col.x, col.y, 160.0f, 40.0f}, ButtonStyle::Secondary, Icon::ChevronLeft)) {
             --current_;
             scroll_.offset = 0.0f;
         }

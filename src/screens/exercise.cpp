@@ -46,7 +46,7 @@ public:
         }
 
         // Top bar: back link, session title, progress
-        if (button("Practice", Rect{col.x, col.y, 120.0f, 34.0f}, ButtonStyle::Ghost, Icon::ChevronLeft)) app.go(Page::Practice);
+        if (button("Practice", Rect{col.x, col.y, 120.0f, 34.0f}, ButtonStyle::Secondary, Icon::ChevronLeft)) app.go(Page::Practice);
         const bool finished = s.pos >= s.ids.size();
         const std::string counter = finished ? "Finished" : "Question " + std::to_string(s.pos + 1) + " of " + std::to_string(s.ids.size());
         drawText(Face::Bold, 15, s.label() + "  -  " + counter, col.x + 132.0f, col.y + 8.0f, p.textMuted);
@@ -403,7 +403,7 @@ private:
         if (button("Practice again", Rect{col.x, col.y, 170.0f, 42.0f}, ButtonStyle::Secondary, Icon::Refresh)) app.startSession(s.title, s.ids, s.retry);
         if (!wrong.empty() && button("Retry the wrong ones", Rect{col.x + 182.0f, col.y, 220.0f, 42.0f}, ButtonStyle::Primary, Icon::Play))
             app.startSession(s.title, wrong, true);
-        if (button("Back to practice", Rect{col.x + col.w - 190.0f, col.y, 190.0f, 42.0f}, ButtonStyle::Ghost)) app.go(Page::Practice);
+        if (button("Back to practice", Rect{col.x + col.w - 190.0f, col.y, 190.0f, 42.0f}, ButtonStyle::Secondary, Icon::ChevronLeft)) app.go(Page::Practice);
         col.space(52.0f);
     }
 
