@@ -49,6 +49,7 @@ void openModal(const std::string& id, const ModalOpts& opts) {
     m.openedAt = cx.now;
     m.result = ModalResult::None;
     cx.focus = 0;
+    cx.kbFocus = 0;
     cx.modalBlocks = true;
 }
 
@@ -71,29 +72,36 @@ ModalResult takeModalResult(const std::string& id) {
     return r;
 }
 
-// Backdrop, dialog box, title, message and the two buttons.
+// Backdrop, dialog box, title, message and the two buttons. The dialog fades in and scales up from 94%.
 void drawModal() {
     ModalState& m = state();
     if (!m.open) return;
     Context& cx = Context::get();
     const Palette& p = Theme::get().colors();
-    const float t = static_cast<float>(std::clamp((cx.now - m.openedAt) / 0.12, 0.0, 1.0));
+    const float t = static_cast<float>(std::clamp((cx.now - m.openedAt) / motion::kBase, 0.0, 1.0));
+    const float e = easeOutCubic(t);
     const float sw = static_cast<float>(cx.screenW), sh = static_cast<float>(cx.screenH);
-    DrawRectangleRec(Rect{0, 0, sw, sh}, withAlpha(Color{8, 10, 20, 255}, 0.55f * t));
+    DrawRectangleRec(Rect{0, 0, sw, sh}, withAlpha(p.scrim, e));
 
-    const float w = std::min(480.0f, sw - 48.0f);
-    const float textW = w - 56.0f;
+    const float w = std::min(500.0f, sw - 48.0f);
+    const float textW = w - 64.0f;
     const float msgH = textHeight(Face::Regular, size::kBody, m.opts.message, textW);
-    const float h = 28.0f + 30.0f + 12.0f + msgH + 26.0f + 44.0f + 24.0f;
-    Rect box{(sw - w) / 2.0f, (sh - h) / 2.0f + (1.0f - t) * 12.0f, w, h};
-    shadowRound(box, 14.0f, withAlpha(Color{0, 0, 0, 255}, 0.4f * t));
-    fillRound(box, 14.0f, p.surface);
-    strokeRound(box, 14.0f, 1.0f, p.border);
+    const float h = 32.0f + 30.0f + 14.0f + msgH + 28.0f + 44.0f + 28.0f;
+    Rect box{(sw - w) / 2.0f, (sh - h) / 2.0f, w, h};
+    pushScale(0.94f + 0.06f * e, box.x + box.width / 2.0f, box.y + box.height / 2.0f);
+    shadowRound(box, radius::kXl, shadow::kModal, e);
+    fillRound(box, radius::kXl, withAlpha(p.surfaceRaised, e));
+    strokeRound(box, radius::kXl, 1.0f, withAlpha(p.border, e));
+    // Slim accent strip along the top edge marks the kind of dialog.
+    const Color tone = m.opts.danger ? p.danger : p.accent;
+    cx.pushClip(Rect{box.x, box.y, box.width, 4.0f});
+    fillRound(box, radius::kXl, withAlpha(tone, e));
+    cx.popClip();
 
-    float y = box.y + 28.0f;
-    drawText(Face::Bold, size::kH3, m.opts.title, box.x + 28.0f, y, p.text);
-    y += 42.0f;
-    y += drawParagraph(Face::Regular, size::kBody, m.opts.message, box.x + 28.0f, y, textW, p.textMuted) + 26.0f;
+    float y = box.y + 32.0f;
+    drawText(Face::Bold, size::kH3, m.opts.title, box.x + 32.0f, y, withAlpha(p.text, e));
+    y += 44.0f;
+    y += drawParagraph(Face::Regular, size::kBody, m.opts.message, box.x + 32.0f, y, textW, withAlpha(p.textMuted, e)) + 28.0f;
 
     // Keys (ignored on the frame that opened the dialog so the opening click cannot answer it).
     const bool fresh = cx.frame == m.openedFrame;
@@ -104,9 +112,9 @@ void drawModal() {
         if (IsKeyPressed(KEY_ENTER) || IsKeyPressed(KEY_KP_ENTER)) (m.focusConfirm ? confirm : cancel) = true;
     }
 
-    const float bw = std::max(150.0f, Theme::get().textWidth(Face::Bold, 16, m.opts.confirmLabel) + 48.0f);
-    const float cw = std::max(150.0f, Theme::get().textWidth(Face::Bold, 16, m.opts.cancelLabel) + 48.0f);
-    Rect confirmR{box.x + box.width - 28.0f - bw, y, bw, 44.0f};
+    const float bw = std::max(150.0f, Theme::get().textWidth(Face::Bold, size::kButton, m.opts.confirmLabel) + 48.0f);
+    const float cw = std::max(150.0f, Theme::get().textWidth(Face::Bold, size::kButton, m.opts.cancelLabel) + 48.0f);
+    Rect confirmR{box.x + box.width - 32.0f - bw, y, bw, 44.0f};
     Rect cancelR{confirmR.x - 12.0f - cw, y, cw, 44.0f};
     cx.insideModal = true;
     cx.pushId("modal");
@@ -119,10 +127,9 @@ void drawModal() {
     }
     cx.popId();
     // Focus ring on the keyboard-selected button.
-    const Rect ring = m.focusConfirm ? confirmR : cancelR;
-    strokeRound(Rect{ring.x - 3.0f, ring.y - 3.0f, ring.width + 6.0f, ring.height + 6.0f}, 12.0f, 2.0f,
-                m.focusConfirm && m.opts.danger ? p.danger : p.accent);
+    focusRing(m.focusConfirm ? confirmR : cancelR, radius::kMd);
     cx.insideModal = false;
+    popOffset();
 
     if (confirm) finish(ModalResult::Confirm);
     else if (cancel) finish(ModalResult::Cancel);

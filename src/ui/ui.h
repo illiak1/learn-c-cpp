@@ -54,11 +54,40 @@ public:
     void popId();
     uint32_t makeId(const std::string& label) const;
 
-    // Smoothly moves a stored value toward a target (0..1) for hover/press animations.
+    // Smoothly moves a stored value toward a target (0..1) for hover/press animations
+    // (exponential smoothing: frame-rate independent, about 95% done after 3/speed seconds).
     float anim(uint32_t id, float target, float speed = 16.0f);
+    // Time-based eased tween (ease-out cubic over `duration` seconds). The first call returns the target at once,
+    // later changes of the target glide from the current value.
+    float tween(uint32_t id, float target, float duration = motion::kBase);
+    // Same, but the value starts at `from` on first sight and again whenever the page changes ("animate in").
+    float tweenIn(uint32_t id, float target, float duration = motion::kSlow, float from = 0.0f);
+    // Called when the page changes: restarts the page transition and the stagger clock.
+    void enterPage();
+    // 0..1 progress of the page transition (fade/slide of the whole page).
+    float pageProgress() const;
+    // 0..1 eased progress of the n-th staggered element since the page opened.
+    float appear(int index) const;
+    // True while a transition or stagger animation still runs (keeps overlays cheap once everything settled).
+    bool pageAnimating() const;
 
     // Shows a short message at the bottom of the window.
     void toast(const std::string& message);
+    // Registers a tooltip for the widget with this id; it appears after the pointer rested on the rectangle.
+    void tooltip(uint32_t id, Rect anchor, const char* text);
+    // Sliding-indicator state shared by the chips of one group (see chip()).
+    struct PillGroup {
+        Rect cur{}, from{}, next{};   // pill now, where the slide started, selected chip of the last frame
+        bool hasNext = false;
+        bool valid = false;
+        unsigned long lastFrame = 0;
+        double since = 0.0;           // start of the current slide
+        uint32_t sel = 0, nextSel = 0;  // id of the selected chip (current slide / last frame)
+        bool sliding = false;
+    };
+    PillGroup& pillGroup(uint32_t id) { return pills_[id]; }
+    // Registers a button for keyboard (Tab) navigation; returns true when it has the keyboard focus and Enter/Space was pressed.
+    bool registerFocusable(uint32_t id, bool& focused);
 
     Vector2 mouse{};
     bool down = false, pressed = false, released = false;
@@ -67,7 +96,9 @@ public:
     float dt = 0.016f;
     double now = 0.0;
     uint32_t active = 0;      // widget held by the mouse
-    uint32_t focus = 0;       // widget with keyboard focus
+    uint32_t focus = 0;       // text input with keyboard focus
+    uint32_t kbFocus = 0;     // button with keyboard focus (Tab), 0 = none
+    bool kbActivate = false;  // Enter/Space pressed this frame while a button has the keyboard focus
     int cursor = MOUSE_CURSOR_DEFAULT;
     int screenW = 0, screenH = 0;
     bool modalBlocks = false;  // a modal dialog is open: widgets underneath ignore the pointer
@@ -78,6 +109,8 @@ public:
     std::unordered_map<uint32_t, InputState> inputs;
     std::vector<uint32_t> inputOrder;      // inputs drawn this frame (for Tab navigation)
     std::vector<uint32_t> prevInputOrder;  // ... and last frame
+    std::vector<uint32_t> buttonOrder;      // buttons drawn this frame (for Tab navigation)
+    std::vector<uint32_t> prevButtonOrder;  // ... and last frame
 
 private:
     Context() = default;
@@ -86,16 +119,59 @@ private:
     std::vector<Rect> clips_;
     std::vector<uint32_t> idStack_{2166136261u};
     std::unordered_map<uint32_t, float> anims_;
+    struct Tween {
+        float from = 0, to = 0, value = 0;
+        double start = 0;
+        unsigned epoch = 0;
+    };
+    std::unordered_map<uint32_t, Tween> tweens_;
+    std::unordered_map<uint32_t, PillGroup> pills_;
+    unsigned epoch_ = 0;
+    double pageStart_ = 0.0;
     std::string toastText_;
-    double toastUntil_ = 0.0;
+    double toastStart_ = 0.0, toastUntil_ = 0.0;
+    uint32_t tipId_ = 0, tipSeen_ = 0;
+    double tipSince_ = 0.0;
+    std::string tipText_;
+    Rect tipAnchor_{};
+    bool tipShown_ = false;
 };
+
+// Easing curves for t in 0..1.
+float easeOutCubic(float t);
+float easeInOutCubic(float t);
+float easeOutBack(float t);
 
 // ---- Drawing helpers ------------------------------------------------------------------------
 // Rounded rectangle with a radius in pixels.
 void fillRound(Rect r, float radiusPx, Color c);
 void strokeRound(Rect r, float radiusPx, float thickness, Color c);
-// Soft drop shadow under a rounded rectangle.
-void shadowRound(Rect r, float radiusPx, Color shadow);
+// Soft drop shadow under a rounded rectangle (stacked translucent layers; styles are theme tokens).
+void shadowRound(Rect r, float radiusPx, const ShadowStyle& style, float strength = 1.0f);
+// Rounded rectangle with a subtle vertical gradient (built from a few stacked layers, so the corners stay smooth).
+void fillRoundGradient(Rect r, float radiusPx, Color top, Color bottom);
+// Keyboard focus ring around a rounded rectangle.
+void focusRing(Rect r, float radiusPx);
+// Horizontal shake offset in pixels for an error animation that started t seconds ago.
+float shakeOffset(float t);
+// Draws what follows translated by an offset; ends by restoring the transform.
+void pushOffset(float dx, float dy);
+void popOffset();
+// Scale-in transform around a point (used by the modal).
+void pushScale(float s, float cx, float cy);
+// Fade-in/slide-up of one element: its content is drawn shifted and a background-coloured veil is removed over time.
+// Put one on the stack around a card; `index` staggers the start.
+class Appear {
+public:
+    Appear(int index, Rect bounds);
+    ~Appear();
+    Appear(const Appear&) = delete;
+    Appear& operator=(const Appear&) = delete;
+
+private:
+    float t_ = 1.0f;
+    Rect bounds_{};
+};
 // Draws an icon centred at (cx, cy) with the given size. cutout is the background colour for
 // icons that carve a shape out (moon); transparent means the card surface colour.
 void drawIcon(Icon icon, float cx, float cy, float size, Color c, Color cutout = Color{0, 0, 0, 0});
@@ -110,7 +186,7 @@ float drawParagraph(Face face, int px, const std::string& text, float x, float y
 // Draws one line centred inside r.
 void drawCentered(Face face, int px, const std::string& text, Rect r, Color c);
 // Cuts a string to fit a width, adding "..." when needed.
-std::string ellipsize(Face face, int px, const std::string& text, float width);
+const std::string& ellipsize(Face face, int px, const std::string& text, float width);
 
 // ---- Layout ---------------------------------------------------------------------------------
 // Vertical cursor: hands out rectangles from top to bottom.
@@ -131,22 +207,33 @@ struct Column {
 bool button(const std::string& label, Rect r, ButtonStyle style = ButtonStyle::Primary, Icon icon = Icon::None,
             bool enabled = true);
 // Square icon-only button.
-bool iconButton(const std::string& id, Rect r, Icon icon, bool selected = false);
-// White surface with border and shadow.
+bool iconButton(const std::string& id, Rect r, Icon icon, bool selected = false, const char* tooltip = nullptr);
+// Same with a precomputed widget id (no string building per frame).
+bool iconButton(uint32_t id, Rect r, Icon icon, bool selected = false, const char* tooltip = nullptr);
+// Surface card with a soft border and layered shadow.
 void card(Rect r, bool shadow = true);
+// Raised card (modal-like panels, headers): lighter surface and a deeper shadow.
+void cardRaised(Rect r);
 // Card that lifts on hover and reports clicks. r is moved up by the hover lift so content can be drawn inside it.
 bool cardButton(const std::string& id, Rect& r);
-// Pill-shaped filter chip; returns true when clicked.
+// Pill-shaped filter chip; returns true when clicked. The chips drawn in one id scope form a group that shares a
+// sliding highlight, so wrap each separate group in pushId()/popId().
 bool chip(const std::string& label, Rect r, bool selected);
 float chipWidth(const std::string& label);
 // Card filled with a custom colour (e.g. soft success/danger backgrounds).
 void tintedCard(Rect r, Color fill, Color border);
+// Callout: tinted background with a slim accent bar on the left (key points, tips, warnings).
+void callout(Rect r, Color accent, Color fill);
 // On/off switch; returns true on the frame it flips (value is updated).
 bool toggleSwitch(const std::string& id, Rect r, bool& value);
-// Segmented control; returns the (possibly new) selected index.
+// Segmented control with a sliding indicator; returns the (possibly new) selected index.
 int tabs(Rect r, const std::vector<std::string>& labels, int selected);
-// Horizontal progress bar (fraction 0..1).
-void progressBar(Rect r, float fraction, Color fill);
+// Horizontal progress bar (fraction 0..1). With an id the fill animates in and follows value changes.
+void progressBar(Rect r, float fraction, Color fill, const std::string& id = "");
+// Circular progress ring with a gradient and rounded ends; the value is drawn by the caller.
+void progressRing(float cx, float cy, float radiusPx, float thickness, float fraction, Color fill, const std::string& id = "");
+// Number that counts up to its target when the page opens (and glides when the target changes).
+float countUp(const std::string& id, float target);
 // Rounded label chip; returns its width.
 float badge(const std::string& text, float x, float y, Color fg, Color bg);
 // Width a badge would take.
@@ -154,10 +241,13 @@ float badgeWidth(const std::string& text);
 
 // Vertical scroll view state; keep one per scrollable region.
 struct ScrollState {
-    float offset = 0.0f;
+    float offset = 0.0f;      // what is drawn (eases toward target); assigning it jumps there
     float contentH = 0.0f;
     bool dragging = false;
     float dragGrab = 0.0f;
+    float target = 0.0f;      // where the wheel / keys want to go
+    float lastOffset = 0.0f;  // offset at the end of the previous frame (detects outside writes)
+    double lastActive = -10.0;  // time of the last scroll interaction (the bar fades out afterwards)
 };
 // Starts a scroll view: returns the content origin (x, y already shifted by the scroll offset, w = usable width).
 Rect scrollBegin(ScrollState& s, Rect viewport);
@@ -192,7 +282,7 @@ struct TextInputOpts {
     const char* placeholder = "";
     int fontPx = size::kBody;
     int status = 0;  // 0 normal, 1 correct (green), 2 wrong (red)
-    float padX = 11.0f;
+    float padX = 12.0f;
     float padY = 8.0f;
 };
 // Editable text field. Returns true when Enter is pressed (single line) or the text changed (multiline).
@@ -203,7 +293,9 @@ struct CodeBoxOpts {
     bool lineNumbers = true;
     bool cpp = false;            // keyword set (C vs C++)
     bool plain = false;          // no syntax colours (tables, diagrams)
-    bool copyButton = false;     // small "copy" icon in the corner
+    bool copyButton = false;     // slim header with the language label and a copy icon
+    const char* title = nullptr; // header label (language); the header is also shown for copyButton
+    int tone = 0;                // header tint: 0 neutral, 1 wrong (red), 2 ok (green)
     int fontPx = size::kCode;
     int highlightLine = -1;      // 0-based line drawn with a tinted background
     bool clickableLines = false; // lines react to hover/click (find-the-bug)
