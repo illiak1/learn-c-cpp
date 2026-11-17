@@ -1,4 +1,4 @@
-// theme.cpp - palette definitions and the font cache.
+// theme.cpp - palette definitions (light/dark, accent per track), the font cache and text measuring.
 #include "ui/theme.h"
 
 #include <algorithm>
@@ -25,73 +25,114 @@ std::vector<int> glyphSet() {
     return cps;
 }
 
+// FNV-1a 64-bit hash step over raw bytes.
+uint64_t hashBytes(uint64_t h, const char* s) {
+    for (; *s; ++s) {
+        h ^= static_cast<unsigned char>(*s);
+        h *= 1099511628211ull;
+    }
+    return h;
+}
+
+// Accent fill and the text colour on top of it, per theme and track.
+struct AccentSet {
+    Color fill, onFill;
+};
+constexpr AccentSet kAccentLight[2] = {{rgb(37, 99, 235), rgb(255, 255, 255)}, {rgb(124, 58, 237), rgb(255, 255, 255)}};
+constexpr AccentSet kAccentDark[2] = {{rgb(98, 150, 255), rgb(8, 14, 34)}, {rgb(170, 138, 255), rgb(18, 8, 44)}};
+
 }  // namespace
 
-// Builds both palettes once.
+// Builds both palettes once; the accent fields are filled by rebuild().
 Theme::Theme() {
-    light_.bg = rgb(244, 246, 251);
+    // Light: cool off-white background, white cards on a slightly tinted sidebar, soft borders.
+    light_.bg = rgb(240, 243, 249);
+    light_.sidebar = rgb(248, 250, 253);
     light_.surface = rgb(255, 255, 255);
-    light_.surfaceAlt = rgb(237, 240, 247);
-    light_.border = rgb(224, 228, 237);
-    light_.borderStrong = rgb(199, 206, 220);
-    light_.text = rgb(26, 32, 50);
-    light_.textMuted = rgb(100, 109, 130);
+    light_.surfaceRaised = rgb(255, 255, 255);
+    light_.surfaceAlt = rgb(236, 240, 247);
+    light_.surfaceHover = rgb(228, 234, 244);
+    light_.border = rgb(226, 231, 240);
+    light_.borderStrong = rgb(200, 208, 224);
+    light_.text = rgb(22, 28, 46);
+    light_.textMuted = rgb(94, 104, 128);
     light_.textOnAccent = rgb(255, 255, 255);
-    light_.accent = rgb(79, 70, 229);
-    light_.accentHover = rgb(99, 91, 240);
-    light_.accentPressed = rgb(62, 54, 190);
-    light_.accentSoft = rgb(237, 236, 253);
-    light_.success = rgb(22, 150, 78);
-    light_.successSoft = rgb(223, 246, 232);
-    light_.danger = rgb(214, 48, 49);
-    light_.dangerSoft = rgb(253, 231, 231);
+    light_.success = rgb(16, 135, 70);
+    light_.successSoft = rgb(224, 246, 234);
+    light_.successFill = rgb(20, 146, 78);
+    light_.danger = rgb(204, 42, 48);
+    light_.dangerSoft = rgb(253, 233, 233);
     light_.dangerFill = rgb(208, 40, 44);
-    light_.warning = rgb(196, 112, 8);
-    light_.warningSoft = rgb(254, 244, 220);
-    light_.shadow = rgb(30, 40, 90, 26);
-    light_.codeBg = rgb(247, 248, 252);
-    light_.codeBorder = rgb(222, 226, 236);
-    light_.codeText = rgb(38, 44, 62);
-    light_.codeLineNo = rgb(150, 158, 178);
-    light_.codeLineHot = rgb(253, 231, 231);
-    light_.synKeyword = rgb(165, 50, 150);
-    light_.synType = rgb(23, 105, 170);
-    light_.synString = rgb(24, 128, 70);
-    light_.synComment = rgb(122, 132, 152);
-    light_.synNumber = rgb(196, 98, 18);
-    light_.synPreproc = rgb(120, 90, 180);
+    light_.warning = rgb(172, 94, 0);
+    light_.warningSoft = rgb(255, 243, 219);
+    light_.shadow = rgb(28, 40, 96);
+    light_.shadowScale = 1.0f;
+    light_.scrim = rgb(16, 22, 44, 140);
+    light_.codeBg = rgb(248, 249, 253);
+    light_.codeGutter = rgb(241, 243, 249);
+    light_.codeHeader = rgb(238, 241, 248);
+    light_.codeBorder = rgb(224, 229, 239);
+    light_.codeText = rgb(34, 40, 58);
+    light_.codeLineNo = rgb(136, 145, 166);
+    light_.codeLineHot = rgb(253, 229, 229);
+    light_.synKeyword = rgb(158, 36, 146);
+    light_.synType = rgb(14, 98, 166);
+    light_.synString = rgb(18, 116, 62);
+    light_.synComment = rgb(104, 114, 136);
+    light_.synNumber = rgb(172, 80, 0);
+    light_.synPreproc = rgb(108, 72, 172);
 
-    dark_.bg = rgb(14, 16, 25);
-    dark_.surface = rgb(24, 27, 40);
-    dark_.surfaceAlt = rgb(33, 37, 54);
-    dark_.border = rgb(45, 50, 71);
+    // Dark: deep blue-grey layers; every surface is a little lighter than the one behind it.
+    dark_.bg = rgb(13, 15, 24);
+    dark_.sidebar = rgb(18, 20, 31);
+    dark_.surface = rgb(25, 28, 42);
+    dark_.surfaceRaised = rgb(32, 36, 54);
+    dark_.surfaceAlt = rgb(34, 38, 56);
+    dark_.surfaceHover = rgb(43, 48, 70);
+    dark_.border = rgb(43, 48, 68);
     dark_.borderStrong = rgb(66, 73, 100);
-    dark_.text = rgb(230, 233, 243);
-    dark_.textMuted = rgb(143, 151, 176);
+    dark_.text = rgb(232, 235, 245);
+    dark_.textMuted = rgb(148, 156, 181);
     dark_.textOnAccent = rgb(255, 255, 255);
-    dark_.accent = rgb(105, 98, 244);
-    dark_.accentHover = rgb(128, 122, 250);
-    dark_.accentPressed = rgb(86, 79, 214);
-    dark_.accentSoft = rgb(38, 40, 76);
-    dark_.success = rgb(74, 210, 128);
-    dark_.successSoft = rgb(24, 56, 42);
-    dark_.danger = rgb(250, 110, 110);
-    dark_.dangerSoft = rgb(66, 30, 38);
-    dark_.dangerFill = rgb(214, 54, 60);
-    dark_.warning = rgb(244, 178, 74);
+    dark_.success = rgb(78, 210, 132);
+    dark_.successSoft = rgb(22, 56, 42);
+    dark_.successFill = rgb(30, 148, 84);
+    dark_.danger = rgb(255, 120, 120);
+    dark_.dangerSoft = rgb(68, 30, 38);
+    dark_.dangerFill = rgb(212, 52, 58);
+    dark_.warning = rgb(248, 184, 80);
     dark_.warningSoft = rgb(62, 48, 22);
-    dark_.shadow = rgb(0, 0, 0, 90);
-    dark_.codeBg = rgb(18, 20, 31);
-    dark_.codeBorder = rgb(42, 47, 67);
-    dark_.codeText = rgb(220, 224, 238);
-    dark_.codeLineNo = rgb(98, 106, 133);
-    dark_.codeLineHot = rgb(72, 32, 40);
-    dark_.synKeyword = rgb(222, 128, 222);
-    dark_.synType = rgb(110, 187, 245);
-    dark_.synString = rgb(130, 214, 150);
-    dark_.synComment = rgb(116, 126, 152);
-    dark_.synNumber = rgb(247, 168, 98);
-    dark_.synPreproc = rgb(168, 150, 238);
+    dark_.shadow = rgb(0, 0, 0);
+    dark_.shadowScale = 2.6f;
+    dark_.scrim = rgb(4, 6, 14, 170);
+    dark_.codeBg = rgb(17, 19, 30);
+    dark_.codeGutter = rgb(21, 24, 36);
+    dark_.codeHeader = rgb(28, 31, 46);
+    dark_.codeBorder = rgb(41, 46, 66);
+    dark_.codeText = rgb(226, 230, 243);
+    dark_.codeLineNo = rgb(104, 113, 140);
+    dark_.codeLineHot = rgb(76, 34, 42);
+    dark_.synKeyword = rgb(232, 142, 232);
+    dark_.synType = rgb(120, 196, 252);
+    dark_.synString = rgb(142, 222, 162);
+    dark_.synComment = rgb(130, 140, 166);
+    dark_.synNumber = rgb(250, 176, 106);
+    dark_.synPreproc = rgb(178, 162, 247);
+
+    rebuild();
+}
+
+// Recomputes the active palette: the base palette of the mode plus the accent of the track.
+void Theme::rebuild() {
+    const bool dark = mode_ == ThemeMode::Dark;
+    active_ = dark ? dark_ : light_;
+    const AccentSet& a = (dark ? kAccentDark : kAccentLight)[accent_ == Accent::C ? 0 : 1];
+    active_.accent = a.fill;
+    active_.textOnAccent = a.onFill;
+    active_.accentHover = mix(a.fill, dark ? rgb(255, 255, 255) : rgb(255, 255, 255), dark ? 0.16f : 0.14f);
+    active_.accentPressed = mix(a.fill, rgb(0, 0, 0), dark ? 0.22f : 0.18f);
+    active_.accentSoft = mix(active_.surface, a.fill, dark ? 0.17f : 0.10f);
+    active_.accentGlow = withAlpha(a.fill, dark ? 0.45f : 0.35f);
 }
 
 // Returns the process-wide theme.
@@ -100,13 +141,25 @@ Theme& Theme::get() {
     return theme;
 }
 
+// Switches light/dark.
+void Theme::setMode(ThemeMode m) {
+    mode_ = m;
+    rebuild();
+}
+
+// Switches the accent colour to the selected track's.
+void Theme::setAccent(Accent a) {
+    accent_ = a;
+    rebuild();
+}
+
 // Remembers where the fonts live; fonts themselves load lazily.
 void Theme::init(const std::string& assetsDir) { assetsDir_ = assetsDir; }
 
 // Loads the sizes used by the screens up front.
 void Theme::preload() {
-    for (int px : {11, 12, 13, 14, 15, 16, 17, 20}) font(Face::Regular, px);
-    for (int px : {12, 13, 14, 15, 16, 17, 18, 20, 21, 24, 25, 30, 34, 40, 44}) font(Face::Bold, px);
+    for (int px : {13, 14, 15, 16, 17, 20}) font(Face::Regular, px);
+    for (int px : {13, 14, 15, 16, 17, 18, 20, 21, 24, 25, 30, 34, 40, 44}) font(Face::Bold, px);
     for (int px : {14, 15}) font(Face::Mono, px);
 }
 
@@ -117,7 +170,10 @@ void Theme::shutdown() {
 }
 
 // Stores the display scale (clamped to a sane range); fonts for the new scale load on first use.
-void Theme::setScale(float s) { scale_ = std::clamp(s, 0.5f, 4.0f); }
+void Theme::setScale(float s) {
+    scale_ = std::clamp(s, 0.5f, 4.0f);
+    widths_.clear();
+}
 
 // Text size in physical pixels.
 int Theme::pixelSize(int px) const { return std::max(1, static_cast<int>(std::lround(static_cast<float>(px) * scale_))); }
@@ -128,7 +184,7 @@ float Theme::snap(float v) const { return std::round(v * scale_) / scale_; }
 // Loads (once) and returns a font of the given face, rasterised at the physical pixel size.
 const Font& Theme::font(Face face, int logicalPx) {
     const int px = pixelSize(logicalPx);
-    const auto key = std::make_pair(static_cast<int>(face), px);
+    const uint64_t key = (static_cast<uint64_t>(face) << 32) | static_cast<uint64_t>(px);
     auto it = fonts_.find(key);
     if (it != fonts_.end()) return it->second;
 
@@ -143,34 +199,50 @@ const Font& Theme::font(Face face, int logicalPx) {
     return fonts_.emplace(key, f).first->second;
 }
 
-// Width of a string in the given face and size.
-float Theme::textWidth(Face face, int px, const std::string& text) {
-    return MeasureTextEx(font(face, px), text.c_str(), drawSize(px), 0).x;
+// Width of a C string in the given face and size; results are cached by a 64-bit hash of (face, size, text).
+float Theme::textWidth(Face face, int px, const char* text) {
+    uint64_t h = 1469598103934665603ull ^ (static_cast<uint64_t>(face) * 131u + static_cast<uint64_t>(px));
+    h = hashBytes(h * 1099511628211ull, text);
+    auto it = widths_.find(h);
+    if (it != widths_.end()) return it->second;
+    if (widths_.size() > 40000) widths_.clear();
+    const float w = MeasureTextEx(font(face, px), text, drawSize(px), 0).x;
+    widths_.emplace(h, w);
+    return w;
 }
+
+// Width of a string in the given face and size.
+float Theme::textWidth(Face face, int px, const std::string& text) { return textWidth(face, px, text.c_str()); }
 
 // Width of one glyph of the monospace font.
 float Theme::monoAdvance(int px) { return textWidth(Face::Mono, px, "M"); }
 
 // Linear alpha change (alpha in 0..1 multiplies the existing alpha).
 Color withAlpha(Color c, float alpha) {
-    c.a = static_cast<unsigned char>(static_cast<float>(c.a) * alpha);
+    c.a = static_cast<unsigned char>(static_cast<float>(c.a) * std::clamp(alpha, 0.0f, 1.0f));
     return c;
 }
 
 // Linear interpolation between two colours.
 Color mix(Color a, Color b, float t) {
+    t = std::clamp(t, 0.0f, 1.0f);
     auto l = [t](unsigned char x, unsigned char y) {
         return static_cast<unsigned char>(static_cast<float>(x) + (static_cast<float>(y) - static_cast<float>(x)) * t);
     };
     return Color{l(a.r, b.r), l(a.g, b.g), l(a.b, b.b), l(a.a, b.a)};
 }
 
-// Draws a string with the themed font; returns the drawn width. The origin is rounded to a whole
+// Draws a C string with the themed font; returns the drawn width. The origin is rounded to a whole
 // screen pixel: with the bilinear filter a glyph drawn between two pixels is smeared over both.
-float drawText(Face face, int px, const std::string& text, float x, float y, Color color) {
+float drawText(Face face, int px, const char* text, float x, float y, Color color) {
     Theme& th = Theme::get();
-    DrawTextEx(th.font(face, px), text.c_str(), Vector2{th.snap(x), th.snap(y)}, th.drawSize(px), 0, color);
+    DrawTextEx(th.font(face, px), text, Vector2{th.snap(x), th.snap(y)}, th.drawSize(px), 0, color);
     return th.textWidth(face, px, text);
+}
+
+// Draws a string with the themed font.
+float drawText(Face face, int px, const std::string& text, float x, float y, Color color) {
+    return drawText(face, px, text.c_str(), x, y, color);
 }
 
 }  // namespace ui
