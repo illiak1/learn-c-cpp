@@ -219,3 +219,102 @@ int main() {
 Num operator++(int) {
 @explain
 The postfix form needs the unused int parameter; without it the function is the prefix operator.
+
+@exercise cpp-op-theory-member-params
+@type theory
+@lesson 05_operators
+@difficulty 2
+@prompt
+A member operator+ of class Vec is written as  Vec operator+(const Vec& o) const.  How many explicit parameters does it have? Write the number.
+@answer
+1 | one
+@explain
+a + b means a.operator+(b): the left operand is the object itself (this), and only the right operand is a parameter.
+
+@exercise cpp-op-theory-ostream
+@type theory
+@lesson 05_operators
+@difficulty 2
+@prompt
+What is the type of the first parameter of  operator<<(..., const Clock& c)  when it is used with cout? Write the type.
+@answer
+ostream& | ostream & | std::ostream& | std::ostream & | ostream
+@explain
+cout is an ostream. The function takes it by reference, changes it by writing into it, and returns the same reference so that << can be chained.
+
+@exercise cpp-op-choice-nonmember
+@type choice
+@lesson 05_operators
+@difficulty 2
+@prompt
+Why can operator<< for  cout << myClock  not be a member function of Clock?
+@choices
+- Because member functions cannot be operators
+- Because << may only be overloaded once per program
+* Because the left operand is cout, not a Clock, and a member operator always has the object itself on the left
+- Because member functions cannot use cout
+@explain
+A member operator is called on its left operand. Here the left operand is cout, which we cannot change, so the operator has to be a free function (usually a friend).
+
+@exercise cpp-op-bug-operand
+@type bug
+@lesson 05_operators
+@difficulty 2
+@prompt
+The program should print 7 but prints 6. Click the buggy line, then type the corrected line.
+@code
+#include <iostream>
+using namespace std;
+
+class Counter {
+public:
+    int n;
+    Counter(int v) : n(v) { }
+    Counter operator+(const Counter& o) const {
+        return Counter(n + n);
+    }
+};
+
+int main() {
+    Counter a(3), b(4);
+    Counter c = a + b;
+    cout << c.n << endl;
+    return 0;
+}
+@bugline 9
+@answer
+return Counter(n + o.n);
+@explain
+n + n doubles the left operand and ignores the right one. The sum of the two objects is n + o.n.
+
+@exercise cpp-op-bug-return-ref
+@type bug
+@lesson 05_operators
+@difficulty 3
+@prompt
+This operator+ returns a reference to something that no longer exists. Click the line that is a bug, then type the corrected line.
+@code
+#include <iostream>
+using namespace std;
+
+class Vec {
+public:
+    int x, y;
+    Vec(int a, int b) : x(a), y(b) { }
+    Vec& operator+(const Vec& o) const {
+        Vec result(x + o.x, y + o.y);
+        return result;
+    }
+};
+
+int main() {
+    Vec a(1, 2), b(3, 4);
+    Vec c = a + b;
+    cout << c.x << " " << c.y << endl;
+    return 0;
+}
+@bugline 8
+@answer
+Vec operator+(const Vec& o) const {
+@explain
+result is a local variable and dies when the function returns, so the reference is dangling. A binary operator+ builds a new object and returns it by value.

@@ -224,3 +224,33 @@ int main() {
 for (int *p = a; p < a + 5; p++) {
 @explain
 a + 5 is one past the last element, so the condition must be p < a + 5.
+
+@exercise c-ptr-theory-deref
+@type theory
+@lesson 02_pointers
+@difficulty 1
+@prompt
+Which operator follows a pointer to the variable it points to, so that you can read or change that variable? Write the symbol.
+@answer
+* | dereference | the dereference operator | dereference operator | asterisk | indirection
+@explain
+*p is the variable p points to (dereferencing). Do not confuse it with the * in a declaration such as int *p, which only says that p is a pointer.
+
+@exercise c-ptr-bug-uninit
+@type bug
+@lesson 02_pointers
+@difficulty 2
+@prompt
+This program writes through a pointer that points nowhere in particular. Click the line that is a bug.
+@code
+#include <stdio.h>
+
+int main() {
+    int *p;
+    *p = 5;
+    printf("%d\n", *p);
+    return 0;
+}
+@bugline 5
+@explain
+int *p; does not give p an address, so it holds garbage. Writing through it is undefined behavior. Point p at a real variable (p = &x) or at malloc'ed memory first.

@@ -132,3 +132,130 @@ int main() {
 void addOne(int &x) {
 @explain
 x is a copy of a. Taking the parameter by reference (int &x) lets the function change the caller's variable.
+
+@exercise cpp-basics-theory-bool
+@type theory
+@lesson 01_basics
+@difficulty 1
+@prompt
+Which type holds only the values true and false?
+@answer
+bool | boolean | a bool
+@explain
+bool stores true or false; cout prints them as 1 and 0.
+
+@exercise cpp-basics-theory-const
+@type theory
+@lesson 01_basics
+@difficulty 1
+@prompt
+Which keyword makes a variable unchangeable after its declaration?
+@answer
+const | constant
+@explain
+const int MAX = 100; cannot be assigned to again; the compiler reports an error if you try.
+
+@exercise cpp-basics-choice-modulo
+@type choice
+@lesson 01_basics
+@difficulty 1
+@prompt
+What is the value of 17 % 5?
+@choices
+- 3
+* 2
+- 3.4
+- 12
+@explain
+% gives the remainder of an integer division: 17 = 3 * 5 + 2.
+
+@exercise cpp-basics-choice-uninit
+@type choice
+@lesson 01_basics
+@difficulty 2
+@prompt
+What does a local variable hold right after  int x;  ?
+@choices
+- 0
+- -1
+* Nothing defined: it holds a leftover value and must not be read before it is assigned
+- The address of x
+@explain
+Local variables are not initialised automatically. Reading one before assigning it gives an unpredictable value.
+
+@exercise cpp-basics-fill-cin-chain
+@type fill
+@lesson 01_basics
+@difficulty 1
+@prompt
+Read two integers with one cin statement and print their sum.
+@code
+int a, b;
+cin ___ a ___ b;
+cout << "Sum: " << a + b << endl;
+@answer
+>>
+>>
+@explain
+cin uses the extraction operator >> and can chain several reads; cout uses << to send values out.
+
+@exercise cpp-basics-fill-half
+@type fill
+@lesson 01_basics
+@difficulty 2
+@prompt
+For n = 7 the variable half should become 3.5. Fill in the divisor so that the division keeps the fraction.
+@code
+int n = 7;
+double half = n / ___;
+cout << half << endl;
+@answer
+2.0 | 2. | 2.0f
+@explain
+int / int is integer division (7 / 2 is 3). A double operand such as 2.0 makes the division a double one: 3.5.
+
+@exercise cpp-basics-bug-assign-compare
+@type bug
+@lesson 01_basics
+@difficulty 2
+@prompt
+The program should print "no" because age is not 18, but it prints "yes". Click the buggy line, then type the corrected line.
+@code
+#include <iostream>
+using namespace std;
+
+int main() {
+    int age = 20;
+    if (age = 18) {
+        cout << "yes" << endl;
+    } else {
+        cout << "no" << endl;
+    }
+    return 0;
+}
+@bugline 6
+@answer
+if (age == 18) {
+@explain
+A single = assigns 18 to age (and the value 18 counts as true). Comparing needs ==.
+
+@exercise cpp-basics-bug-char-literal
+@type bug
+@lesson 01_basics
+@difficulty 1
+@prompt
+This code does not compile. Click the buggy line, then type the corrected line.
+@code
+#include <iostream>
+using namespace std;
+
+int main() {
+    char grade = "A";
+    cout << grade << endl;
+    return 0;
+}
+@bugline 5
+@answer
+char grade = 'A';
+@explain
+Double quotes make a string literal (several characters plus '\0'). A single char needs single quotes: 'A'.

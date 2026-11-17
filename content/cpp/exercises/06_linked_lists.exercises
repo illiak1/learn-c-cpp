@@ -180,3 +180,158 @@ void deleteList(Node* head) {
 @bugline 9 10
 @explain
 After delete cur the node no longer exists, so cur->next reads freed memory. Save the next pointer first, then delete the node.
+
+@exercise cpp-list-theory-arrow
+@type theory
+@lesson 06_linked_lists
+@difficulty 1
+@prompt
+Which operator reads a field through a node pointer, as in  p->data  ? Write the two-character symbol.
+@answer
+-> | arrow | the arrow operator | arrow operator
+@explain
+p->data is shorthand for (*p).data: follow the pointer, then select the field.
+
+@exercise cpp-list-choice-insert-front
+@type choice
+@lesson 06_linked_lists
+@difficulty 2
+@prompt
+Why is inserting a new element at the beginning cheap in a linked list?
+@choices
+- Because the list keeps its elements sorted
+* Because no other element has to be moved: the new node only needs its next pointer set to the old head
+- Because the compiler optimises it
+- Because the head pointer never changes
+@explain
+An array has to shift every element one place to the right. A linked list only creates one node and updates two pointers, however long the list is.
+
+@exercise cpp-list-predict-append
+@type predict
+@lesson 06_linked_lists
+@difficulty 2
+@prompt
+What does this program print?
+@code
+#include <iostream>
+using namespace std;
+
+struct Node {
+    int data;
+    Node* next;
+};
+
+int main() {
+    int values[] = {4, 5, 6};
+    Node* head = nullptr;
+    Node* tail = nullptr;
+    for (int v : values) {
+        Node* n = new Node{v, nullptr};
+        if (head == nullptr) {
+            head = n;
+        } else {
+            tail->next = n;
+        }
+        tail = n;
+    }
+    int count = 0, sum = 0;
+    for (Node* p = head; p != nullptr; p = p->next) {
+        count++;
+        sum += p->data;
+    }
+    cout << head->data << " " << tail->data << " " << count << " " << sum << endl;
+    while (head != nullptr) {
+        Node* t = head;
+        head = head->next;
+        delete t;
+    }
+    return 0;
+}
+@answer
+4 6 3 15
+@explain
+Appending with a tail pointer keeps the order 4, 5, 6: the head is 4 and the tail is 6. The list has 3 nodes with the sum 15.
+
+@exercise cpp-list-predict-delete-first
+@type predict
+@lesson 06_linked_lists
+@difficulty 3
+@prompt
+What does this program print?
+@code
+#include <iostream>
+using namespace std;
+
+struct Node {
+    int data;
+    Node* next;
+};
+
+void deleteFirst(Node** head) {
+    Node* temp = *head;
+    *head = temp->next;
+    delete temp;
+}
+
+int main() {
+    Node* c = new Node{30, nullptr};
+    Node* b = new Node{20, c};
+    Node* a = new Node{10, b};
+    Node* head = a;
+    deleteFirst(&head);
+    cout << head->data << " " << head->next->data << " " << (head == b) << endl;
+    delete b;
+    delete c;
+    return 0;
+}
+@answer
+20 30 1
+@explain
+deleteFirst moves the caller's head from node a (10) to node b (20) and frees a. The list is now 20, 30 and head is the same node as b.
+
+@exercise cpp-list-bug-append-null
+@type bug
+@lesson 06_linked_lists
+@difficulty 3
+@prompt
+This function appends a node to a non-empty list but crashes. Click the buggy line, then type the corrected line.
+@code
+struct Node {
+    int data;
+    Node* next;
+};
+
+void append(Node* head, int value) {
+    Node* cur = head;
+    while (cur != nullptr) {
+        cur = cur->next;
+    }
+    cur->next = new Node{value, nullptr};
+}
+@bugline 8
+@answer
+while (cur->next != nullptr) {
+@explain
+The loop ends only when cur is nullptr, and then cur->next is a null dereference. Stop at the last node, the one whose next is nullptr.
+
+@exercise cpp-list-bug-insert-order
+@type bug
+@lesson 06_linked_lists
+@difficulty 3
+@prompt
+After this insertAtBeginning the old list is lost and the new node points to itself. Click the line that is a bug (either of the two lines involved is accepted).
+@code
+struct Node {
+    int data;
+    Node* next;
+};
+
+void insertAtBeginning(Node** head, int value) {
+    Node* node = new Node;
+    node->data = value;
+    *head = node;
+    node->next = *head;
+}
+@bugline 9 10
+@explain
+Once *head = node has run, *head is the new node, so node->next = *head makes the node point to itself and the old first node is lost. Set node->next first, then move the head.

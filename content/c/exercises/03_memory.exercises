@@ -204,3 +204,64 @@ int main() {
 @bugline 7
 @explain
 Freeing the same memory twice is undefined behavior. Free once, or set p = NULL after the first free (free(NULL) is safe).
+
+@exercise c-mem-theory-realloc
+@type theory
+@lesson 03_memory
+@difficulty 2
+@prompt
+Which function changes the size of a block that was already allocated with malloc?
+@answer
+realloc | realloc() | the realloc function
+@explain
+realloc(p, newSize) returns a block of the new size that keeps the old contents, and it may move the data to a different address. Always use the returned pointer.
+
+@exercise c-mem-fill-strdup
+@type fill
+@lesson 03_memory
+@difficulty 2
+@prompt
+Write a function that returns a heap copy of a string. The block needs room for one more character than strlen counts.
+@code
+char *duplicate(const char *s) {
+    char *copy = malloc(strlen(s) + ___);
+    if (copy == NULL) {
+        return NULL;
+    }
+    strcpy(copy, s);
+    return copy;
+}
+@answer
+1
+@explain
+strlen does not count the terminating '\0', but strcpy copies it, so the block needs strlen(s) + 1 bytes.
+
+@exercise c-mem-predict-two-blocks
+@type predict
+@lesson 03_memory
+@difficulty 2
+@prompt
+What does this program print?
+@code
+#include <stdio.h>
+#include <stdlib.h>
+
+int *make(void) {
+    int *p = malloc(sizeof(int));
+    *p = 8;
+    return p;
+}
+
+int main() {
+    int *a = make();
+    int *b = make();
+    *a = 1;
+    printf("%d %d\n", *a, *b);
+    free(a);
+    free(b);
+    return 0;
+}
+@answer
+1 8
+@explain
+Every call to malloc returns a separate block. Changing *a does not touch the block that b points to.

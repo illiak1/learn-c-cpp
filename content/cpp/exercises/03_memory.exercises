@@ -241,3 +241,28 @@ int main() {
 @bugline 7
 @explain
 After delete the memory no longer belongs to the program. Print first, delete afterwards.
+
+@exercise cpp-mem-theory-leak
+@type theory
+@lesson 03_memory
+@difficulty 1
+@prompt
+What is the problem called when memory from new is never given back with delete? Write two words.
+@answer
+memory leak | a memory leak | leak | memory leaks
+@explain
+A leak happens when the last pointer to a heap block is lost or the block is simply never deleted. The memory stays reserved until the program ends.
+
+@exercise cpp-mem-choice-funcptr
+@type choice
+@lesson 03_memory
+@difficulty 2
+@prompt
+Which line declares fp as a pointer to a function that takes two ints and returns an int?
+@choices
+- int *fp(int, int);
+* int (*fp)(int, int);
+- int fp*(int, int);
+- (int*) fp(int, int);
+@explain
+The parentheses around *fp are what make it a pointer to a function. Without them, int *fp(int, int) declares a function that returns an int*.

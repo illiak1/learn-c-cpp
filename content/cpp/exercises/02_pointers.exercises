@@ -245,3 +245,45 @@ int main() {
 int* ptr = &i;
 @explain
 A pointer must hold an address: use &i.
+
+@exercise cpp-ptr-choice-notnull
+@type choice
+@lesson 02_pointers
+@difficulty 2
+@prompt
+Which condition is true only when the pointer p points to something?
+@choices
+* if (p != nullptr)
+- if (p == nullptr)
+- if (!p)
+- if (*p != nullptr)
+@explain
+p != nullptr (or simply if (p)) tests the pointer itself. Testing *p would first dereference p, which is exactly what must not happen for a null pointer.
+
+@exercise cpp-ptr-bug-swap-call
+@type bug
+@lesson 02_pointers
+@difficulty 2
+@prompt
+This code does not compile. Click the buggy line, then type the corrected line.
+@code
+#include <iostream>
+using namespace std;
+
+void swapPtr(int* x, int* y) {
+    int z = *x;
+    *x = *y;
+    *y = z;
+}
+
+int main() {
+    int a = 1, b = 2;
+    swapPtr(a, b);
+    cout << a << " " << b << endl;
+    return 0;
+}
+@bugline 12
+@answer
+swapPtr(&a, &b);
+@explain
+swapPtr expects two addresses. Pass &a and &b, not the ints themselves.

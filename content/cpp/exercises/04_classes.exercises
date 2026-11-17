@@ -301,3 +301,42 @@ int main() {
 @bugline 13
 @explain
 x is private, so it cannot be read from outside the class. Add a public getter or make the field public.
+
+@exercise cpp-class-theory-this
+@type theory
+@lesson 04_classes
+@difficulty 2
+@prompt
+Which keyword gives a method a pointer to the object it was called on?
+@answer
+this | this pointer | the this pointer
+@explain
+Inside a method, this is the address of the current object, so this->x is the same as x and *this is the object itself.
+
+@exercise cpp-class-bug-arrow
+@type bug
+@lesson 04_classes
+@difficulty 2
+@prompt
+This code does not compile. Click the buggy line, then type the corrected line.
+@code
+#include <iostream>
+using namespace std;
+
+class Point {
+public:
+    double x, y;
+};
+
+int main() {
+    Point* p = new Point();
+    p.x = 3;
+    cout << p->x << endl;
+    delete p;
+    return 0;
+}
+@bugline 11
+@answer
+p->x = 3;
+@explain
+p is a pointer, so its members are reached with ->, or with (*p).x. The dot works only on an object itself.
