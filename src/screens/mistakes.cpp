@@ -26,6 +26,7 @@ public:
 
         if (wrong.empty() && failed.empty()) {
             Rect r = col.take(190.0f);
+            Appear apEmpty(0, r);
             card(r);
             drawIcon(Icon::Check, r.x + r.width / 2.0f, r.y + 62.0f, 38.0f, p.success);
             drawCentered(Face::Bold, size::kH3, "No mistakes to review", Rect{r.x, r.y + 90.0f, r.width, 30.0f}, p.text);
@@ -38,17 +39,20 @@ public:
         // Questions
         if (!wrong.empty()) {
             Rect head = col.take(70.0f);
-            card(head);
+            Appear apHead(0, head);
+            cardRaised(head);
             drawText(Face::Bold, size::kH3, std::to_string(wrong.size()) + (wrong.size() == 1 ? " question" : " questions") + " to review",
                      head.x + 22.0f, head.y + 22.0f, p.text);
             if (button("Replay all", Rect{head.x + head.width - 172.0f, head.y + 14.0f, 150.0f, 42.0f}, ButtonStyle::Primary, Icon::Play))
                 app.startSession("Mistakes", wrong);
+            int rowIndex = 0;
             for (const std::string& id : wrong) {
                 const content::Exercise* e = tc.findExercise(id);
                 if (!e) continue;
                 const logic::ExerciseRecord* rec = app.progress().exercise(key, id);
-                Rect r = col.take(66.0f);
-                card(r, false);
+                Rect r = col.take(68.0f);
+                Appear apRow(++rowIndex, r);
+                card(r);
                 Context::get().pushId(id);
                 badge(content::typeName(e->type), r.x + 18.0f, r.y + 11.0f, p.accent, p.accentSoft);
                 if (rec) {
@@ -66,7 +70,7 @@ public:
         if (!failed.empty()) {
             col.space(10.0f);
             Rect head = col.take(70.0f);
-            card(head);
+            cardRaised(head);
             drawText(Face::Bold, size::kH3, std::to_string(failed.size()) + (failed.size() == 1 ? " exam function" : " exam functions") + " to redo",
                      head.x + 22.0f, head.y + 22.0f, p.text);
             if (button("Retry as mini exam", Rect{head.x + head.width - 232.0f, head.y + 14.0f, 210.0f, 42.0f}, ButtonStyle::Primary, Icon::Timer))
@@ -74,10 +78,10 @@ public:
             for (const std::string& id : failed) {
                 const content::Task* t = tc.findTask(id);
                 if (!t) continue;
-                Rect r = col.take(58.0f);
-                card(r, false);
+                Rect r = col.take(60.0f);
+                card(r);
                 Context::get().pushId(id);
-                drawIcon(Icon::Cross, r.x + 28.0f, r.y + 29.0f, 16.0f, p.danger);
+                drawIcon(Icon::Cross, r.x + 28.0f, r.y + 30.0f, 16.0f, p.danger);
                 drawText(Face::Bold, 16, t->title, r.x + 52.0f, r.y + 8.0f, p.text);
                 drawText(Face::Regular, 14, std::to_string(t->points) + " points", r.x + 52.0f, r.y + 31.0f, p.textMuted);
                 if (button("Redo", Rect{r.x + r.width - 118.0f, r.y + 8.0f, 98.0f, 42.0f}, ButtonStyle::Secondary, Icon::Timer))

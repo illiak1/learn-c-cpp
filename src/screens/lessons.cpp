@@ -40,20 +40,21 @@ public:
             const float textW = col.w - textX - rightW;
             const float sumH = l.summary.empty() ? 0.0f : textHeight(Face::Regular, 15, l.summary, textW);
             const float barY = 50.0f + sumH + 10.0f;
-            Rect r = col.take(std::max(104.0f, barY + 6.0f + 18.0f));
+            Rect r = col.take(std::max(108.0f, barY + 6.0f + 20.0f));
+            Appear appear(index, r);
             Context::get().pushId(l.id);
             const bool clicked = cardButton("card", r);
             const float midY = r.y + r.height / 2.0f;
             Rect num{r.x + 20.0f, midY - 26.0f, 52.0f, 52.0f};
-            fillRound(num, 14.0f, p.accentSoft);
+            fillRoundGradient(num, radius::kLg - 2.0f, mix(p.accentSoft, p.accent, 0.1f), p.accentSoft);
             drawCentered(Face::Bold, size::kH2, std::to_string(++index), num, p.accent);
             drawText(Face::Bold, size::kH3, ellipsize(Face::Bold, size::kH3, l.title, textW), r.x + textX, r.y + 22.0f, p.text);
             drawParagraph(Face::Regular, 15, l.summary, r.x + textX, r.y + 50.0f, textW, p.textMuted);
             const int read = app.progress().sectionsRead(app.trackKey(), l.id);
             progressBar(Rect{r.x + textX, r.y + std::max(barY, r.height - 24.0f), textW, 6.0f},
-                        l.sections.empty() ? 0.0f : static_cast<float>(read) / static_cast<float>(l.sections.size()), p.accent);
+                        l.sections.empty() ? 0.0f : static_cast<float>(read) / static_cast<float>(l.sections.size()), p.accent, "bar");
             const std::string count = std::to_string(read) + " / " + std::to_string(l.sections.size()) + " read";
-            badge(count, r.x + r.width - badgeWidth(count) - 56.0f, read > 0 ? midY - 27.0f : midY - 11.0f, p.textMuted, p.surfaceAlt);
+            badge(count, r.x + r.width - badgeWidth(count) - 56.0f, read > 0 ? midY - 29.0f : midY - 12.0f, read == static_cast<int>(l.sections.size()) && read > 0 ? p.success : p.textMuted, read == static_cast<int>(l.sections.size()) && read > 0 ? p.successSoft : p.surfaceAlt);
             drawIcon(Icon::ChevronRight, r.x + r.width - 30.0f, midY, 18.0f, p.textMuted);
             // Per-topic reset (only when there is something to reset). Drawn after the card, so a click
             // on it belongs to the button and does not open the lesson.
@@ -100,8 +101,9 @@ public:
         col.space(46.0f);
         pageHeader(col, app, lesson->title);
 
-        // Section chips, wrapped over several rows.
+        // Section chips, wrapped over several rows (one chip group: they share the sliding highlight).
         float x = col.x, y = col.y;
+        Context::get().pushId("sections");
         for (int i = 0; i < sections; ++i) {
             const std::string id = content::sectionNumber(app.content(), *lesson, static_cast<size_t>(i));
             const float w = std::max(52.0f, chipWidth(id));
@@ -112,7 +114,8 @@ public:
             if (chip(id, Rect{x, y, w, 30.0f}, i == sel)) sel = i;
             x += w + 8.0f;
         }
-        col.y = y + 52.0f;
+        Context::get().popId();
+        col.y = y + 54.0f;
 
         const content::Section& sec = lesson->sections[static_cast<size_t>(sel)];
         app.progress().markSectionRead(app.trackKey(), lesson->id, sec.id);
