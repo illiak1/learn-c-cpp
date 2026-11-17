@@ -48,17 +48,22 @@ inline constexpr float kXl = 24.0f;
 inline constexpr float kXxl = 32.0f;
 }  // namespace space
 
-// A soft shadow made of stacked translucent rounded rectangles.
+// A soft shadow made of stacked translucent rounded rectangles. Cards are drawn one after another, so a shadow
+// that reaches a neighbour would be painted over the neighbour's body: the reach below a card (spread + offsetY) must
+// stay within half of the smallest gap between cards (12 px), see the static_asserts below.
 struct ShadowStyle {
     float spread;    // how far the shadow reaches beyond the shape
     float offsetY;   // vertical offset (light comes from above)
     float opacity;   // opacity at the edge of the shape, 0..1 (before the palette's shadowScale)
 };
 namespace shadow {
-inline constexpr ShadowStyle kCard{10.0f, 3.0f, 0.10f};
-inline constexpr ShadowStyle kRaised{16.0f, 6.0f, 0.15f};
-inline constexpr ShadowStyle kButton{6.0f, 2.0f, 0.12f};
-inline constexpr ShadowStyle kModal{34.0f, 14.0f, 0.26f};
+inline constexpr float kMinCardGap = 12.0f;
+inline constexpr ShadowStyle kCard{4.0f, 2.0f, 0.07f};
+inline constexpr ShadowStyle kRaised{4.0f, 2.0f, 0.10f};
+inline constexpr ShadowStyle kButton{3.0f, 1.0f, 0.09f};
+inline constexpr ShadowStyle kModal{28.0f, 10.0f, 0.22f};  // nothing sits next to a modal
+static_assert(kCard.spread + kCard.offsetY <= kMinCardGap / 2.0f, "card shadow reaches too far");
+static_assert(kRaised.spread + kRaised.offsetY <= kMinCardGap / 2.0f, "raised shadow reaches too far");
 }  // namespace shadow
 
 // Layout constants (pixels).

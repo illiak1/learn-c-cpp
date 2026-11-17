@@ -296,11 +296,12 @@ void strokeRound(Rect r, float radiusPx, float thickness, Color c) {
 // Stacked translucent rectangles fake a blurred shadow.
 void shadowRound(Rect r, float radiusPx, const ShadowStyle& style, float strength) {
     const Palette& p = Theme::get().colors();
-    constexpr int kLayers = 5;
-    const float a = style.opacity * p.shadowScale * strength / static_cast<float>(kLayers) * 1.5f;
+    // One layer per 1.5 px of reach: a small spread needs only two or three layers.
+    const int layers = std::clamp(static_cast<int>(style.spread / 1.5f + 0.5f), 2, 6);
+    const float a = style.opacity * p.shadowScale * strength / static_cast<float>(layers) * 1.5f;
     if (a <= 0.0f) return;
-    for (int i = kLayers; i >= 1; --i) {
-        const float f = static_cast<float>(i) / static_cast<float>(kLayers);
+    for (int i = layers; i >= 1; --i) {
+        const float f = static_cast<float>(i) / static_cast<float>(layers);
         const float grow = style.spread * f;
         Rect s{r.x - grow, r.y - grow + style.offsetY, r.width + grow * 2.0f, r.height + grow * 2.0f};
         fillRound(s, radiusPx + grow, withAlpha(p.shadow, a));
@@ -356,7 +357,7 @@ Appear::~Appear() {
     if (t_ >= 1.0f) return;
     popOffset();
     const Palette& p = Theme::get().colors();
-    DrawRectangleRec(Rect{bounds_.x - 12.0f, bounds_.y - 4.0f, bounds_.width + 24.0f, bounds_.height + 36.0f}, withAlpha(p.bg, 1.0f - t_));
+    DrawRectangleRec(Rect{bounds_.x - 6.0f, bounds_.y - 3.0f, bounds_.width + 12.0f, bounds_.height + 14.0f + 8.0f}, withAlpha(p.bg, 1.0f - t_));
 }
 
 // Draws an icon from lines, circles and triangles.

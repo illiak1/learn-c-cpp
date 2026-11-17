@@ -65,7 +65,7 @@ Theme::Theme() {
     light_.dangerFill = rgb(208, 40, 44);
     light_.warning = rgb(172, 94, 0);
     light_.warningSoft = rgb(255, 243, 219);
-    light_.shadow = rgb(28, 40, 96);
+    light_.shadow = rgb(16, 20, 32);
     light_.shadowScale = 1.0f;
     light_.scrim = rgb(16, 22, 44, 140);
     light_.codeBg = rgb(248, 249, 253);
@@ -103,7 +103,7 @@ Theme::Theme() {
     dark_.warning = rgb(248, 184, 80);
     dark_.warningSoft = rgb(62, 48, 22);
     dark_.shadow = rgb(0, 0, 0);
-    dark_.shadowScale = 2.6f;
+    dark_.shadowScale = 1.5f;
     dark_.scrim = rgb(4, 6, 14, 170);
     dark_.codeBg = rgb(17, 19, 30);
     dark_.codeGutter = rgb(21, 24, 36);
