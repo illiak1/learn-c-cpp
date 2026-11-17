@@ -57,9 +57,9 @@ Theme::Theme() {
     light_.text = rgb(22, 28, 46);
     light_.textMuted = rgb(94, 104, 128);
     light_.textOnAccent = rgb(255, 255, 255);
-    light_.success = rgb(16, 135, 70);
+    light_.success = rgb(13, 124, 63);
     light_.successSoft = rgb(224, 246, 234);
-    light_.successFill = rgb(20, 146, 78);
+    light_.successFill = rgb(16, 128, 66);
     light_.danger = rgb(204, 42, 48);
     light_.dangerSoft = rgb(253, 233, 233);
     light_.dangerFill = rgb(208, 40, 44);
