@@ -99,3 +99,42 @@ TEST(duel_rounds_are_independent_clocks) {
     CHECK_EQ(d.rounds[0].answer(true), 0);  // an over round takes no more points
     CHECK_EQ(d.rounds[1].answer(true), 10);
 }
+
+static DuelRecord rec(const std::string& a, int sa, const std::string& b, int sb) { return DuelRecord{"2026-11-21", a, b, sa, sb}; }
+
+TEST(a_finished_duel_becomes_a_record) {
+    Duel d(pool(5), 1u, "Ann", "Bob");
+    d.rounds[0].answer(true);
+    d.rounds[1].answer(true);
+    d.rounds[1].answer(true);
+    const DuelRecord r = d.record("2026-11-21");
+    CHECK_EQ(r.nameA, std::string("Ann"));
+    CHECK_EQ(r.scoreA, 10);
+    CHECK_EQ(r.scoreB, 20);
+    CHECK(r.outcome() == DuelOutcome::Second);
+    CHECK_EQ(r.winnerName(), std::string("Bob"));
+    CHECK(rec("A", 5, "B", 5).winnerName().empty());
+}
+
+TEST(head_to_head_counts_both_seats_and_ignores_case) {
+    const std::vector<DuelRecord> h = {rec("Illia", 100, "Mantas", 80), rec("Mantas", 90, "Illia", 70), rec("illia", 60, "MANTAS", 60),
+                                       rec("Mantas", 40, "Illia", 120), rec("Illia", 50, "Mantas", 90), rec("Illia", 10, "Zoe", 5)};
+    const HeadToHead x = headToHead(h, "Illia", "Mantas");
+    CHECK_EQ(x.winsA, 2);  // Illia: seat A win, seat B win
+    CHECK_EQ(x.winsB, 2);
+    CHECK_EQ(x.draws, 1);
+    CHECK_EQ(x.total(), 5);
+    const HeadToHead y = headToHead(h, "MANTAS", "illia");  // the other way round: same numbers swapped
+    CHECK_EQ(y.winsA, 2);
+    CHECK_EQ(y.winsB, 2);
+    CHECK_EQ(headToHead(h, "Illia", "Zoe").winsA, 1);
+    CHECK_EQ(headToHead(h, "Zoe", "Mantas").total(), 0);
+    CHECK_EQ(headToHead(h, "Illia", "illia").total(), 0);  // the same name twice is no pairing
+    CHECK_EQ(headToHead({}, "A", "B").total(), 0);
+}
+
+TEST(head_to_head_text) {
+    CHECK_EQ(formatHeadToHead("Illia", "Mantas", HeadToHead{3, 2, 1}), std::string("Illia 3 - 2 Mantas, 1 draw"));
+    CHECK_EQ(formatHeadToHead("Illia", "Mantas", HeadToHead{0, 4, 2}), std::string("Illia 0 - 4 Mantas, 2 draws"));
+    CHECK_EQ(formatHeadToHead("A", "B", HeadToHead{1, 1, 0}), std::string("A 1 - 1 B"));
+}
