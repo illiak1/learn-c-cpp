@@ -13,6 +13,7 @@ std::unique_ptr<Screen> makeLessonScreen();
 std::unique_ptr<Screen> makeExamSetupScreen();
 std::unique_ptr<Screen> makeExamRunScreen();
 std::unique_ptr<Screen> makeExamReviewScreen();
+std::unique_ptr<Screen> makeCompetitionScreen();
 std::unique_ptr<Screen> makeMistakesScreen();
 std::unique_ptr<Screen> makeStatsScreen();
 std::unique_ptr<Screen> makePracticeScreen();

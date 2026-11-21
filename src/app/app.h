@@ -18,10 +18,10 @@ namespace app {
 enum class Track { C, Cpp };
 
 // Every page the app can show.
-enum class Page { Home, Lessons, Lesson, Practice, Exercise, Exam, ExamRun, ExamReview, Mistakes, Stats };
+enum class Page { Home, Lessons, Lesson, Practice, Exercise, Exam, ExamRun, ExamReview, Competition, Mistakes, Stats };
 
 // Sidebar entries; each page belongs to one of them.
-enum class Section { Home, Lessons, Practice, Exam, Mistakes, Stats };
+enum class Section { Home, Lessons, Practice, Exam, Competition, Mistakes, Stats };
 
 Section sectionOf(Page page);
 const char* trackName(Track t);

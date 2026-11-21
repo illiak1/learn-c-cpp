@@ -4,6 +4,7 @@
 #include <algorithm>
 #include <cmath>
 #include <cstring>
+#include <iterator>
 
 #include <cstdio>
 #include <filesystem>
@@ -47,6 +48,7 @@ Section sectionOf(Page page) {
         case Page::Exam:
         case Page::ExamRun:
         case Page::ExamReview: return Section::Exam;
+        case Page::Competition: return Section::Competition;
         case Page::Mistakes: return Section::Mistakes;
         case Page::Stats: return Section::Stats;
     }
@@ -71,6 +73,7 @@ Options parseArgs(int argc, char** argv) {
             else if (n == "practice") o.page = Page::Practice;
             else if (n == "exam") o.page = Page::Exam;
             else if (n == "mistakes") o.page = Page::Mistakes;
+            else if (n == "competition") o.page = Page::Competition;
             else if (n == "examrun") o.page = Page::ExamRun;
             else if (n == "review") o.page = Page::ExamReview;
             else if (n == "lesson") o.page = Page::Lesson;
@@ -124,6 +127,7 @@ void App::registerScreens() {
     screens_[Page::Exam] = makeExamSetupScreen();
     screens_[Page::ExamRun] = makeExamRunScreen();
     screens_[Page::ExamReview] = makeExamReviewScreen();
+    screens_[Page::Competition] = makeCompetitionScreen();
     screens_[Page::Mistakes] = makeMistakesScreen();
     screens_[Page::Stats] = makeStatsScreen();
 }
@@ -227,7 +231,7 @@ void App::requestFinishExam() {
 
 // Asks for confirmation before erasing answers, streak and exam history.
 void App::requestResetProgress() {
-    openModal("reset-progress", ModalOpts{"Reset progress", "Erase all answers, the streak and the exam history? This cannot be undone.",
+    openModal("reset-progress", ModalOpts{"Reset progress", "Erase all answers, the streak, the exam history and the Competition tables? This cannot be undone.",
                                           "Reset progress", "Keep progress", true});
 }
 
@@ -286,13 +290,14 @@ void App::drawSidebar(Rect r) {
         {"Lessons", Icon::Book, Section::Lessons, Page::Lessons},
         {"Practice", Icon::Pencil, Section::Practice, Page::Practice},
         {"Exam mode", Icon::Timer, Section::Exam, Page::Exam},
+        {"Competition", Icon::Trophy, Section::Competition, Page::Competition},
         {"Mistakes", Icon::Cross, Section::Mistakes, Page::Mistakes},
         {"Statistics", Icon::Chart, Section::Stats, Page::Stats},
     };
     drawText(Face::Bold, size::kLabel, "LEARN", r.x + 22.0f, r.y + 176.0f, p.textMuted);
     const float top = r.y + 200.0f, pitch = 46.0f, rowH = 42.0f;
     int activeIdx = 0;
-    for (int i = 0; i < 6; ++i)
+    for (int i = 0; i < static_cast<int>(std::size(items)); ++i)
         if (sectionOf(page_) == items[i].section) activeIdx = i;
     // The pill and its accent bar glide to the active row.
     const float pillY = cx.tween(cx.makeId("nav-pill"), top + pitch * static_cast<float>(activeIdx), motion::kBase);
