@@ -24,6 +24,11 @@ struct Palette {
     float shadowScale;     // multiplies the shadow opacity (shadows need to be stronger on dark surfaces)
     Color scrim;           // modal backdrop
     Color codeBg, codeGutter, codeHeader, codeBorder, codeText, codeLineNo, codeLineHot;
+    // Arcade look of the Competition page. The hero gradient is the same vivid colour pair in both themes (the accent of
+    // the track and a hue-shifted partner) and always carries white text; heroDeep is its dark end for dim areas.
+    Color heroFrom, heroTo, heroDeep;
+    Color gold, silver, bronze, onMedal;  // medals of the Top 3 (onMedal = text on a medal)
+    Color hot;                             // celebration pink, the top combo tier
     Color synKeyword, synType, synString, synComment, synNumber, synPreproc;
 };
 
@@ -86,6 +91,21 @@ inline constexpr float kScreen = 0.22f;
 inline constexpr float kStagger = 0.04f;
 }  // namespace motion
 
+// Arcade (Competition) motion and colour tokens. The colours sit on the dark-ish hero gradient, in both themes.
+namespace arcade {
+inline constexpr Color kWhite{255, 255, 255, 255};
+inline constexpr Color kAmber{255, 200, 61, 255};   // second combo tier, timer under 20 s
+inline constexpr Color kCoral{255, 107, 107, 255};  // timer under 5 s, wrong answers
+inline constexpr Color kMint{110, 231, 183, 255};   // correct answers
+inline constexpr Color kConfetti[6] = {{255, 200, 61, 255}, {255, 107, 158, 255}, {110, 231, 183, 255},
+                                       {120, 190, 255, 255}, {190, 150, 255, 255}, {255, 120, 60, 255}};
+inline constexpr float kCountStep = 0.8f;    // seconds per number of the 3-2-1 countdown
+inline constexpr float kGoSeconds = 0.6f;    // seconds the "GO!" stays
+inline constexpr float kFlashSeconds = 0.3f; // flash after an answer
+inline constexpr float kRowStagger = 0.07f;  // delay between Top 10 rows sliding in
+inline constexpr float kRowSlide = 0.4f;     // slide duration of one row
+}  // namespace arcade
+
 // Text sizes used across the UI. Nothing is smaller than kLabel; line heights are whole pixels (Theme::lineHeight).
 namespace size {
 inline constexpr int kLabel = 14;    // uppercase labels, badges, axis ticks
@@ -99,6 +119,8 @@ inline constexpr int kH1 = 36;       // page titles
 inline constexpr int kValue = 28;    // numbers on the Home tiles
 inline constexpr int kStat = 32;     // numbers on the Statistics cards
 inline constexpr int kDisplay = 46;  // the big score of the exam review
+inline constexpr int kScore = 64;    // live score of the Competition HUD
+inline constexpr int kHuge = 96;     // result score and the 3-2-1 countdown
 inline constexpr int kCode = 15;
 }  // namespace size
 

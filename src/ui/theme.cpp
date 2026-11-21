@@ -41,6 +41,14 @@ struct AccentSet {
 constexpr AccentSet kAccentLight[2] = {{rgb(37, 99, 235), rgb(255, 255, 255)}, {rgb(124, 58, 237), rgb(255, 255, 255)}};
 constexpr AccentSet kAccentDark[2] = {{rgb(98, 150, 255), rgb(8, 14, 34)}, {rgb(170, 138, 255), rgb(18, 8, 44)}};
 
+// Rotates the hue of a colour by `degrees` and scales its brightness.
+Color hueShift(Color c, float degrees, float valueScale) {
+    Vector3 hsv = ColorToHSV(c);
+    hsv.x = std::fmod(hsv.x + degrees + 360.0f, 360.0f);
+    hsv.z = std::clamp(hsv.z * valueScale, 0.0f, 1.0f);
+    return ColorFromHSV(hsv.x, hsv.y, hsv.z);
+}
+
 }  // namespace
 
 // Builds both palettes once; the accent fields are filled by rebuild().
@@ -75,6 +83,11 @@ Theme::Theme() {
     light_.codeText = rgb(34, 40, 58);
     light_.codeLineNo = rgb(136, 145, 166);
     light_.codeLineHot = rgb(253, 229, 229);
+    light_.gold = rgb(236, 168, 18);
+    light_.silver = rgb(150, 162, 184);
+    light_.bronze = rgb(200, 118, 62);
+    light_.onMedal = rgb(40, 26, 4);
+    light_.hot = rgb(219, 39, 119);
     light_.synKeyword = rgb(158, 36, 146);
     light_.synType = rgb(14, 98, 166);
     light_.synString = rgb(18, 116, 62);
@@ -112,6 +125,11 @@ Theme::Theme() {
     dark_.codeText = rgb(226, 230, 243);
     dark_.codeLineNo = rgb(104, 113, 140);
     dark_.codeLineHot = rgb(76, 34, 42);
+    dark_.gold = rgb(255, 202, 64);
+    dark_.silver = rgb(190, 200, 220);
+    dark_.bronze = rgb(226, 142, 84);
+    dark_.onMedal = rgb(40, 26, 4);
+    dark_.hot = rgb(255, 98, 164);
     dark_.synKeyword = rgb(232, 142, 232);
     dark_.synType = rgb(120, 196, 252);
     dark_.synString = rgb(142, 222, 162);
@@ -132,6 +150,12 @@ void Theme::rebuild() {
     active_.accentHover = mix(a.fill, dark ? rgb(255, 255, 255) : rgb(255, 255, 255), dark ? 0.16f : 0.14f);
     active_.accentPressed = mix(a.fill, rgb(0, 0, 0), dark ? 0.22f : 0.18f);
     active_.accentSoft = mix(active_.surface, a.fill, dark ? 0.17f : 0.10f);
+    // Hero gradient: the vivid (light-theme) accent of the track to a hue-shifted partner, identical in both modes.
+    const Color vivid = kAccentLight[accent_ == Accent::C ? 0 : 1].fill;
+    const Color partner = hueShift(vivid, accent_ == Accent::C ? -24.0f : 38.0f, 0.92f);
+    active_.heroFrom = mix(vivid, rgb(0, 0, 0), 0.12f);
+    active_.heroTo = mix(partner, rgb(0, 0, 0), 0.10f);
+    active_.heroDeep = mix(vivid, rgb(8, 6, 28), 0.62f);
     active_.accentGlow = withAlpha(a.fill, dark ? 0.45f : 0.35f);
 }
 
@@ -160,7 +184,7 @@ void Theme::init(const std::string& assetsDir) { assetsDir_ = assetsDir; }
 void Theme::preload() {
     const int sizes[] = {size::kLabel, size::kLabel + 1, size::kSmall, size::kSmall + 1, size::kBodySm, size::kButton, size::kBody,
                          size::kH3,    size::kH3 + 1,    size::kH2,    size::kH1,        size::kH1 + 6,  size::kValue,
-                         size::kStat,  size::kDisplay};
+                         size::kStat,  size::kDisplay,   size::kScore, size::kHuge};
     for (int px : sizes) {
         font(Face::Regular, px);
         font(Face::Bold, px);

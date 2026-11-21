@@ -2,6 +2,7 @@
 // progress bars, scroll views, text inputs and the code box.
 #pragma once
 
+#include <array>
 #include <cstdint>
 #include <string>
 #include <unordered_map>
@@ -148,8 +149,8 @@ void fillRound(Rect r, float radiusPx, Color c);
 void strokeRound(Rect r, float radiusPx, float thickness, Color c);
 // Soft drop shadow under a rounded rectangle (stacked translucent layers; styles are theme tokens).
 void shadowRound(Rect r, float radiusPx, const ShadowStyle& style, float strength = 1.0f);
-// Rounded rectangle with a subtle vertical gradient (built from a few stacked layers, so the corners stay smooth).
-void fillRoundGradient(Rect r, float radiusPx, Color top, Color bottom);
+// Rounded rectangle with a subtle vertical gradient (built from a few stacked layers, so the corners stay smooth). A slant above 0 tilts the gradient toward the diagonal.
+void fillRoundGradient(Rect r, float radiusPx, Color top, Color bottom, float slant = 0.0f);
 // Keyboard focus ring around a rounded rectangle.
 void focusRing(Rect r, float radiusPx);
 // Horizontal shake offset in pixels for an error animation that started t seconds ago.
@@ -309,5 +310,73 @@ Rect codeBoxCell(Rect box, const std::string& code, const CodeBoxOpts& opts, int
 float codeBoxHeight(const std::string& code, const CodeBoxOpts& opts = {});
 // Draws a read-only code block with syntax colours; returns the 0-based line clicked this frame, or -1.
 int codeBox(const std::string& id, Rect r, const std::string& code, const CodeBoxOpts& opts = {});
+
+// ---- Arcade look (arcade.cpp): used by the Competition page --------------------------------------
+// Slowly moving glows and drifting shapes over the page background, clipped to `area`.
+void arcadeBackdrop(Rect area);
+// Vivid hero gradient panel (white text goes on it) with slowly moving light shapes; `flash` 0..1 washes it with `flashColor`.
+void heroPanel(Rect r, float radiusPx = radius::kXl, float flash = 0.0f, Color flashColor = Color{255, 255, 255, 255});
+// Soft glow around a rounded rectangle (strength 0..1), for pulsing highlights.
+void glowRound(Rect r, float radiusPx, Color c, float strength);
+// Scale for a "pop": 1 + amount at t = 0 settling to 1 after `duration` seconds (t < 0 or past the end gives 1).
+float popScale(float t, float amount = 0.35f, float duration = 0.35f);
+// Text centred at (cx, cy), scaled around its centre (pop animations, the countdown). No allocation.
+void drawTextPop(Face face, int px, const char* text, float cx, float cy, float scale, Color c);
+// Bar on a hero panel: dark translucent track and a rounded fill with a sheen; `pulse` 0..1 adds a glow around it.
+void arcadeBar(Rect r, float fraction, Color fill, float pulse = 0.0f);
+// Row of `segments` cells that fills from the left (fill 0..1 of the whole bar); cells light up in `c`.
+void segmentMeter(Rect r, int segments, float fill, Color c, float glow = 0.0f);
+// Colour of the timer for the seconds left: accent tint, then amber, then coral.
+Color timerTint(double secondsLeft);
+// Colour of a combo multiplier tier (1..3) on the hero gradient.
+Color comboTint(int multiplier);
+
+// Confetti: a fixed pool of falling paper pieces (no allocation while it runs).
+class Confetti {
+public:
+    // Shoots `count` pieces from (x, y) in a fan around `angleDeg` (screen degrees, -90 = straight up).
+    void burst(float x, float y, int count, float angleDeg, float fanDeg, float speed);
+    // Lets `count` pieces fall from the top edge of `area`.
+    void rain(Rect area, int count);
+    // Moves and draws every piece inside `area` (call once per frame, after the content).
+    void draw(Rect area);
+    bool active() const { return live_ > 0; }
+    void clear();
+
+private:
+    struct Piece {
+        float x = 0, y = 0, vx = 0, vy = 0, rot = 0, spin = 0, size = 0, flip = 0, age = 0, life = 0;
+        unsigned char color = 0;
+        bool alive = false;
+    };
+    static constexpr int kMax = 360;
+    Piece* spawn();
+    std::array<Piece, kMax> pieces_{};
+    int live_ = 0;
+    uint32_t rng_ = 2463534242u;
+    float rand01();
+};
+
+// Short messages that float up and fade ("+20", "-3 s"); a fixed pool, no allocation.
+class FloatTexts {
+public:
+    void add(float x, float y, const char* text, Color c, int px = size::kH2);
+    // Moves and draws every message (call once per frame, on top of the content).
+    void draw();
+    void clear();
+
+private:
+    struct Item {
+        char text[16] = {};
+        float x = 0, y = 0;
+        double born = 0;
+        Color color{};
+        int px = 0;
+        bool alive = false;
+    };
+    static constexpr int kMax = 10;
+    std::array<Item, kMax> items_{};
+    int next_ = 0;
+};
 
 }  // namespace ui

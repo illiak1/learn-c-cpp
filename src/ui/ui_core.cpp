@@ -310,7 +310,7 @@ void shadowRound(Rect r, float radiusPx, const ShadowStyle& style, float strengt
 
 // Rounded rectangle with a true vertical gradient: a triangle fan from the centre over the outline, with the colour
 // of every vertex taken from its height (colour is linear in y, so the interpolation is exact). Opaque colours only.
-void fillRoundGradient(Rect r, float radiusPx, Color top, Color bottom) {
+void fillRoundGradient(Rect r, float radiusPx, Color top, Color bottom, float slant) {
     if (r.width <= 0.0f || r.height <= 0.0f) return;
     const float rad = std::min({radiusPx, r.width / 2.0f, r.height / 2.0f});
     constexpr int kSeg = 6;  // arc segments per corner
@@ -326,15 +326,16 @@ void fillRoundGradient(Rect r, float radiusPx, Color top, Color bottom) {
             pts[n++] = Vector2{centres[c].x + std::cos(a) * rad, centres[c].y + std::sin(a) * rad};
         }
     }
-    auto colourAt = [&](float y) { return mix(top, bottom, (y - r.y) / r.height); };
+    // Position along the gradient axis: straight down, or tilted so that `slant` x the width shifts it like extra height.
+    auto colourAt = [&](Vector2 v) { return mix(top, bottom, ((v.y - r.y) + slant * (v.x - r.x)) / (r.height + slant * r.width)); };
     const Vector2 mid{r.x + r.width / 2.0f, r.y + r.height / 2.0f};
-    const Color midColour = colourAt(mid.y);
+    const Color midColour = colourAt(mid);
     for (int i = 0; i < n; ++i) {
         const Vector2 a = pts[i], b = pts[(i + 1) % n];
         // Raylib wants counter-clockwise triangles (negative cross product in screen coordinates).
         const float cross = (a.x - mid.x) * (b.y - mid.y) - (a.y - mid.y) * (b.x - mid.x);
-        if (cross < 0.0f) DrawTriangleGradient(mid, a, b, midColour, colourAt(a.y), colourAt(b.y));
-        else DrawTriangleGradient(mid, b, a, midColour, colourAt(b.y), colourAt(a.y));
+        if (cross < 0.0f) DrawTriangleGradient(mid, a, b, midColour, colourAt(a), colourAt(b));
+        else DrawTriangleGradient(mid, b, a, midColour, colourAt(b), colourAt(a));
     }
 }
 
