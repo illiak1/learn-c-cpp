@@ -169,43 +169,49 @@ void functionBadge(const Palette& p, logic::TaskCheck c, std::string& text, Colo
     }
 }
 
-// Card with a yes/no row per function.
+// Card with a yes/no row per function of the checked file (tasks that were not in the file are not listed).
 void drawFunctions(Column& col, const CheckPanel& panel, const std::vector<const content::Task*>& tasks) {
     const Palette& p = Theme::get().colors();
-    const size_t n = std::min(tasks.size(), panel.check.tasks.size());
+    const logic::ExamCheck& ck = panel.check;
+    std::vector<size_t> rows;
+    for (size_t i = 0; i < tasks.size() && i < ck.tasks.size() && i < ck.inScope.size(); ++i)
+        if (ck.inScope[i]) rows.push_back(i);
+    const size_t n = rows.size();
     if (n == 0) return;
-    const bool anyUnchecked = std::any_of(panel.check.tasks.begin(), panel.check.tasks.end(),
-                                          [](const logic::TaskVerdict& t) { return t.status == logic::TaskCheck::NotChecked; });
-    const std::string foot = panel.check.wholeExamZero
-                                 ? "Every function is marked Not solved because the whole exam gives 0. Fix the problem and check again."
-                                 : anyUnchecked ? "The tests of a function marked \"check by eye\" print values instead of yes/no: compare them with the paper and mark it yourself."
-                                                : "The functions were marked automatically. You can still change the marks below.";
+    const bool anyUnchecked = std::any_of(rows.begin(), rows.end(), [&](size_t i) { return ck.tasks[i].status == logic::TaskCheck::NotChecked; });
+    const bool partial = n < tasks.size();
+    std::string foot = ck.wholeExamZero
+                           ? "Every function in this file is marked Not solved because the whole exam gives 0. Fix the problem and check again."
+                           : anyUnchecked ? "The tests of a function marked \"check by eye\" print values instead of yes/no: compare them with the paper and mark it yourself."
+                                          : "The functions were marked automatically. You can still change the marks below.";
+    if (partial) foot += " Tasks whose function is not in the file were left unchanged.";
     const float footH = textHeight(Face::Regular, size::kSmall, foot, col.w - 2.0f * kPad);
     Rect r = col.take(kPad + 36.0f + 36.0f * static_cast<float>(n) + footH + 20.0f);
     card(r);
     drawText(Face::Bold, size::kH3, "Functions", r.x + kPad, r.y + 16.0f, p.text);
     int solved = 0;
-    for (size_t i = 0; i < n; ++i) solved += panel.check.marks[i] == 1;
-    if (!panel.check.wholeExamZero) {
+    for (size_t i : rows) solved += ck.marks[i] == 1;
+    if (!ck.wholeExamZero) {
         const std::string s = std::to_string(solved) + " of " + std::to_string(n) + " yes";
         drawText(Face::Regular, size::kSmall, s, r.x + r.width - kPad - Theme::get().textWidth(Face::Regular, size::kSmall, s), r.y + 22.0f, p.textMuted);
     }
     float y = r.y + kPad + 36.0f;
-    for (size_t i = 0; i < n; ++i) {
-        const logic::TaskVerdict& v = panel.check.tasks[i];
+    for (size_t i : rows) {
+        const logic::TaskVerdict& v = ck.tasks[i];
         std::string text;
         Color fg, bg;
         functionBadge(p, v.status, text, fg, bg);
         const float bw = badgeWidth(text);
         badge(text, r.x + r.width - kPad - bw, y + 5.0f, fg, bg);
         float rightEdge = r.x + r.width - kPad - bw - 12.0f;
-        if (v.yes + v.no > 0 && !panel.check.wholeExamZero) {
+        if (v.yes + v.no > 0 && !ck.wholeExamZero) {
             const std::string counts = std::to_string(v.yes) + " yes, " + std::to_string(v.no) + " no";
             const float cw = Theme::get().textWidth(Face::Regular, size::kSmall, counts);
             drawText(Face::Regular, size::kSmall, counts, rightEdge - cw, y + 18.0f - Theme::get().textMidline(Face::Regular, size::kSmall), p.textMuted);
             rightEdge -= cw + 12.0f;
         }
-        const std::string label = "Task " + std::to_string(i + 1) + "  \xC2\xB7  " + tasks[i]->title;
+        const std::string fn = i < ck.names.size() && !ck.names[i].empty() ? ck.names[i] : tasks[i]->title;
+        const std::string label = "Task " + std::to_string(i + 1) + "  \xC2\xB7  " + fn;
         drawText(Face::Regular, size::kBodySm, ellipsize(Face::Regular, size::kBodySm, label, rightEdge - (r.x + kPad)), r.x + kPad,
                  y + 18.0f - Theme::get().textMidline(Face::Regular, size::kBodySm), p.text);
         y += 36.0f;
@@ -215,10 +221,21 @@ void drawFunctions(Column& col, const CheckPanel& panel, const std::vector<const
 
 }  // namespace
 
+// Only the tasks of the checked file (or the task the check was started from) show the panel.
+bool panelBelongsTo(const CheckPanel& panel, size_t task) {
+    if (static_cast<int>(task) == panel.originTask) return true;
+    return !panel.missing.empty() ? false : task < panel.check.inScope.size() && panel.check.inScope[task];
+}
+
 // Verdict card, then the explanation, compiler messages, output and per-function list.
 void drawCheckPanel(Column& col, const CheckPanel& panel, const std::vector<const content::Task*>& tasks) {
     const Palette& p = Theme::get().colors();
     const logic::RunResult& run = panel.run;
+
+    if (!panel.missing.empty()) {  // wrong clipboard: nothing was compiled, nothing is marked
+        noteCallout(col, p.warning, p.warningSoft, Icon::Warning, "The clipboard does not contain " + panel.missing, panel.missingNote);
+        return;
+    }
 
     Rect head = col.take(64.0f);
     card(head);

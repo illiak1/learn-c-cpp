@@ -16,7 +16,14 @@ namespace app {
 struct CheckPanel {
     logic::RunResult run;
     logic::ExamCheck check;
+    int originTask = 0;        // task the check was started from
+    std::string missing;       // function name not found in the clipboard: nothing was compiled or marked
+    std::string missingNote;   // what the clipboard did contain
 };
+
+// Is this panel meant for the given task? Only the tasks of the checked file (or the one it was started from)
+// show it, so switching tasks never shows another task's result.
+bool panelBelongsTo(const CheckPanel& panel, size_t task);
 
 // Draws the result blocks one under the other and advances the column.
 void drawCheckPanel(ui::Column& col, const CheckPanel& panel, const std::vector<const content::Task*>& tasks);

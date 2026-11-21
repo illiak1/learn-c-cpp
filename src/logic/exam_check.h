@@ -28,15 +28,38 @@ struct ExamCheck {
     Verdict verdict = Verdict::Finished;
     bool wholeExamZero = false;               // compile error, timeout or crash: 0 for the whole exam
     std::vector<TaskVerdict> tasks;           // one per task, in exam order
-    std::vector<signed char> marks;           // suggested Exam::marks: 1 solved, 0 not solved, -1 leave unchanged
+    std::vector<signed char> marks;           // suggested Exam::marks: 1 solved, 0 not solved, -1 leave unchanged (always -1 out of scope)
+    std::vector<std::string> names;           // function name of every task ("" when it cannot be told)
+    std::vector<char> inScope;                // 1 = the checked file contains this task's function; only those are judged
 };
 
 // Compares the output with the expected output of every task. `customMain` = the file uses a verbatim main()
 // from an original paper, whose printed values are not the tasks' yes/no lines.
 std::vector<TaskVerdict> checkTaskOutputs(const std::vector<const content::Task*>& tasks, const std::string& output, bool customMain);
 
-// Full verdict of one run: whole-exam failure for CompileError/Timeout/Crash (every function failed), per-function
-// results for Finished, nothing decided for the other verdicts.
-ExamCheck checkExamRun(const std::vector<const content::Task*>& tasks, const RunResult& run, bool customMain);
+// What a task asks for: the functions/classes of its stub that contain "your code here" (stub helpers excluded),
+// falling back to the first definition and then the title. taskFunctionName joins them with ", ".
+std::vector<std::string> taskKeyNames(const content::Task& task);
+std::string taskFunctionName(const content::Task& task);
+
+// Names of the functions and classes defined (not just called or mentioned) at file level in a C/C++ source.
+std::vector<std::string> definedFunctions(const std::string& source);
+
+// The task's key names that `source` does not define.
+std::vector<std::string> missingNames(const content::Task& task, const std::string& source);
+
+// 1 for every task whose key names are all defined in `source`, matched by name (never by position).
+std::vector<char> tasksInSource(const std::vector<const content::Task*>& tasks, const std::string& source);
+
+// Full verdict of one run: whole-exam failure for CompileError/Timeout/Crash (every function in scope failed),
+// per-function results for Finished, nothing decided for the other verdicts. `scope` (one flag per task) limits the
+// judgement to the tasks present in the checked file; empty = all tasks. Out-of-scope tasks always get mark -1.
+ExamCheck checkExamRun(const std::vector<const content::Task*>& tasks, const RunResult& run, bool customMain,
+                       const std::vector<char>& scope = {});
+
+// Check of a pasted file: scope from the functions the source defines; the verbatim main() of the exam counts only
+// when the source really contains it (a single-task file brings its own yes/no tests).
+ExamCheck checkClipboardRun(const std::vector<const content::Task*>& tasks, const std::string& mainOverride,
+                            const std::string& source, const RunResult& run);
 
 }  // namespace logic

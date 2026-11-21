@@ -1,5 +1,6 @@
 // test_exam_check.cpp - unit tests for turning the output of an exam file into per-function verdicts, plus an
 // end-to-end check that compiles the reference solutions of the shipped exams (skipped without a compiler).
+#include <algorithm>
 #include <filesystem>
 
 #include "content/library.h"
@@ -143,7 +144,7 @@ static void checkShippedSolutions(const std::string& trackDir, Language lang) {
             CHECK(run.verdict == Verdict::Finished);
             return;
         }
-        const ExamCheck c = checkExamRun(tasks, run, !mainOverride.empty());
+        const ExamCheck c = checkClipboardRun(tasks, mainOverride, file, run);
         for (size_t i = 0; i < tasks.size(); ++i) {
             if (c.tasks[i].status == TaskCheck::Passed || c.tasks[i].status == TaskCheck::NotChecked) continue;
             std::cerr << "  " << name << ": task " << tasks[i]->id << " was not accepted\n";
@@ -179,8 +180,172 @@ TEST(exam_check_rejects_the_empty_stubs) {
     cfg.runSeconds = 5.0;
     const RunResult run = runSource(Language::C, buildExamFile(tasks, set->mainOverride, false), cfg);
     CHECK(run.verdict == Verdict::Finished || run.verdict == Verdict::Crash || run.verdict == Verdict::Timeout);
-    const ExamCheck c = checkExamRun(tasks, run, true);
+    const ExamCheck c = checkClipboardRun(tasks, set->mainOverride, buildExamFile(tasks, set->mainOverride, false), run);
     int passed = 0;
     for (signed char m : c.marks) passed += m == 1;
     CHECK(passed < static_cast<int>(tasks.size()) / 2);  // empty functions cannot solve most tasks
+}
+
+// ---- Scope of a check: the functions found in the pasted file decide which tasks are judged ----
+
+namespace {
+
+// Three tasks like the C++ track (bare yes/no output): stubs define swap_a, sum_b, find_c.
+struct ThreeTasks {
+    content::Task a, b, c;
+    ThreeTasks() {
+        a = makeTask("a", "yes");
+        b = makeTask("b", "yes");
+        c = makeTask("c", "yes");
+        a.stub = "void swap_a(int *x, int *y) {\n    // your code here\n}";
+        b.stub = "int sum_b(int n) {\n    // your code here\n}";
+        c.stub = "int find_c(int n, int arr[]) {\n    // your code here\n}";
+    }
+    std::vector<const content::Task*> all() const { return {&a, &b, &c}; }
+};
+
+const char* kBody = " {\n    return 0;\n}\n";
+
+}  // namespace
+
+TEST(scope_finds_defined_functions_only) {
+    const std::string src = std::string("#include <stdio.h>\n// void ghost(int a) {\nint helper(int a)") + kBody +
+                            "static int twice(int a)" + kBody + "int main() {\n    helper(1);\n    printf(\"fake(1) {\");\n    if (1) { }\n    return 0;\n}\n";
+    const auto f = definedFunctions(src);
+    CHECK_EQ(f.size(), static_cast<size_t>(3));
+    CHECK(std::find(f.begin(), f.end(), "helper") != f.end());
+    CHECK(std::find(f.begin(), f.end(), "twice") != f.end());
+    CHECK(std::find(f.begin(), f.end(), "main") != f.end());
+    CHECK(std::find(f.begin(), f.end(), "ghost") == f.end());
+    CHECK(std::find(f.begin(), f.end(), "fake") == f.end());
+}
+
+TEST(scope_task_function_name_comes_from_the_stub) {
+    ThreeTasks t;
+    CHECK(taskFunctionName(t.a) == "swap_a");
+    CHECK(taskFunctionName(t.c) == "find_c");
+    content::Task bare = makeTask("x", "");
+    bare.title = "fallback";
+    CHECK(taskFunctionName(bare) == "fallback");
+}
+
+TEST(scope_helpers_in_a_stub_and_classes) {
+    content::Task list = makeTask("list", "yes");
+    list.stub = "struct Node {\n    int data;\n};\n\nvoid insertAtEnd(Node** h, int v) {\n    *h = nullptr;\n}\n\n"
+                "bool deleteWithValue(Node** h, int v) {\n    // your code here\n    return false;\n}\n\n"
+                "int countNodes(Node* h) {\n    // your code here\n    return 0;\n}";
+    CHECK(taskFunctionName(list) == "deleteWithValue, countNodes");  // the provided helper and the struct are not the task
+    content::Task cls = makeTask("cls", "yes");
+    cls.stub = "class Rectangle {\n    // your code here: fields\npublic:\n    Rectangle(int w, int h) {\n        // your code here\n    }\n};";
+    CHECK(taskFunctionName(cls) == "Rectangle");
+    const std::string onlyOne = "bool deleteWithValue(Node** h, int v) { return true; }\nclass Rectangle { };\n";
+    const auto scope = tasksInSource({&list, &cls}, onlyOne);
+    CHECK_EQ(static_cast<int>(scope[0]), 0);  // countNodes is missing too
+    CHECK_EQ(static_cast<int>(scope[1]), 1);
+    CHECK(missingNames(list, onlyOne) == std::vector<std::string>{"countNodes"});
+}
+
+TEST(scope_single_task_file_for_task_2_marks_only_task_2) {
+    ThreeTasks t;
+    const std::string file = buildTaskFile(t.b, false);
+    const ExamCheck c = checkClipboardRun(t.all(), "", file, finished("yes\n"));
+    CHECK_EQ(static_cast<int>(c.inScope[0]), 0);
+    CHECK_EQ(static_cast<int>(c.inScope[1]), 1);
+    CHECK_EQ(static_cast<int>(c.marks[0]), -1);
+    CHECK_EQ(static_cast<int>(c.marks[1]), 1);  // the bare "yes" belongs to task 2, not to task 1
+    CHECK_EQ(static_cast<int>(c.marks[2]), -1);
+    CHECK(c.names[1] == "sum_b");
+    const ExamCheck bad = checkClipboardRun(t.all(), "", file, finished("no\n"));
+    CHECK_EQ(static_cast<int>(bad.marks[0]), -1);
+    CHECK_EQ(static_cast<int>(bad.marks[1]), 0);
+}
+
+TEST(scope_single_task_file_for_task_3_marks_only_task_3) {
+    ThreeTasks t;
+    const ExamCheck c = checkClipboardRun(t.all(), "", buildTaskFile(t.c, false), finished("yes\n"));
+    CHECK_EQ(static_cast<int>(c.marks[0]), -1);
+    CHECK_EQ(static_cast<int>(c.marks[1]), -1);
+    CHECK_EQ(static_cast<int>(c.marks[2]), 1);
+}
+
+TEST(scope_full_file_with_mixed_results) {
+    ThreeTasks t;
+    const std::string file = buildExamFile(t.all(), "", false);
+    const ExamCheck c = checkClipboardRun(t.all(), "", file, finished("yes\nno\nyes\n"));
+    CHECK_EQ(static_cast<int>(c.marks[0]), 1);
+    CHECK_EQ(static_cast<int>(c.marks[1]), 0);
+    CHECK_EQ(static_cast<int>(c.marks[2]), 1);
+    // Tasks 1 and 3 only (task 2 deleted from the file): task 2 stays unchanged.
+    const std::string two = buildExamFile({&t.a, &t.c}, "", false);
+    const ExamCheck d = checkClipboardRun(t.all(), "", two, finished("no\nyes\n"));
+    CHECK_EQ(static_cast<int>(d.marks[0]), 0);
+    CHECK_EQ(static_cast<int>(d.marks[1]), -1);
+    CHECK_EQ(static_cast<int>(d.marks[2]), 1);
+}
+
+TEST(scope_headed_c_style_output_is_keyed_by_header) {
+    content::Task a = makeTask("a", "--- Q1 ---\nyes"), b = makeTask("b", "--- Q2 ---\nyes");
+    a.stub = "int one(void) {\n}";
+    b.stub = "int two(void) {\n}";
+    const ExamCheck c = checkClipboardRun({&a, &b}, "", buildTaskFile(b, false), finished("--- Q2 ---\nyes\n"));
+    CHECK_EQ(static_cast<int>(c.marks[0]), -1);
+    CHECK_EQ(static_cast<int>(c.marks[1]), 1);
+}
+
+TEST(scope_compile_error_with_a_single_task_file_fails_only_that_task) {
+    ThreeTasks t;
+    for (Verdict v : {Verdict::CompileError, Verdict::Timeout, Verdict::Crash}) {
+        RunResult run;
+        run.verdict = v;
+        const ExamCheck c = checkClipboardRun(t.all(), "", buildTaskFile(t.b, false), run);
+        CHECK(c.wholeExamZero);
+        CHECK_EQ(static_cast<int>(c.marks[0]), -1);
+        CHECK_EQ(static_cast<int>(c.marks[1]), 0);
+        CHECK_EQ(static_cast<int>(c.marks[2]), -1);
+        CHECK(c.tasks[0].status == TaskCheck::NotChecked);
+        CHECK(c.tasks[1].status == TaskCheck::Failed);
+    }
+}
+
+TEST(scope_wrong_clipboard_has_no_task_in_scope) {
+    ThreeTasks t;
+    const std::string src = "int unrelated(int a) {\n    return a;\n}\nint main() { return 0; }\n";
+    const auto scope = tasksInSource(t.all(), src);
+    CHECK_EQ(static_cast<int>(scope[0] + scope[1] + scope[2]), 0);
+    const ExamCheck c = checkClipboardRun(t.all(), "", src, finished("yes\nyes\nyes\n"));
+    for (signed char m : c.marks) CHECK_EQ(static_cast<int>(m), -1);
+}
+
+TEST(scope_single_task_file_does_not_use_the_verbatim_main) {
+    ThreeTasks t;
+    const std::string paperMain = "int main() {\n    printf(\"%d\\n\", sum_b(2));\n}";
+    // Single-task file (own yes/no tests): checked normally although the exam has a verbatim main().
+    const ExamCheck c = checkClipboardRun(t.all(), paperMain, buildTaskFile(t.b, false), finished("yes\n"));
+    CHECK_EQ(static_cast<int>(c.marks[1]), 1);
+    // The full paper file contains the verbatim main(): yes/no tasks are left to the student ("check by eye").
+    const ExamCheck d = checkClipboardRun(t.all(), paperMain, buildExamFile(t.all(), paperMain, false), finished("4\n"));
+    CHECK(d.tasks[1].status == TaskCheck::NotChecked);
+    CHECK_EQ(static_cast<int>(d.marks[1]), -1);
+}
+
+TEST(scope_every_shipped_task_has_a_unique_function_name) {
+    for (const char* dir : {"c", "cpp"}) {
+        const content::TrackContent track = content::loadTrack("content", dir);
+        std::vector<const content::Task*> all;
+        for (const content::Task& t : track.tasks) all.push_back(&t);
+        for (const content::Task* t : all) {
+            if (definedFunctions(t->stub).empty()) std::cerr << "  no function in the stub of " << t->id << "\n";
+            CHECK(!definedFunctions(t->stub).empty());
+            // The file of one task contains its own function and no other task's function.
+            const auto scope = tasksInSource(all, buildTaskFile(*t, false));
+            int hits = 0;
+            for (size_t i = 0; i < all.size(); ++i) {
+                if (!scope[i]) continue;
+                ++hits;
+                if (all[i] != t) std::cerr << "  " << t->id << " file also contains " << all[i]->id << "\n";
+                CHECK(all[i] == t);
+            }
+            CHECK_EQ(hits, 1);
+        }
+    }
 }

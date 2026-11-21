@@ -142,7 +142,7 @@ public:
         }
         const Rect checkR = wrap ? Rect{col.x, col.y + 54.0f, checkW, 42.0f} : Rect{col.x + copyW + fullW + 24.0f, col.y, checkW, 42.0f};
         if (button("Check from clipboard", checkR, ButtonStyle::Secondary, Icon::Play, compiler_.found && !runner_.busy()))
-            startCheck(app, exam);
+            startCheck(app, exam, tasks);
         col.space(wrap ? 114.0f : 60.0f);
         const float hint = drawParagraph(Face::Regular, size::kBodySm,
                                          "The file has all " + std::to_string(tasks.size()) + " functions with empty bodies and the tests at the bottom. "
@@ -185,7 +185,7 @@ private:
     }
 
     // Takes the clipboard text and hands it to the runner thread.
-    void startCheck(App& app, const logic::Exam& exam) {
+    void startCheck(App& app, const logic::Exam& exam, const std::vector<const content::Task*>& tasks) {
         const char* clip = GetClipboardText();
         const std::string text = clip ? clip : "";
         if (text.find_first_not_of(" \t\r\n") == std::string::npos) {
@@ -197,7 +197,26 @@ private:
             return;
         }
         panel_.reset();
+        // The functions found in the clipboard decide what is checked. The task on screen must be one of them.
+        const std::vector<char> scope = logic::tasksInSource(tasks, text);
+        const size_t cur = static_cast<size_t>(current_);
+        if (cur >= scope.size() || !scope[cur]) {
+            CheckPanel panel;
+            panel.originTask = current_;
+            const std::vector<std::string> miss = logic::missingNames(*tasks[cur], text);
+            for (const std::string& m : miss) panel.missing += (panel.missing.empty() ? "" : ", ") + m;
+            if (panel.missing.empty()) panel.missing = logic::taskFunctionName(*tasks[cur]);
+            std::string found;
+            for (size_t i = 0; i < scope.size(); ++i)
+                if (scope[i]) found += (found.empty() ? "" : ", ") + logic::taskFunctionName(*tasks[i]);
+            panel.missingNote = found.empty() ? "None of this exam's functions was found. Copy this task (or the full exam) to your IDE, solve it and copy the whole file again."
+                                              : "The clipboard has " + found + ". Open that task, or copy the file with " + panel.missing + " and check again.";
+            panel_ = std::move(panel);
+            return;
+        }
         runExamStart_ = exam.startedAt;
+        runTask_ = current_;
+        runSource_ = text;
         runner_.start(language(app), text, runnerConfig(app));
     }
 
@@ -207,7 +226,8 @@ private:
         if (!runner_.poll(run)) return;
         if (runExamStart_ != exam.startedAt) return;  // the exam changed while the file was running
         CheckPanel panel;
-        panel.check = logic::checkExamRun(tasks, run, !exam.mainOverride.empty());
+        panel.check = logic::checkClipboardRun(tasks, exam.mainOverride, runSource_, run);
+        panel.originTask = runTask_;
         panel.run = std::move(run);
         for (size_t i = 0; i < tasks.size() && i < panel.check.marks.size(); ++i)
             if (panel.check.marks[i] >= 0) exam.marks[i] = panel.check.marks[i];
@@ -220,7 +240,8 @@ private:
         }
         if (panel.run.verdict == logic::Verdict::Finished) {
             const int solved = static_cast<int>(std::count(panel.check.marks.begin(), panel.check.marks.end(), static_cast<signed char>(1)));
-            Context::get().toast("Checked: " + std::to_string(solved) + " of " + std::to_string(tasks.size()) + " functions solved");
+            const int checked = static_cast<int>(std::count(panel.check.inScope.begin(), panel.check.inScope.end(), static_cast<char>(1)));
+            Context::get().toast("Checked: " + std::to_string(solved) + " of " + std::to_string(checked) + " functions solved");
         } else if (panel.check.wholeExamZero) {
             Context::get().toast("In the real exam this gives 0 for the whole exam");
         }
@@ -245,7 +266,7 @@ private:
                 detectCompiler(app);
             col.space(6.0f);
         }
-        if (panel_ && !runner_.busy()) {
+        if (panel_ && !runner_.busy() && panelBelongsTo(*panel_, static_cast<size_t>(current_))) {
             drawCheckPanel(col, *panel_, tasks);
             col.space(6.0f);
         }
@@ -283,6 +304,8 @@ private:
     logic::CompilerInfo compiler_;         // compiler of the current track (not found = the check button is disabled)
     std::optional<CheckPanel> panel_;      // result of the last check
     double runExamStart_ = -1.0;           // exam the running check belongs to
+    int runTask_ = 0;                      // task the running check was started from
+    std::string runSource_;                // the file being checked (its functions decide the scope)
 };
 
 }  // namespace
