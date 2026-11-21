@@ -316,6 +316,8 @@ int codeBox(const std::string& id, Rect r, const std::string& code, const CodeBo
 void arcadeBackdrop(Rect area);
 // Vivid hero gradient panel (white text goes on it) with slowly moving light shapes; `flash` 0..1 washes it with `flashColor`.
 void heroPanel(Rect r, float radiusPx = radius::kXl, float flash = 0.0f, Color flashColor = Color{255, 255, 255, 255});
+// Call-to-action pill for hero panels: white with an accent label and a pulsing glow; returns true when clicked.
+bool arcadeButton(const std::string& label, Rect r, Icon icon = Icon::None, bool enabled = true);
 // Soft glow around a rounded rectangle (strength 0..1), for pulsing highlights.
 void glowRound(Rect r, float radiusPx, Color c, float strength);
 // Scale for a "pop": 1 + amount at t = 0 settling to 1 after `duration` seconds (t < 0 or past the end gives 1).

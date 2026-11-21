@@ -120,7 +120,8 @@ inline constexpr int kValue = 28;    // numbers on the Home tiles
 inline constexpr int kStat = 32;     // numbers on the Statistics cards
 inline constexpr int kDisplay = 46;  // the big score of the exam review
 inline constexpr int kScore = 64;    // live score of the Competition HUD
-inline constexpr int kHuge = 96;     // result score and the 3-2-1 countdown
+inline constexpr int kHuge = 96;     // result score
+inline constexpr int kCountdown = 150;  // the 3-2-1-GO numbers
 inline constexpr int kCode = 15;
 }  // namespace size
 

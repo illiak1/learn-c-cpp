@@ -133,6 +133,42 @@ bool button(const std::string& label, Rect r, ButtonStyle style, Icon icon, bool
     return (in.clicked || kbClick) && enabled;
 }
 
+// Call-to-action pill for the hero gradient: white with an accent label, a pulsing glow while it waits for a click.
+bool arcadeButton(const std::string& label, Rect r, Icon icon, bool enabled) {
+    Context& cx = Context::get();
+    Theme& th = Theme::get();
+    const Palette& p = th.colors();
+    const uint32_t id = cx.makeId(label);
+    Interaction in = interact(id, r, enabled);
+    const bool kbClick = enabled && cx.registerFocusable(id, in.kbFocused);
+    const float h = cx.anim(id, in.hovered ? 1.0f : 0.0f);
+    const float pr = cx.anim(id ^ 0x9e3779b9u, in.held ? 1.0f : 0.0f, 30.0f);
+    const float pulse = 0.5f + 0.5f * std::sin(static_cast<float>(cx.now) * 4.0f);
+    const float grow = (3.0f * h - 2.0f * pr);
+    const Rect b{r.x - grow, r.y - grow - 1.5f * h * (1.0f - pr), r.width + 2.0f * grow, r.height + 2.0f * grow};
+    const float rad = b.height / 2.0f;
+    Color top = arcade::kWhite, bottom = mix(arcade::kWhite, p.heroFrom, 0.14f + 0.08f * pr), fg = p.heroDeep;
+    if (!enabled) {
+        top = bottom = p.surfaceAlt;
+        fg = p.textMuted;
+    } else {
+        glowRound(b, rad, arcade::kWhite, (0.35f + 0.45f * pulse) * (1.0f - 0.5f * h));
+        shadowRound(b, rad, shadow::kButton, 1.6f);
+    }
+    fillRoundGradient(b, rad, top, bottom);
+    if (in.kbFocused) focusRing(b, rad);
+    const float iconSz = 20.0f;
+    const float gap = icon != Icon::None ? 10.0f : 0.0f;
+    const float textW = th.textWidth(Face::Bold, size::kH3, label);
+    float x = b.x + (b.width - ((icon != Icon::None ? iconSz : 0.0f) + gap + textW)) / 2.0f;
+    if (icon != Icon::None) {
+        drawIcon(icon, x + iconSz / 2.0f, b.y + b.height / 2.0f, iconSz, fg);
+        x += iconSz + gap;
+    }
+    drawText(Face::Bold, size::kH3, label, x, b.y + b.height / 2.0f - th.textMidline(Face::Bold, size::kH3), fg);
+    return (in.clicked || kbClick) && enabled;
+}
+
 // Square icon-only button with a hover background and an optional tooltip.
 bool iconButton(const std::string& idStr, Rect r, Icon icon, bool selected, const char* tooltip) {
     return iconButton(Context::get().makeId(idStr), r, icon, selected, tooltip);

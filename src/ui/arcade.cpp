@@ -65,7 +65,7 @@ void heroPanel(Rect r, float radiusPx, float flash, Color flashColor) {
     Context& cx = Context::get();
     const Palette& p = Theme::get().colors();
     const float t = static_cast<float>(cx.now) + r.x * 0.013f + r.y * 0.007f;
-    shadowRound(r, radiusPx, shadow::kModal, 0.55f);
+    shadowRound(r, radiusPx, shadow::kRaised, 1.8f);
     fillRoundGradient(r, radiusPx, p.heroFrom, p.heroTo, 0.7f);
     // Light shapes stay inside the rectangle that fits within the rounded corners.
     const float inset = radiusPx * 0.3f;
@@ -124,8 +124,8 @@ void arcadeBar(Rect r, float fraction, Color fill, float pulse) {
     if (f <= 0.0f) return;
     const Rect bar{r.x, r.y, std::max(r.height, r.width * f), r.height};
     glowRound(bar, rad, fill, pulse * 0.8f);
-    fillRoundGradient(bar, rad, mix(fill, Color{255, 255, 255, 255}, 0.30f), fill);
-    if (bar.width > r.height * 1.6f && r.height >= 8.0f) fillRound(Rect{bar.x + rad * 0.7f, bar.y + 2.0f, bar.width - rad * 1.4f, 2.0f}, 1.0f, Color{255, 255, 255, 80});
+    fillRound(bar, rad, fill);  // flat fill: a gradient fan over such a thin shape shows cracks
+    if (bar.width > r.height * 1.6f) fillRound(Rect{bar.x + rad * 0.6f, bar.y + 1.5f, bar.width - rad * 1.2f, r.height * 0.34f}, r.height * 0.17f, Color{255, 255, 255, 70});
 }
 
 // Cells that light up one after another.
@@ -141,14 +141,15 @@ void segmentMeter(Rect r, int segments, float fill, Color c, float glow) {
         if (part <= 0.0f) continue;
         const Rect fr{cr.x, cr.y, std::max(rad * 2.0f, cell * part), cr.height};
         if (part >= 1.0f) glowRound(fr, rad, c, glow);
-        fillRoundGradient(fr, rad, mix(c, Color{255, 255, 255, 255}, 0.30f), c);
+        fillRound(fr, rad, c);
+        fillRound(Rect{fr.x + rad * 0.5f, fr.y + 1.0f, std::max(1.0f, fr.width - rad), fr.height * 0.34f}, fr.height * 0.17f, Color{255, 255, 255, 70});
     }
 }
 
-// Accent tint while there is time, amber under 20 s, coral under 5 s.
+// Near-white tinted with the accent while there is time, amber under 20 s, coral under 5 s.
 Color timerTint(double secondsLeft) {
     const Palette& p = Theme::get().colors();
-    const Color base = mix(p.heroFrom, arcade::kWhite, 0.62f);
+    const Color base = mix(p.heroFrom, arcade::kWhite, 0.85f);
     const float s = static_cast<float>(secondsLeft);
     if (s >= 20.0f) return base;
     if (s >= 10.0f) return mix(arcade::kAmber, base, (s - 10.0f) / 10.0f);
