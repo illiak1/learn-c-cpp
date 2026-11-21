@@ -96,7 +96,7 @@ void CompetitionScreen::drawLobby(App& app, Column& col) {
     (void)p;
 
     drawRulesTiles(col);
-    drawTable(app, col, highlight_);
+    drawTable(app, col, highlight_, phaseSince_ + 0.2);
 }
 
 // Four tiles with the scoring rules: big coloured values, short captions.

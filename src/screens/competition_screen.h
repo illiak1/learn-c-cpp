@@ -51,6 +51,7 @@ private:
     // competition_round.cpp: the round itself
     void loadNext();
     void finishRound(App& app);
+    void buildResultTexts();
     void drawRound(App& app, ui::Column& col);
     void drawHud(ui::Column& col);
     void drawQuestion(App& app, ui::Column& col, const content::Exercise& ex);
@@ -60,7 +61,8 @@ private:
 
     // competition_result.cpp: result card and the Top 10 table
     void drawResult(App& app, ui::Column& col);
-    void drawTable(App& app, ui::Column& col, int highlightRank);
+    void celebrate(double t);
+    void drawTable(App& app, ui::Column& col, int highlightRank, double slideStart);
 
     Phase phase_ = Phase::Lobby;
     double phaseSince_ = 0.0;  // clock time the current phase began
@@ -69,6 +71,10 @@ private:
     std::string readyText_;    // "Get ready, <name>" (built once per countdown)
     int prevBest_ = -1;        // the player's best in the table before this round (-1 = none)
     int lastMult_ = 1;         // multiplier shown last, to spot tier changes
+    std::string bestText_;     // "+40 vs your best (320)" under the result score
+    int bestTone_ = 0;         // 1 better than before, -1 worse, 0 neutral
+    std::string rankGapText_;  // "34 points to Pro"
+    int celebration_ = 0;      // confetti waves already fired on the result page
     logic::BlitzRound round_;
     std::unique_ptr<logic::QuestionQueue> queue_;
     Current cur_;

@@ -33,9 +33,31 @@ void CompetitionScreen::finishRound(App& app) {
     placement_ = app.progress().recordBlitz(app.trackKey(), e);
     highlight_ = placement_.rank;
     app.saveProgress();
+    buildResultTexts();
+    celebration_ = 0;
+    confetti_.clear();
+    floats_.clear();
     phase_ = Phase::Result;
     phaseSince_ = Context::get().now;
     scroll_ = {};
+}
+
+// Texts of the result page (comparison with the personal best, distance to the next rank), built once per round.
+void CompetitionScreen::buildResultTexts() {
+    bestTone_ = 0;
+    bestText_.clear();
+    if (prevBest_ >= 0) {
+        const int diff = round_.score - prevBest_;
+        bestTone_ = diff > 0 ? 1 : diff < 0 ? -1 : 0;
+        bestText_ = diff > 0 ? "+" + std::to_string(diff) + " vs your best (" + std::to_string(prevBest_) + ")"
+                  : diff < 0 ? std::to_string(-diff) + " short of your best (" + std::to_string(prevBest_) + ")"
+                             : "Equal to your best (" + std::to_string(prevBest_) + ")";
+    } else if (placement_.rank > 0) {
+        bestText_ = "First run in this table";
+        bestTone_ = 1;
+    }
+    const char* next = logic::nextRankTitle(round_.score);
+    rankGapText_ = next ? std::to_string(logic::pointsToNextRank(round_.score)) + " points to " + next : "Top rank reached!";
 }
 
 // HUD, the question and the feedback; advances the clock and the question.

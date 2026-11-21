@@ -1,5 +1,8 @@
-// competition_result.cpp - the result card after a round and the Top 10 table.
+// competition_result.cpp - the arcade result page after a round and the animated Top 10 table.
 #include <algorithm>
+#include <cmath>
+#include <cctype>
+#include <cstdio>
 
 #include "screens/competition_screen.h"
 
@@ -7,56 +10,184 @@ namespace app {
 
 using namespace ui;
 
-// Name, score, stats, rank, buttons and the table with the new run highlighted.
-void CompetitionScreen::drawResult(App& app, Column& col) {
-    const Palette& p = Theme::get().colors();
-    drawText(type::kTitle, "Time's up!", col.x, col.y, p.text);
-    col.space(60.0f);
-    Rect r = col.take(236.0f);
-    Appear apHero(0, r);
-    cardRaised(r);
-    drawIcon(Icon::Trophy, r.x + 40.0f, r.y + 40.0f, 24.0f, p.accent);
-    drawText(Face::Bold, size::kH3, player_, r.x + 70.0f, r.y + 26.0f, p.text);
-    if (placement_.newBest) {
-        const std::string label = "New best!";
-        badge(label, r.x + r.width - 22.0f - badgeWidth(label), r.y + 28.0f, p.success, p.successSoft);
-    }
-    drawText(Face::Bold, size::kDisplay, std::to_string(round_.score), r.x + 22.0f, r.y + 66.0f, p.accent);
-    drawText(Face::Regular, size::kBody, "points", r.x + 34.0f + Theme::get().textWidth(Face::Bold, size::kDisplay, std::to_string(round_.score)), r.y + 90.0f, p.textMuted);
+namespace {
 
-    const float tileW = (r.width - 44.0f - 24.0f) / 3.0f;
-    const std::string rank = placement_.rank > 0 ? "#" + std::to_string(placement_.rank) : "Not in Top 10";
-    const struct {
-        const char* label;
-        std::string value;
-    } tiles[] = {
-        {"CORRECT ANSWERS", std::to_string(round_.correct)},
-        {"BEST COMBO", std::to_string(round_.bestCombo)},
-        {"RANK", rank},
-    };
-    for (int i = 0; i < 3; ++i) {
-        Rect t{r.x + 22.0f + static_cast<float>(i) * (tileW + 12.0f), r.y + 138.0f, tileW, 80.0f};
-        fillRound(t, radius::kMd, p.surfaceAlt);
-        drawLabel(tiles[i].label, t.x + 14.0f, t.y + 12.0f, p.textMuted);
-        drawText(Face::Bold, size::kH2, ellipsize(Face::Bold, size::kH2, tiles[i].value, t.width - 28.0f), t.x + 14.0f, t.y + 34.0f,
-                 i == 2 && placement_.rank > 0 ? p.accent : p.text);
-    }
+// Medal colour of a 0-based place (gold, silver, bronze); other places have none.
+Color medalColor(const Palette& p, size_t place) { return place == 0 ? p.gold : place == 1 ? p.silver : p.bronze; }
 
-    if (button("Play again", Rect{col.x, col.y, 170.0f, 44.0f}, ButtonStyle::Primary, Icon::Refresh)) startCountdown(app);
-    if (button("Back", Rect{col.x + 182.0f, col.y, 130.0f, 44.0f}, ButtonStyle::Secondary, Icon::ChevronLeft)) app.go(Page::Home);
-    col.space(64.0f);
-    drawTable(app, col, highlight_);
+// Colour of a rank tier on the hero gradient: Rookie is plain, then bronze, silver and gold.
+Color rankColor(const Palette& p, int tier) { return tier <= 0 ? arcade::kWhite : tier == 1 ? p.bronze : tier == 2 ? mix(p.silver, arcade::kWhite, 0.3f) : p.gold; }
+
+// 0..1 ease-out reveal that starts `delay` seconds after the page opened.
+float reveal(double t, double delay, float duration = 0.35f) { return easeOutCubic(std::clamp(static_cast<float>((t - delay) / duration), 0.0f, 1.0f)); }
+
+}  // namespace
+
+// Fires the confetti waves of the result page once their time has come (t = seconds since the page opened).
+void CompetitionScreen::celebrate(double t) {
+    if (round_.score <= 0) return;
+    const Rect v = viewport_;
+    const bool best = placement_.newBest;
+    if (celebration_ == 0 && t >= 1.3) {
+        celebration_ = 1;
+        if (best) {
+            confetti_.burst(v.x + 24.0f, v.y + v.height - 8.0f, 90, -62.0f, 40.0f, 1000.0f);
+            confetti_.burst(v.x + v.width - 24.0f, v.y + v.height - 8.0f, 90, -118.0f, 40.0f, 1000.0f);
+            confetti_.rain(v, 50);
+        } else if (logic::rankIndex(round_.score) >= 1) {
+            confetti_.burst(v.x + v.width / 2.0f, v.y + v.height - 8.0f, 60, -90.0f, 70.0f, 900.0f);
+        }
+    }
+    if (best && celebration_ == 1 && t >= 1.9) {
+        celebration_ = 2;
+        confetti_.burst(v.x + 24.0f, v.y + v.height - 8.0f, 50, -70.0f, 40.0f, 900.0f);
+        confetti_.burst(v.x + v.width - 24.0f, v.y + v.height - 8.0f, 50, -110.0f, 40.0f, 900.0f);
+        confetti_.rain(v, 70);
+    }
+    if (best && celebration_ == 2 && t >= 2.6) {
+        celebration_ = 3;
+        confetti_.rain(v, 80);
+    }
 }
 
-// Rank, player, score and date of the best ten runs of this track; the run just played is highlighted.
-void CompetitionScreen::drawTable(App& app, Column& col, int highlightRank) {
-    const Palette& p = Theme::get().colors();
+// Hero card with the counting score, rank title, comparison with the personal best and the stats; then buttons and the table.
+void CompetitionScreen::drawResult(App& app, Column& col) {
+    Context& cx = Context::get();
+    Theme& th = Theme::get();
+    const Palette& p = th.colors();
+    const double t = cx.now - phaseSince_;
+    const bool best = placement_.newBest;
+    const Color white = arcade::kWhite;
+    const Color muted = withAlpha(white, 0.8f);
+
+    // Enter or Space plays another round (not in the first moments, so a key typed at the buzzer does not skip the result).
+    if (t > 0.6 && !cx.modalBlocks && (IsKeyPressed(KEY_ENTER) || IsKeyPressed(KEY_KP_ENTER) || IsKeyPressed(KEY_SPACE))) {
+        startCountdown(app);
+        return;
+    }
+    celebrate(t);
+
+    Rect r = col.take(396.0f);
+    Appear apHero(0, r);
+    const float pulse = 0.5f + 0.5f * std::sin(static_cast<float>(cx.now) * 4.0f);
+    if (best && t > 1.2) glowRound(r, radius::kXl, p.gold, (0.45f + 0.4f * pulse) * reveal(t, 1.2));
+    heroPanel(r);
+
+    // Header: who played and where the run landed.
+    drawText(type::kLabel, "TIME'S UP", r.x + 26.0f, r.y + 22.0f, muted);
+    drawText(Face::Bold, size::kH2, ellipsize(Face::Bold, size::kH2, player_, r.width * 0.5f), r.x + 26.0f, r.y + 42.0f, white);
+    {
+        const bool placed = placement_.rank > 0;
+        char label[40];
+        if (best) std::snprintf(label, sizeof label, "NEW BEST!");
+        else if (placed) std::snprintf(label, sizeof label, "#%d in the Top 10", placement_.rank);
+        else std::snprintf(label, sizeof label, "Not in the Top 10");
+        const float w = th.textWidth(Face::Bold, size::kBody, label) + 44.0f;
+        const Rect pill{r.x + r.width - 26.0f - w, r.y + 26.0f, w, 36.0f};
+        const float a = reveal(t, 0.3);
+        if (best) {
+            pushScale(1.0f + 0.05f * pulse, pill.x + w / 2.0f, pill.y + 18.0f);
+            glowRound(pill, 18.0f, p.hot, 0.8f * a);
+            fillRound(pill, 18.0f, withAlpha(p.hot, a));
+            drawCentered(Face::Bold, size::kBody, label, pill, withAlpha(white, a));
+            popOffset();
+        } else {
+            fillRound(pill, 18.0f, Color{0, 0, 0, static_cast<unsigned char>(70.0f * a)});
+            drawCentered(Face::Bold, size::kBody, label, pill, withAlpha(white, a));
+        }
+    }
+
+    // Score: counts up, then pops once.
+    constexpr double kCountStart = 0.3, kCountLen = 1.0;
+    const float prog = easeOutCubic(std::clamp(static_cast<float>((t - kCountStart) / kCountLen), 0.0f, 1.0f));
+    char buf[32];
+    std::snprintf(buf, sizeof buf, "%d", static_cast<int>(static_cast<float>(round_.score) * prog + 0.5f));
+    const float numW = th.textWidth(Face::Bold, size::kHuge, buf);
+    const float done = static_cast<float>(t - (kCountStart + kCountLen));
+    const Color scoreCol = best && done >= 0.0f ? mix(white, p.gold, 0.7f) : white;
+    drawTextPop(Face::Bold, size::kHuge, buf, r.x + 26.0f + numW / 2.0f, r.y + 136.0f, popScale(done, 0.18f, 0.35f), scoreCol);
+    std::snprintf(buf, sizeof buf, "%d", round_.score);
+    drawText(Face::Regular, size::kBody, "points", r.x + 26.0f + th.textWidth(Face::Bold, size::kHuge, buf) + 12.0f, r.y + 124.0f, muted);
+
+    // Difference to the personal best.
+    if (!bestText_.empty()) {
+        const float a = reveal(t, 1.3);
+        const Color c = bestTone_ > 0 ? arcade::kMint : bestTone_ < 0 ? arcade::kCoral : white;
+        drawText(Face::Bold, size::kBody, ellipsize(Face::Bold, size::kBody, bestText_, r.width * 0.5f), r.x + 26.0f, r.y + 200.0f + 8.0f * (1.0f - a), withAlpha(c, a));
+    }
+
+    // Rank title with progress to the next one.
+    {
+        const int tier = logic::rankIndex(round_.score);
+        const float a = reveal(t, 1.3);
+        const float rw = std::min(300.0f, r.width * 0.42f);
+        const float rx = r.x + r.width - 26.0f - rw;
+        const Color tc = rankColor(p, tier);
+        std::string title = logic::rankTitle(round_.score);
+        for (char& ch : title) ch = static_cast<char>(std::toupper(static_cast<unsigned char>(ch)));
+        drawText(type::kLabel, "YOUR RANK", rx, r.y + 88.0f, muted);
+        drawIcon(Icon::Trophy, rx + 18.0f, r.y + 142.0f, 34.0f, withAlpha(tc, a));
+        const float tw = th.textWidth(Face::Bold, size::kDisplay, title);
+        drawTextPop(Face::Bold, size::kDisplay, title.c_str(), rx + 46.0f + tw / 2.0f, r.y + 142.0f, popScale(static_cast<float>(t - 1.3), 0.35f, 0.4f), withAlpha(tc, a));
+        const int lo = logic::kRanks[tier].minScore;
+        const float frac = tier + 1 < logic::kRankCount ? static_cast<float>(round_.score - lo) / static_cast<float>(logic::kRanks[tier + 1].minScore - lo) : 1.0f;
+        arcadeBar(Rect{rx, r.y + 182.0f, rw, 12.0f}, frac * reveal(t, 1.3, 0.7f), tc);
+        drawText(Face::Regular, size::kBodySm, ellipsize(Face::Regular, size::kBodySm, rankGapText_, rw), rx, r.y + 202.0f, withAlpha(white, 0.85f * a));
+    }
+
+    // Stat tiles.
+    {
+        const float tw = (r.width - 52.0f - 36.0f) / 4.0f;
+        const int answered = round_.answered();
+        char acc[16], correct[16], combo[16], place[16];
+        std::snprintf(correct, sizeof correct, "%d", round_.correct);
+        std::snprintf(combo, sizeof combo, "%d", round_.bestCombo);
+        if (answered > 0) std::snprintf(acc, sizeof acc, "%d%%", round_.correct * 100 / answered);
+        else std::snprintf(acc, sizeof acc, "-");
+        if (placement_.rank > 0) std::snprintf(place, sizeof place, "#%d", placement_.rank);
+        else std::snprintf(place, sizeof place, "-");
+        const struct {
+            const char* label;
+            const char* value;
+        } tiles[] = {{"CORRECT", correct}, {"BEST COMBO", combo}, {"ACCURACY", acc}, {"PLACE", place}};
+        for (int i = 0; i < 4; ++i) {
+            const float a = reveal(t, 0.5 + 0.1 * i);
+            const Rect tr{r.x + 26.0f + static_cast<float>(i) * (tw + 12.0f), r.y + 236.0f + 8.0f * (1.0f - a), tw, 70.0f};
+            fillRound(tr, radius::kMd, Color{0, 0, 0, static_cast<unsigned char>(62.0f * a)});
+            drawText(type::kLabel, tiles[i].label, tr.x + 14.0f, tr.y + 10.0f, withAlpha(muted, a));
+            drawText(Face::Bold, size::kH2, tiles[i].value, tr.x + 14.0f, tr.y + 30.0f, withAlpha(white, a));
+        }
+    }
+
+    // Play again: the big call to action.
+    if (arcadeButton("Play again", Rect{r.x + 26.0f, r.y + r.height - 78.0f, 240.0f, 54.0f}, Icon::Refresh)) {
+        startCountdown(app);
+        return;
+    }
+    drawText(Face::Regular, size::kSmall, "or press Enter or Space", r.x + 286.0f, r.y + r.height - 62.0f, withAlpha(white, 0.75f));
+
+    // Secondary actions below the card.
+    if (button("Change player", Rect{col.x, col.y, 170.0f, 44.0f}, ButtonStyle::Secondary, Icon::Pencil)) {
+        backToLobby();
+        return;
+    }
+    if (button("Back", Rect{col.x + 182.0f, col.y, 120.0f, 44.0f}, ButtonStyle::Secondary, Icon::ChevronLeft)) app.go(Page::Home);
+    col.space(60.0f);
+    drawTable(app, col, highlight_, phaseSince_ + 0.9);
+}
+
+// Top 10 of this track: rows slide in one after another, the top three wear medal colours and the run just played pulses.
+void CompetitionScreen::drawTable(App& app, Column& col, int highlightRank, double slideStart) {
+    Context& cx = Context::get();
+    Theme& th = Theme::get();
+    const Palette& p = th.colors();
     const auto& table = app.progress().blitzTable(app.trackKey());
-    const float rowH = 40.0f;
+    const float rowH = 42.0f;
     Rect r = col.take(96.0f + static_cast<float>(std::max<size_t>(1, table.size())) * rowH);
     Appear apTable(2, r);
     card(r);
-    drawText(Face::Bold, size::kH3, std::string("Top 10 - ") + trackName(app.track()), r.x + 22.0f, r.y + 16.0f, p.text);
+    drawIcon(Icon::Trophy, r.x + 34.0f, r.y + 29.0f, 22.0f, p.gold);
+    drawText(Face::Bold, size::kH3, std::string("Top 10 - ") + trackName(app.track()), r.x + 54.0f, r.y + 16.0f, p.text);
     const float headY = r.y + 56.0f;
     drawLabel("RANK", r.x + 22.0f, headY, p.textMuted);
     drawLabel("PLAYER", r.x + 96.0f, headY, p.textMuted);
@@ -67,25 +198,40 @@ void CompetitionScreen::drawTable(App& app, Column& col, int highlightRank) {
         drawText(Face::Regular, size::kBodySm, "No scores yet in this track. Play a round to be the first.", r.x + 22.0f, headY + 42.0f, p.textMuted);
         return;
     }
+    const float lh = th.lineHeight(size::kBodySm);
     for (size_t i = 0; i < table.size(); ++i) {
         const logic::BlitzEntry& e = table[i];
-        Rect row{r.x + 10.0f, headY + 34.0f + static_cast<float>(i) * rowH, r.width - 20.0f, rowH - 4.0f};
+        const float a = easeOutCubic(std::clamp(static_cast<float>((cx.now - slideStart - static_cast<double>(i) * arcade::kRowStagger) / arcade::kRowSlide), 0.0f, 1.0f));
+        if (a <= 0.0f) continue;
         const bool mine = highlightRank == static_cast<int>(i) + 1;
+        const bool medal = i < 3;
+        const Color mc = medal ? medalColor(p, i) : p.accent;
+        pushOffset((1.0f - a) * 70.0f, 0.0f);  // slides in from the right
+        Rect row{r.x + 10.0f, headY + 34.0f + static_cast<float>(i) * rowH, r.width - 20.0f, rowH - 4.0f};
+        if (medal) fillRound(row, radius::kMd, withAlpha(mc, (mine ? 0.26f : 0.14f) * a));
         if (mine) {
-            fillRound(row, radius::kMd, p.accentSoft);
-            strokeRound(row, radius::kMd, 1.5f, p.accent);
+            const float beat = 0.5f + 0.5f * std::sin(static_cast<float>(cx.now) * 5.0f);
+            if (!medal) fillRound(row, radius::kMd, withAlpha(p.accentSoft, a));
+            glowRound(row, radius::kMd, mine && medal ? mc : p.accent, (0.35f + 0.45f * beat) * a);
+            strokeRound(row, radius::kMd, 1.5f, withAlpha(medal ? mc : p.accent, a));
         }
-        const float ty = row.y + (row.height - Theme::get().lineHeight(size::kBodySm)) / 2.0f;
-        if (i < 3) {
-            const Rect medal{row.x + 12.0f, row.y + (row.height - 26.0f) / 2.0f, 26.0f, 26.0f};
-            fillRound(medal, 13.0f, mine ? p.accent : p.accentSoft);
-            drawCentered(Face::Bold, size::kLabel, std::to_string(i + 1), medal, mine ? p.textOnAccent : p.accent);
+        const float ty = row.y + (row.height - lh) / 2.0f;
+        const Rect disc{row.x + 12.0f, row.y + (row.height - 28.0f) / 2.0f, 28.0f, 28.0f};
+        char num[24];
+        std::snprintf(num, sizeof num, "%zu", i + 1);
+        if (medal) {
+            fillRound(disc, 14.0f, withAlpha(mc, a));
+            drawCentered(Face::Bold, size::kLabel, num, disc, withAlpha(p.onMedal, a));
         } else {
-            drawCentered(Face::Bold, size::kBodySm, std::to_string(i + 1), Rect{row.x + 12.0f, row.y, 26.0f, row.height}, p.textMuted);
+            drawCentered(Face::Bold, size::kBodySm, num, disc, withAlpha(p.textMuted, a));
         }
-        drawText(mine ? Face::Bold : Face::Regular, size::kBodySm, ellipsize(Face::Regular, size::kBodySm, e.name, r.width - 360.0f), r.x + 86.0f, ty, p.text);
-        drawText(Face::Bold, size::kBodySm, std::to_string(e.score), r.x + r.width - 240.0f, ty, mine ? p.accent : p.text);
-        drawText(Face::Regular, size::kBodySm, e.date, r.x + r.width - 130.0f, ty, p.textMuted);
+        const float nameW = th.textWidth(Face::Bold, size::kBodySm, "NEW") + 18.0f;
+        drawText(mine ? Face::Bold : Face::Regular, size::kBodySm, ellipsize(Face::Regular, size::kBodySm, e.name, r.width - 360.0f - (mine ? nameW : 0.0f)), r.x + 86.0f, ty, withAlpha(p.text, a));
+        if (mine) badge("NEW", r.x + 86.0f + th.textWidth(Face::Bold, size::kBodySm, ellipsize(Face::Regular, size::kBodySm, e.name, r.width - 360.0f - nameW)) + 10.0f, row.y + (row.height - 24.0f) / 2.0f, arcade::kWhite, withAlpha(p.hot, a));
+        std::snprintf(num, sizeof num, "%d", e.score);
+        drawText(Face::Bold, size::kBodySm, num, r.x + r.width - 240.0f, ty, withAlpha(mine ? p.accent : p.text, a));
+        drawText(Face::Regular, size::kBodySm, e.date, r.x + r.width - 130.0f, ty, withAlpha(p.textMuted, a));
+        popOffset();
     }
 }
 
