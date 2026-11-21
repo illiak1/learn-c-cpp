@@ -176,6 +176,86 @@ void CompetitionScreen::drawResult(App& app, Column& col) {
     drawTable(app, col, highlight_, phaseSince_ + 0.9);
 }
 
+// Duel result: both scores side by side, the winner (or a draw) announced with a celebration, a Rematch button.
+void CompetitionScreen::drawDuelResult(App& app, Column& col) {
+    Context& cx = Context::get();
+    Theme& th = Theme::get();
+    const Palette& p = th.colors();
+    const logic::Duel& d = *duel_;
+    const double t = cx.now - phaseSince_;
+    const bool draw = d.outcome() == logic::DuelOutcome::Draw;
+    const Color white = arcade::kWhite;
+    const Color muted = withAlpha(white, 0.8f);
+
+    if (t > 0.6 && !cx.modalBlocks && (IsKeyPressed(KEY_ENTER) || IsKeyPressed(KEY_KP_ENTER) || IsKeyPressed(KEY_SPACE))) {
+        startDuel(app, d.names[0], d.names[1]);  // rematch: same names, a new question order
+        return;
+    }
+    // Confetti: stronger for a winner than for a draw.
+    const Rect v = viewport_;
+    if (celebration_ == 0 && t >= 1.4) {
+        celebration_ = 1;
+        const int n = draw ? 40 : 90;
+        confetti_.burst(v.x + 24.0f, v.y + v.height - 8.0f, n, -62.0f, 40.0f, 1000.0f);
+        confetti_.burst(v.x + v.width - 24.0f, v.y + v.height - 8.0f, n, -118.0f, 40.0f, 1000.0f);
+        if (!draw) confetti_.rain(v, 50);
+    }
+    if (!draw && celebration_ == 1 && t >= 2.1) {
+        celebration_ = 2;
+        confetti_.rain(v, 80);
+    }
+
+    Rect r = col.take(430.0f);
+    Appear apHero(0, r);
+    const float pulse = 0.5f + 0.5f * std::sin(static_cast<float>(cx.now) * 4.0f);
+    if (!draw && t > 1.3) glowRound(r, radius::kXl, p.gold, (0.45f + 0.4f * pulse) * reveal(t, 1.3));
+    heroPanel(r);
+    drawText(type::kLabel, "DUEL RESULT", r.x + 26.0f, r.y + 22.0f, muted);
+
+    // Headline: appears once the scores have counted up.
+    const float ha = reveal(t, 1.4);
+    const int headPx = th.textWidth(Face::Bold, size::kDisplay, headlineText_) <= r.width - 52.0f ? size::kDisplay : size::kH2;
+    drawTextPop(Face::Bold, headPx, ellipsize(Face::Bold, headPx, headlineText_, r.width - 52.0f).c_str(), r.x + r.width / 2.0f, r.y + 76.0f,
+                popScale(static_cast<float>(t - 1.4), 0.3f, 0.4f), withAlpha(draw ? white : mix(white, p.gold, 0.75f), ha));
+    drawCentered(Face::Regular, size::kBody, marginText_, Rect{r.x, r.y + 106.0f, r.width, 26.0f}, withAlpha(muted, ha));
+
+    // One card per player.
+    const float gap = 20.0f;
+    const float cw = (r.width - 52.0f - gap) / 2.0f;
+    const float prog = easeOutCubic(std::clamp(static_cast<float>((t - 0.3) / 1.0), 0.0f, 1.0f));
+    for (int i = 0; i < 2; ++i) {
+        const logic::BlitzRound& rd = d.rounds[i];
+        const bool winner = !draw && (d.outcome() == logic::DuelOutcome::First) == (i == 0);
+        const float a = reveal(t, 0.2 + 0.15 * i);
+        const Rect c{r.x + 26.0f + static_cast<float>(i) * (cw + gap), r.y + 148.0f + 8.0f * (1.0f - a), cw, 176.0f};
+        if (winner && t > 1.3) glowRound(c, radius::kLg, p.gold, (0.35f + 0.35f * pulse) * reveal(t, 1.3));
+        fillRound(c, radius::kLg, winner ? Color{255, 255, 255, static_cast<unsigned char>(48.0f * a)} : Color{0, 0, 0, static_cast<unsigned char>(58.0f * a)});
+        if (winner && t > 1.3) strokeRound(c, radius::kLg, 2.0f, withAlpha(p.gold, reveal(t, 1.3)));
+        drawText(Face::Bold, size::kH3, ellipsize(Face::Bold, size::kH3, d.names[i], cw - 70.0f), c.x + 18.0f, c.y + 14.0f, withAlpha(white, a));
+        if (winner) drawIcon(Icon::Trophy, c.x + cw - 32.0f, c.y + 30.0f, 26.0f, withAlpha(p.gold, reveal(t, 1.3)));
+        char buf[64];
+        std::snprintf(buf, sizeof buf, "%d", static_cast<int>(static_cast<float>(rd.score) * prog + 0.5f));
+        const float nw = th.textWidth(Face::Bold, size::kScore, buf);
+        const float done = static_cast<float>(t - 1.3);
+        drawTextPop(Face::Bold, size::kScore, buf, c.x + 18.0f + nw / 2.0f, c.y + 88.0f, popScale(done, 0.15f, 0.35f), withAlpha(winner && done >= 0.0f ? mix(white, p.gold, 0.7f) : white, a));
+        std::snprintf(buf, sizeof buf, "%s  -  %d correct, best combo %d", logic::rankTitle(rd.score), rd.correct, rd.bestCombo);
+        drawText(Face::Regular, size::kBodySm, ellipsize(Face::Regular, size::kBodySm, buf, cw - 36.0f), c.x + 18.0f, c.y + c.height - 40.0f, withAlpha(muted, a));
+    }
+
+    if (arcadeButton("Rematch", Rect{r.x + 26.0f, r.y + r.height - 78.0f, 240.0f, 54.0f}, Icon::Refresh)) {
+        startDuel(app, d.names[0], d.names[1]);
+        return;
+    }
+    drawText(Face::Regular, size::kSmall, "or press Enter or Space", r.x + 286.0f, r.y + r.height - 62.0f, withAlpha(white, 0.75f));
+
+    if (button("Change players", Rect{col.x, col.y, 180.0f, 44.0f}, ButtonStyle::Secondary, Icon::Pencil)) {
+        backToLobby();
+        return;
+    }
+    if (button("Back", Rect{col.x + 192.0f, col.y, 120.0f, 44.0f}, ButtonStyle::Secondary, Icon::ChevronLeft)) app.go(Page::Home);
+    col.space(60.0f);
+}
+
 // Top 10 of this track: rows slide in one after another, the top three wear medal colours and the run just played pulses.
 void CompetitionScreen::drawTable(App& app, Column& col, int highlightRank, double slideStart) {
     Context& cx = Context::get();

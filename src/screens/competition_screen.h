@@ -8,6 +8,7 @@
 #include "app/screens.h"
 #include "logic/answer.h"
 #include "logic/blitz.h"
+#include "logic/duel.h"
 #include "logic/leaderboard.h"
 #include "screens/common.h"
 #include "screens/question_widgets.h"
@@ -18,7 +19,8 @@ constexpr double kFeedbackSeconds = 0.8;  // how long the green/red feedback sta
 constexpr double kMaxFrameStep = 0.25;    // a stalled frame (window drag) never eats more than this from the clock
 constexpr double kCountdownSeconds = 3.0 * ui::arcade::kCountStep + ui::arcade::kGoSeconds;
 
-enum class Phase { Lobby, Countdown, Playing, Result };
+// Lobby -> Countdown -> Playing -> Result (solo), or for a duel: ... Playing -> Pass -> Countdown -> Playing -> DuelResult.
+enum class Phase { Lobby, Countdown, Playing, Pass, Result, DuelResult };
 
 // The question being shown and what the player did with it.
 struct Current {
@@ -41,7 +43,11 @@ public:
 private:
     // competition.cpp: flow, start card and countdown
     void drawLobby(App& app, ui::Column& col);
+    void drawSoloStart(App& app, ui::Column& col, bool hasQuestions);
+    void drawDuelStart(App& app, ui::Column& col, bool hasQuestions);
     void drawRulesTiles(ui::Column& col);
+    void startDuel(App& app, std::string first, std::string second);
+    void drawPass(App& app, ui::Column& col);
     void startCountdown(App& app);
     void drawCountdown(App& app, ui::Column& col);
     void startRound(App& app);
@@ -62,12 +68,21 @@ private:
     // competition_result.cpp: result card and the Top 10 table
     void drawResult(App& app, ui::Column& col);
     void celebrate(double t);
+    void drawDuelResult(App& app, ui::Column& col);
     void drawTable(App& app, ui::Column& col, int highlightRank, double slideStart);
 
     Phase phase_ = Phase::Lobby;
     double phaseSince_ = 0.0;  // clock time the current phase began
     std::string name_;         // text in the name field
     std::string player_;       // name of the round being played or just played
+    std::string name2_;        // second player's name field (duel)
+    int mode_ = 0;             // lobby choice: 0 solo, 1 duel
+    std::unique_ptr<logic::Duel> duel_;  // the running or finished duel (null in solo mode)
+    int turn_ = 0;             // whose round of the duel is on: 0 or 1
+    std::string passText_;     // name of the player who gets the keyboard next
+    std::string finishedText_; // "<name> is done"
+    std::string headlineText_; // "<name> wins!" or "It's a draw!"
+    std::string marginText_;   // "by 40 points"
     std::string readyText_;    // "Get ready, <name>" (built once per countdown)
     int prevBest_ = -1;        // the player's best in the table before this round (-1 = none)
     int lastMult_ = 1;         // multiplier shown last, to spot tier changes

@@ -28,6 +28,28 @@ void CompetitionScreen::loadNext() {
 
 // Stores the finished round in the Top 10 and shows the result.
 void CompetitionScreen::finishRound(App& app) {
+    if (duel_) {  // duels never touch the Top 10 or the progress file
+        duel_->rounds[turn_] = round_;
+        confetti_.clear();
+        floats_.clear();
+        flashAt_ = -10.0;
+        scroll_ = {};
+        phaseSince_ = Context::get().now;
+        celebration_ = 0;
+        if (turn_ == 0) {
+            finishedText_ = duel_->names[0] + " is done";
+            passText_ = duel_->names[1];
+            turn_ = 1;
+            player_ = duel_->names[1];
+            phase_ = Phase::Pass;
+        } else {
+            const bool draw = duel_->outcome() == logic::DuelOutcome::Draw;
+            headlineText_ = draw ? "It's a draw!" : duel_->winnerName() + " wins!";
+            marginText_ = draw ? "Both scored " + std::to_string(duel_->rounds[0].score) : "by " + std::to_string(duel_->margin()) + (duel_->margin() == 1 ? " point" : " points");
+            phase_ = Phase::DuelResult;
+        }
+        return;
+    }
     prevBest_ = logic::personalBest(app.progress().blitzTable(app.trackKey()), player_);
     logic::BlitzEntry e{player_, round_.score, logic::todayString(), round_.correct, round_.bestCombo};
     placement_ = app.progress().recordBlitz(app.trackKey(), e);
@@ -185,6 +207,7 @@ void CompetitionScreen::drawQuestion(App& app, Column& col, const content::Exerc
     Context& cx = Context::get();
     const bool cpp = app.track() == Track::Cpp;
     float bx = col.x;
+    if (duel_) bx += badge(player_, bx, col.y, arcade::kWhite, p.hot) + 8.0f;
     bx += badge(content::typeName(ex.type), bx, col.y, p.accent, p.accentSoft) + 8.0f;
     if (cur_.answered) {
         const std::string msg = cur_.correct ? "+" + std::to_string(cur_.points) + (cur_.multiplier > 1 ? "  x" + std::to_string(cur_.multiplier) : "") : "Wrong  -3 s";
@@ -284,8 +307,10 @@ void CompetitionScreen::answer(App& app, const content::Exercise& ex, bool corre
         lastMult_ = 1;
         floats_.add(at.x, at.y, "-3 s", p.danger);
     }
-    app.progress().recordAnswer(app.trackKey(), ex.id, correct, logic::todayString());
-    app.saveProgress();
+    if (!duel_) {  // a duel shares one computer, so its answers stay out of the personal progress
+        app.progress().recordAnswer(app.trackKey(), ex.id, correct, logic::todayString());
+        app.saveProgress();
+    }
 }
 
 // Short green/red banner under the question; a wrong answer also names the right one.
