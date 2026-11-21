@@ -290,7 +290,7 @@ private:
         Attempt& a = attempt_;
         const int clicked = drawBugCode(col, ex, cpp, a.bugLine, a.checked);
         if (clicked > 0) a.bugLine = clicked;
-        drawText(Face::Regular, size::kBodySm, a.bugLine > 0 ? "Selected line " + std::to_string(a.bugLine) : "Click the line that contains the bug.",
+        drawText(Face::Regular, size::kBodySm, a.bugLine > 0 ? "Selected line " + std::to_string(a.bugLine) : "Click the line that contains the bug",
                  col.x, col.y, a.bugLine > 0 ? p.danger : p.textMuted);
         col.space(28.0f);
         if (!ex.answers.empty()) {
@@ -360,7 +360,7 @@ private:
         progressRing(hero.x + 82.0f, hero.y + 72.0f, 50.0f, 11.0f, frac, heroColor, "summary-ring");
         drawCentered(Face::Bold, size::kH3, std::to_string(static_cast<int>(frac * 100.0f + 0.5f)) + "%", Rect{hero.x + 32.0f, hero.y + 22.0f, 100.0f, 100.0f}, p.text);
         drawText(Face::Bold, size::kH1 + 6, std::to_string(right) + " / " + std::to_string(s.ids.size()), hero.x + 160.0f, hero.y + 34.0f, heroColor);
-        drawText(Face::Regular, size::kBody, "answered correctly (" + std::to_string(answered) + " answered)", hero.x + 160.0f, hero.y + 88.0f, p.textMuted);
+        drawText(Face::Regular, size::kBody, "Answered correctly (" + std::to_string(answered) + " answered)", hero.x + 160.0f, hero.y + 88.0f, p.textMuted);
 
         std::vector<std::string> wrong;
         for (size_t i = 0; i < s.ids.size(); ++i) {

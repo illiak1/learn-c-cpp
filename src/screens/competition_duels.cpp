@@ -28,7 +28,7 @@ void CompetitionScreen::drawDuelTable(App& app, Column& col, const std::string& 
     if (button("Clear duels", Rect{r.x + r.width - 22.0f - 124.0f, r.y + 14.0f, 124.0f, 34.0f}, ButtonStyle::Danger, Icon::None, !all.empty())) {
         clearTrack_ = app.trackKey();
         openModal("duel-clear", ModalOpts{std::string("Clear the duels for ") + trackName(app.track()) + "?",
-                                          "This removes all " + std::to_string(all.size()) + " saved duels of the " + trackName(app.track()) +
+                                          "This removes all " + logic::plural(static_cast<long>(all.size()), "saved duel") + " of the " + trackName(app.track()) +
                                               " track, including the head-to-head records. The Top 10 and your learning progress are not touched. This cannot be undone.",
                                           "Clear duels", "Cancel", true});
     }
@@ -44,9 +44,9 @@ void CompetitionScreen::drawDuelTable(App& app, Column& col, const std::string& 
     const bool haveNames = !nameA.empty() && !nameB.empty() && !logic::sameName(nameA, nameB);
     const float lineY = r.y + 54.0f;
     if (!haveNames) {
-        drawText(Face::Regular, size::kBodySm, "Enter two different names to see their head-to-head record.", r.x + 22.0f, lineY, p.textMuted);
+        drawText(Face::Regular, size::kBodySm, "Enter two different names to see their head-to-head record", r.x + 22.0f, lineY, p.textMuted);
     } else if (h2hText_.empty()) {
-        drawText(Face::Regular, size::kBodySm, "No duels between these two players yet.", r.x + 22.0f, lineY, p.textMuted);
+        drawText(Face::Regular, size::kBodySm, "No duels between these two players yet", r.x + 22.0f, lineY, p.textMuted);
     } else {
         const float lw = drawText(Face::Bold, size::kLabel, "HEAD TO HEAD", r.x + 22.0f, lineY + 3.0f, p.textMuted);
         drawText(Face::Bold, size::kBody, ellipsize(Face::Bold, size::kBody, h2hText_, r.width - 70.0f - lw), r.x + 36.0f + lw, lineY, p.accent);

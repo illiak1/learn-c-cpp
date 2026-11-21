@@ -107,7 +107,7 @@ void CompetitionScreen::drawResult(App& app, Column& col) {
     const Color scoreCol = best && done >= 0.0f ? mix(white, p.gold, 0.7f) : white;
     drawTextPop(Face::Bold, size::kHuge, buf, r.x + 26.0f + numW / 2.0f, r.y + 136.0f, popScale(done, 0.18f, 0.35f), scoreCol);
     std::snprintf(buf, sizeof buf, "%d", round_.score);
-    drawText(Face::Regular, size::kBody, "points", r.x + 26.0f + th.textWidth(Face::Bold, size::kHuge, buf) + 12.0f, r.y + 124.0f, muted);
+    drawText(Face::Regular, size::kBody, logic::unit(round_.score, "point"), r.x + 26.0f + th.textWidth(Face::Bold, size::kHuge, buf) + 12.0f, r.y + 124.0f, muted);
 
     // Difference to the personal best.
     if (!bestText_.empty()) {
@@ -164,7 +164,7 @@ void CompetitionScreen::drawResult(App& app, Column& col) {
         startCountdown(app);
         return;
     }
-    drawText(Face::Regular, size::kSmall, "or press Enter or Space", r.x + 286.0f, r.y + r.height - 62.0f, withAlpha(white, 0.75f));
+    drawText(Face::Regular, size::kSmall, "Or press Enter or Space", r.x + 286.0f, r.y + r.height - 62.0f, withAlpha(white, 0.75f));
 
     // Secondary actions below the card.
     if (button("Change player", Rect{col.x, col.y, 170.0f, 44.0f}, ButtonStyle::Secondary, Icon::Pencil)) {
@@ -246,7 +246,7 @@ void CompetitionScreen::drawDuelResult(App& app, Column& col) {
         startDuel(app, d.names[0], d.names[1]);
         return;
     }
-    drawText(Face::Regular, size::kSmall, "or press Enter or Space", r.x + 286.0f, r.y + r.height - 62.0f, withAlpha(white, 0.75f));
+    drawText(Face::Regular, size::kSmall, "Or press Enter or Space", r.x + 286.0f, r.y + r.height - 62.0f, withAlpha(white, 0.75f));
 
     if (button("Change players", Rect{col.x, col.y, 180.0f, 44.0f}, ButtonStyle::Secondary, Icon::Pencil)) {
         backToLobby();
@@ -273,7 +273,7 @@ void CompetitionScreen::drawTable(App& app, Column& col, int highlightRank, doub
     if (button("Clear table", Rect{r.x + r.width - 22.0f - 124.0f, r.y + 14.0f, 124.0f, 34.0f}, ButtonStyle::Danger, Icon::None, !table.empty())) {
         clearTrack_ = app.trackKey();
         openModal("blitz-clear", ModalOpts{std::string("Clear the Top 10 for ") + trackName(app.track()) + "?",
-                                           "This removes all " + std::to_string(table.size()) + " scores of the " + trackName(app.track()) +
+                                           "This removes all " + logic::plural(static_cast<long>(table.size()), "score") + " of the " + trackName(app.track()) +
                                                " table. The other track and your learning progress are not touched. This cannot be undone.",
                                            "Clear table", "Cancel", true});
     }

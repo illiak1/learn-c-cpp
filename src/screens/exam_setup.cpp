@@ -68,12 +68,12 @@ public:
             float bx = r.x + 22.0f;
             for (const char* key : {"c", "cpp"}) {
                 const int best = app.progress().bestExamPercent(key);
-                const std::string label = std::string("Best ") + (std::string(key) == "c" ? "C" : "C++") + ": " + (best < 0 ? "no exam yet" : std::to_string(best) + "%");
+                const std::string label = std::string("Best ") + (std::string(key) == "c" ? "C" : "C++") + ": " + (best < 0 ? "No exam yet" : std::to_string(best) + "%");
                 const bool mineTrack = app.trackKey() == key;
                 bx += badge(label, bx, r.y + 20.0f, best < 0 ? p.textMuted : mineTrack ? p.accent : p.text, best < 0 ? p.surfaceAlt : mineTrack ? p.accentSoft : p.surfaceAlt) + 8.0f;
             }
             drawText(Face::Bold, size::kLabel, std::string("LATEST ") + trackName(app.track()) + " EXAMS", r.x + 22.0f, r.y + 56.0f, p.textMuted);
-            if (mine.empty()) drawText(Face::Regular, size::kBodySm, "No exams finished yet in this track.", r.x + 22.0f, r.y + 82.0f, p.textMuted);
+            if (mine.empty()) drawText(Face::Regular, size::kBodySm, "No exams finished yet in this track", r.x + 22.0f, r.y + 82.0f, p.textMuted);
             for (size_t i = 0; i < mine.size(); ++i) {
                 const logic::ExamRecord& e = *mine[i];
                 const float y = r.y + 80.0f + 40.0f * static_cast<float>(i);
@@ -118,7 +118,7 @@ public:
             x += w + 8.0f;
         }
         Context::get().popId();
-        const std::string drawn = "Drawn from " + std::to_string(pool) + " tasks";
+        const std::string drawn = "Drawn from " + logic::plural(pool, "task");
         drawText(Face::Regular, size::kBodySm, drawn, quick.x + quick.width - 22.0f - Theme::get().textWidth(Face::Regular, size::kBodySm, drawn), quick.y + 20.0f, p.textMuted);
         if (button("Start exam", Rect{quick.x + quick.width - 210.0f, quick.y + (stacked ? 170.0f : 116.0f), 190.0f, 44.0f}, ButtonStyle::Primary, Icon::Play, pool > 0)) {
             std::mt19937 rng(std::random_device{}());
@@ -129,7 +129,7 @@ public:
         col.space(6.0f);
         drawText(Face::Bold, size::kH2, "Original papers", col.x, col.y, p.text);
         col.space(40.0f);
-        if (tc.sets.empty()) col.space(drawParagraph(Face::Regular, size::kBody, "No fixed exams in this track.", col.x, col.y, col.w, p.textMuted));
+        if (tc.sets.empty()) col.space(drawParagraph(Face::Regular, size::kBody, "No fixed exams in this track", col.x, col.y, col.w, p.textMuted));
         for (const content::ExamSet& s : tc.sets) {
             int points = 0;
             for (const std::string& id : s.taskIds)
@@ -142,8 +142,8 @@ public:
             drawText(Face::Bold, size::kH3, s.title, r.x + 22.0f, r.y + 18.0f, p.text);
             if (!s.description.empty()) drawParagraph(Face::Regular, size::kBodySm, s.description, r.x + 22.0f, r.y + 52.0f, r.width - 250.0f, p.textMuted);
             float bx = r.x + 22.0f, by = r.y + 56.0f + dh;
-            bx += badge(std::to_string(s.taskIds.size()) + " functions", bx, by, p.accent, p.accentSoft) + 8.0f;
-            bx += badge(std::to_string(points) + " points", bx, by, p.textMuted, p.surfaceAlt) + 8.0f;
+            bx += badge(logic::plural(static_cast<long>(s.taskIds.size()), "function"), bx, by, p.accent, p.accentSoft) + 8.0f;
+            bx += badge(logic::plural(points, "point"), bx, by, p.textMuted, p.surfaceAlt) + 8.0f;
             badge(std::to_string(s.minutes) + " min", bx, by, p.textMuted, p.surfaceAlt);
             if (button("Start", Rect{r.x + r.width - 130.0f, r.y + r.height / 2.0f - 21.0f, 108.0f, 42.0f}, ButtonStyle::Secondary, Icon::Play))
                 app.beginExam(logic::makeSetExam(s));
@@ -162,7 +162,7 @@ public:
             const bool known = app.progress().taskResult(app.trackKey(), t.id, done);
             if (known) drawIcon(done ? Icon::Check : Icon::Cross, r.x + 26.0f, r.y + 29.0f, 16.0f, done ? p.success : p.danger);
             drawText(Face::Bold, size::kButton, ellipsize(Face::Bold, size::kButton, t.title, r.width - 330.0f), r.x + (known ? 50.0f : 22.0f), r.y + 9.0f, p.text);
-            drawText(Face::Regular, size::kLabel, std::to_string(t.points) + " points", r.x + (known ? 50.0f : 22.0f), r.y + 33.0f, p.textMuted);
+            drawText(Face::Regular, size::kLabel, logic::plural(t.points, "point"), r.x + (known ? 50.0f : 22.0f), r.y + 33.0f, p.textMuted);
             if (button("Practice", Rect{r.x + r.width - 134.0f, r.y + 8.0f, 114.0f, 42.0f}, ButtonStyle::Secondary, Icon::Timer))
                 app.beginExam(logic::makeTaskListExam(t.title, {t.id}));
             Context::get().popId();

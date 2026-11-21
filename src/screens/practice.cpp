@@ -51,7 +51,7 @@ public:
             if (matches(e, filter_)) all.push_back(e.id);
 
         // Mixed sessions
-        const std::string avail = std::to_string(all.size()) + " questions available with this filter";
+        const std::string avail = logic::plural(static_cast<long>(all.size()), "question") + " available with this filter";
         const float availW = col.w - 22.0f - 346.0f;  // text stops before the two buttons
         Rect r = col.take(std::max(102.0f, 56.0f + textHeight(Face::Regular, size::kBodySm, avail, availW) + 22.0f));
         Appear apMix(0, r);
@@ -88,14 +88,14 @@ public:
             if (total == 0) {
                 drawText(Face::Regular, size::kBodySm, "Lessons only", lr.x + 22.0f, lr.y + 52.0f, p.textMuted);
             } else {
-                drawText(Face::Regular, size::kBodySm, std::to_string(ids.size()) + (ids.size() == 1 ? " question" : " questions"), lr.x + 22.0f, lr.y + 52.0f, p.textMuted);
+                drawText(Face::Regular, size::kBodySm, logic::plural(static_cast<long>(ids.size()), "question"), lr.x + 22.0f, lr.y + 52.0f, p.textMuted);
                 if (button("Practice", Rect{lr.x + lr.width - 150.0f, lr.y + 27.0f, 128.0f, 40.0f}, ButtonStyle::Secondary, Icon::Pencil, !ids.empty()))
                     app.startSession(l.title, ids);
             }
             Context::get().popId();
         }
         if (shown == 0)
-            col.space(drawParagraph(Face::Regular, size::kBody, "No topic has questions of this type yet.", col.x, col.y, col.w, p.textMuted));
+            col.space(drawParagraph(Face::Regular, size::kBody, "No topic has questions of this type yet", col.x, col.y, col.w, p.textMuted));
         end(col);
     }
 

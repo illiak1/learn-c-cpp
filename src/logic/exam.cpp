@@ -6,6 +6,8 @@
 #include <set>
 #include <sstream>
 
+#include "logic/plural.h"
+
 namespace logic {
 
 namespace {
@@ -53,7 +55,7 @@ std::string buildExamFile(const std::vector<const content::Task*>& tasks, const 
     for (const content::Task* t : tasks) {
         ++n;
         out << "// ============================================================================\n";
-        out << "// Task " << n << ": " << t->title << " (" << t->points << " points)\n";
+        out << "// Task " << n << ": " << t->title << " (" << plural(t->points, "point") << ")\n";
         out << "// ============================================================================\n";
         out << asComment(t->statement) << "\n";
         out << (withSolution ? t->solution : t->stub) << "\n\n";
@@ -134,7 +136,7 @@ Exam makeRandomExam(const content::TrackContent& track, int count, int minutes, 
     for (const content::Task& t : track.tasks)
         if (std::find(pool.begin(), pool.end(), t.id) != pool.end()) ordered.push_back(t.id);
     Exam e;
-    e.title = "Random exam (" + std::to_string(ordered.size()) + " tasks)";
+    e.title = "Random exam (" + plural(static_cast<long>(ordered.size()), "task") + ")";
     e.taskIds = ordered;
     e.minutes = minutes;
     e.marks.assign(e.taskIds.size(), -1);

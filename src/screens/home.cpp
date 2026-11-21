@@ -44,8 +44,8 @@ public:
         badge(std::string(trackName(t)) + " track", col.x + col.w - bw, col.y + 12.0f, p.textOnAccent, p.accent);
         col.space(52.0f);
         const std::string sub = t == Track::C
-            ? "Prepare for the C coding exam: loops, arrays, strings and functions."
-            : "Prepare for the C++ coding exam: pointers, memory, classes and linked lists.";
+            ? "Prepare for the C coding exam: loops, arrays, strings and functions"
+            : "Prepare for the C++ coding exam: pointers, memory, classes and linked lists";
         col.space(drawParagraph(Face::Regular, size::kBody, sub, col.x, col.y, std::min(col.w, metrics::kProseMaxW), p.textMuted) + 22.0f);
 
         // Stats strip
@@ -53,24 +53,24 @@ public:
         const logic::DayRecord today = app.progress().day(logic::todayString());
         const float sgap = 16.0f;
         const float sw = (col.w - 2.0f * sgap) / 3.0f;
-        const float sh = miniStatHeight(sw, "questions answered today");  // the longest caption sets the row height
+        const float sh = miniStatHeight(sw, "Questions answered today");  // the longest caption sets the row height
         const int streakShown = static_cast<int>(std::lround(countUp("home-streak", static_cast<float>(st.streak))));
         const int todayShown = static_cast<int>(std::lround(countUp("home-today", static_cast<float>(today.answered))));
         const int accShown = static_cast<int>(std::lround(countUp("home-acc", static_cast<float>(std::lround(st.accuracy() * 100.0)))));
         {
             const Rect a{col.x, col.y, sw, sh};
             Appear ap(0, a);
-            miniStat(a, Icon::Flame, p.warning, std::to_string(streakShown) + (st.streak == 1 ? " day" : " days"), "current streak");
+            miniStat(a, Icon::Flame, p.warning, std::to_string(streakShown) + (streakShown == 1 ? " day" : " days"), "Current streak");
         }
         {
             const Rect a{col.x + sw + sgap, col.y, sw, sh};
             Appear ap(1, a);
-            miniStat(a, Icon::Pencil, p.accent, std::to_string(todayShown), "questions answered today");
+            miniStat(a, Icon::Pencil, p.accent, std::to_string(todayShown), "Questions answered today");
         }
         {
             const Rect a{col.x + 2.0f * (sw + sgap), col.y, sw, sh};
             Appear ap(2, a);
-            miniStat(a, Icon::Check, p.success, st.attempts ? std::to_string(accShown) + "%" : "-", "overall accuracy");
+            miniStat(a, Icon::Check, p.success, st.attempts ? std::to_string(accShown) + "%" : "-", "Overall accuracy");
         }
         col.space(sh + 18.0f);
 
@@ -79,7 +79,7 @@ public:
             const float hw = (col.w - sgap) / 2.0f;
             const float lineW = hw - 20.0f - 150.0f;  // text stops before the button on the right
             const int mistakes = app.mistakeCount();
-            const std::string mistakeNote = mistakes ? "Replay what you got wrong." : "Nothing to review right now.";
+            const std::string mistakeNote = mistakes ? "Replay what you got wrong" : "Nothing to review right now";
             const float pairH = std::max(120.0f, 74.0f + textHeight(Face::Regular, size::kSmall, mistakeNote, lineW) + 20.0f);
             Rect left{col.x, col.y, hw, pairH};
             Rect right{col.x + hw + sgap, col.y, hw, pairH};
@@ -111,9 +111,9 @@ public:
         // Quick links
         struct Link { const char* title; const char* text; Icon icon; Page page; };
         static const Link links[] = {
-            {"Lessons", "Read the notes with examples and real output.", Icon::Book, Page::Lessons},
-            {"Practice", "Short questions in five different formats.", Icon::Pencil, Page::Practice},
-            {"Exam mode", "A timed set of whole-function tasks.", Icon::Timer, Page::Exam},
+            {"Lessons", "Read the notes with examples and real output", Icon::Book, Page::Lessons},
+            {"Practice", "Short questions in five different formats", Icon::Pencil, Page::Practice},
+            {"Exam mode", "A timed set of whole-function tasks", Icon::Timer, Page::Exam},
         };
         const float gap = 16.0f;
         const float cw = (col.w - 2.0f * gap) / 3.0f;

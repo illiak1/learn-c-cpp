@@ -30,7 +30,7 @@ public:
             card(r);
             drawIcon(Icon::Check, r.x + r.width / 2.0f, r.y + 62.0f, 38.0f, p.success);
             drawCentered(Face::Bold, size::kH3, "No mistakes to review", Rect{r.x, r.y + 90.0f, r.width, 30.0f}, p.text);
-            drawCentered(Face::Regular, size::kBody, "Questions you get wrong in Practice and functions that fail in an exam will show up here.",
+            drawCentered(Face::Regular, size::kBody, "Questions you get wrong in Practice and functions that fail in an exam will show up here",
                          Rect{r.x, r.y + 124.0f, r.width, 30.0f}, p.textMuted);
             end(col);
             return;
@@ -41,7 +41,7 @@ public:
             Rect head = col.take(70.0f);
             Appear apHead(0, head);
             cardRaised(head);
-            drawText(Face::Bold, size::kH3, std::to_string(wrong.size()) + (wrong.size() == 1 ? " question" : " questions") + " to review",
+            drawText(Face::Bold, size::kH3, logic::plural(static_cast<long>(wrong.size()), "question") + " to review",
                      head.x + 22.0f, head.y + 22.0f, p.text);
             if (button("Replay all", Rect{head.x + head.width - 172.0f, head.y + 14.0f, 150.0f, 42.0f}, ButtonStyle::Primary, Icon::Play))
                 app.startSession("Mistakes", wrong);
@@ -56,7 +56,7 @@ public:
                 Context::get().pushId(id);
                 badge(content::typeName(e->type), r.x + 18.0f, r.y + 11.0f, p.accent, p.accentSoft);
                 if (rec) {
-                    const std::string info = std::to_string(rec->correct) + "/" + std::to_string(rec->attempts) + " correct";
+                    const std::string info = std::to_string(rec->correct) + " of " + std::to_string(rec->attempts) + " correct";
                     badge(info, r.x + 28.0f + badgeWidth(content::typeName(e->type)), r.y + 11.0f, p.textMuted, p.surfaceAlt);
                 }
                 drawText(Face::Regular, size::kBodySm, ellipsize(Face::Regular, size::kBodySm, e->prompt, r.width - 190.0f), r.x + 18.0f, r.y + 38.0f, p.text);
@@ -71,7 +71,7 @@ public:
             col.space(10.0f);
             Rect head = col.take(70.0f);
             cardRaised(head);
-            drawText(Face::Bold, size::kH3, std::to_string(failed.size()) + (failed.size() == 1 ? " exam function" : " exam functions") + " to redo",
+            drawText(Face::Bold, size::kH3, logic::plural(static_cast<long>(failed.size()), "exam function") + " to redo",
                      head.x + 22.0f, head.y + 22.0f, p.text);
             if (button("Retry as mini exam", Rect{head.x + head.width - 232.0f, head.y + 14.0f, 210.0f, 42.0f}, ButtonStyle::Primary, Icon::Timer))
                 app.beginExam(logic::makeTaskListExam("Retry failed functions", failed));
@@ -83,7 +83,7 @@ public:
                 Context::get().pushId(id);
                 drawIcon(Icon::Cross, r.x + 28.0f, r.y + 30.0f, 16.0f, p.danger);
                 drawText(Face::Bold, size::kButton, ellipsize(Face::Bold, size::kButton, t->title, r.width - 52.0f - 128.0f), r.x + 52.0f, r.y + 8.0f, p.text);
-                drawText(Face::Regular, size::kSmall, std::to_string(t->points) + " points", r.x + 52.0f, r.y + 35.0f, p.textMuted);
+                drawText(Face::Regular, size::kSmall, logic::plural(t->points, "point"), r.x + 52.0f, r.y + 35.0f, p.textMuted);
                 if (button("Redo", Rect{r.x + r.width - 118.0f, r.y + 8.0f, 98.0f, 42.0f}, ButtonStyle::Secondary, Icon::Timer))
                     app.beginExam(logic::makeTaskListExam(t->title, {id}));
                 Context::get().popId();

@@ -6,6 +6,7 @@
 #include <cstdio>
 #include <sstream>
 
+#include "logic/plural.h"
 #include "ui/theme.h"
 
 namespace app {
@@ -17,9 +18,6 @@ namespace {
 constexpr float kPad = 22.0f;
 constexpr size_t kMaxMessages = 8;   // compiler messages listed before "+ N more"
 constexpr size_t kMaxOutputLines = 14;
-
-// "1 error", "3 warnings".
-std::string plural(int n, const char* word) { return std::to_string(n) + " " + word + (n == 1 ? "" : "s"); }
 
 // "0.31 s".
 std::string seconds(double s) {
@@ -101,7 +99,7 @@ void drawMessages(Column& col, const logic::RunResult& run) {
     card(r);
     const int errors = run.count("error"), warnings = run.count("warning");
     drawText(Face::Bold, size::kH3, "Compiler messages", r.x + kPad, r.y + 16.0f, p.text);
-    const std::string counts = (errors ? plural(errors, "error") : std::string()) + (errors && warnings ? ", " : "") + (warnings ? plural(warnings, "warning") : std::string());
+    const std::string counts = (errors ? logic::plural(errors, "error") : std::string()) + (errors && warnings ? ", " : "") + (warnings ? logic::plural(warnings, "warning") : std::string());
     const float tw = Theme::get().textWidth(Face::Regular, size::kSmall, counts);
     drawText(Face::Regular, size::kSmall, counts, r.x + r.width - kPad - tw, r.y + 22.0f, p.textMuted);
     float y = r.y + kPad + 36.0f;
@@ -139,7 +137,7 @@ void drawProgramOutput(Column& col, const logic::RunResult& run) {
         if (run.verdict == logic::Verdict::Finished) {
             Rect r = col.take(40.0f);
             card(r);
-            drawText(Face::Regular, size::kSmall, "The program printed nothing.", r.x + kPad, r.y + 10.0f, p.textMuted);
+            drawText(Face::Regular, size::kSmall, "The program printed nothing", r.x + kPad, r.y + 10.0f, p.textMuted);
         }
         return;
     }
@@ -164,8 +162,8 @@ void functionBadge(const Palette& p, logic::TaskCheck c, std::string& text, Colo
     switch (c) {
         case logic::TaskCheck::Passed: text = "yes"; fg = p.success; bg = p.successSoft; break;
         case logic::TaskCheck::Failed: text = "no"; fg = p.danger; bg = p.dangerSoft; break;
-        case logic::TaskCheck::NoOutput: text = "no output"; fg = p.danger; bg = p.dangerSoft; break;
-        case logic::TaskCheck::NotChecked: text = "check by eye"; fg = p.textMuted; bg = p.surfaceAlt; break;
+        case logic::TaskCheck::NoOutput: text = "No output"; fg = p.danger; bg = p.dangerSoft; break;
+        case logic::TaskCheck::NotChecked: text = "Check by eye"; fg = p.textMuted; bg = p.surfaceAlt; break;
     }
 }
 
@@ -182,7 +180,7 @@ void drawFunctions(Column& col, const CheckPanel& panel, const std::vector<const
     const bool partial = n < tasks.size();
     std::string foot = ck.testsStopped
                            ? "The functions in this file are marked Failed because their tests could not run. Fix the problem and check again."
-                           : anyUnchecked ? "The tests of a function marked \"check by eye\" print values instead of yes/no: compare them with the paper and mark it yourself."
+                           : anyUnchecked ? "The tests of a function marked \"Check by eye\" print values instead of yes/no: compare them with the paper and mark it yourself."
                                           : "The app marked these functions. A new check replaces the marks.";
     if (partial) foot += " Tasks whose function is not in the file were left unchanged.";
     const float footH = textHeight(Face::Regular, size::kSmall, foot, col.w - 2.0f * kPad);

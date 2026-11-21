@@ -45,7 +45,7 @@ void CompetitionScreen::finishRound(App& app) {
         } else {
             const bool draw = duel_->outcome() == logic::DuelOutcome::Draw;
             headlineText_ = draw ? "It's a draw!" : duel_->winnerName() + " wins!";
-            marginText_ = draw ? "Both scored " + std::to_string(duel_->rounds[0].score) : "by " + std::to_string(duel_->margin()) + (duel_->margin() == 1 ? " point" : " points");
+            marginText_ = draw ? "Both scored " + std::to_string(duel_->rounds[0].score) : "By " + logic::plural(duel_->margin(), "point");
             app.progress().recordDuel(app.trackKey(), duel_->record(logic::todayString()));
             app.saveProgress();
             phase_ = Phase::DuelResult;
@@ -81,7 +81,7 @@ void CompetitionScreen::buildResultTexts() {
         bestTone_ = 1;
     }
     const char* next = logic::nextRankTitle(round_.score);
-    rankGapText_ = next ? std::to_string(logic::pointsToNextRank(round_.score)) + " points to " + next : "Top rank reached!";
+    rankGapText_ = next ? logic::plural(logic::pointsToNextRank(round_.score), "point") + " to " + next : "Top rank reached!";
 }
 
 // HUD, the question and the feedback; advances the clock and the question.
@@ -236,7 +236,7 @@ void CompetitionScreen::drawQuestion(App& app, Column& col, const content::Exerc
                 cur_.bugLine = clicked;
                 answer(app, ex, logic::checkBug(ex, clicked, "").lineOk, where);
             }
-            drawText(Face::Regular, size::kBodySm, "Click the line that contains the bug.", col.x, col.y, p.textMuted);
+            drawText(Face::Regular, size::kBodySm, "Click the line that contains the bug", col.x, col.y, p.textMuted);
             col.space(30.0f);
             break;
         }

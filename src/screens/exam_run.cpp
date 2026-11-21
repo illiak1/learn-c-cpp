@@ -66,7 +66,7 @@ public:
         cardRaised(hdr);
         const float titleW = hdr.width - 44.0f - finishW - pillW - 24.0f;
         drawText(Face::Bold, size::kH2, ellipsize(Face::Bold, size::kH2, exam.title, titleW), hdr.x + 22.0f, hdr.y + 14.0f, p.text);
-        drawText(Face::Regular, size::kSmall, "Task " + std::to_string(current_ + 1) + " of " + std::to_string(tasks.size()) + "  \xC2\xB7  " + std::to_string(cur.points) + " points", hdr.x + 22.0f, hdr.y + 58.0f, p.textMuted);
+        drawText(Face::Regular, size::kSmall, "Task " + std::to_string(current_ + 1) + " of " + std::to_string(tasks.size()) + "  \xC2\xB7  " + logic::plural(cur.points, "point"), hdr.x + 22.0f, hdr.y + 58.0f, p.textMuted);
         const std::string clock = timed ? logic::formatClock(remaining) : logic::formatClock(static_cast<int>(elapsed));
         const bool low = timed && remaining < 300;
         const bool critical = timed && remaining < 60;
@@ -117,12 +117,12 @@ public:
 
         // The current task
         const content::Task& t = *tasks[static_cast<size_t>(current_)];
-        const float pointsW = badgeWidth(std::to_string(t.points) + " points");
+        const float pointsW = badgeWidth(logic::plural(t.points, "point"));
         const signed char curMark = exam.marks[static_cast<size_t>(current_)];
         const std::string resultText = curMark == 1 ? "Passed" : curMark == 0 ? "Failed" : "";
         const float resultW = resultText.empty() ? 0.0f : badgeWidth(resultText) + 8.0f;
         drawText(Face::Bold, size::kH2, ellipsize(Face::Bold, size::kH2, t.title, col.w - pointsW - resultW - 16.0f), col.x, col.y, p.text);
-        badge(std::to_string(t.points) + " points", col.x + col.w - pointsW, col.y + 6.0f, p.accent, p.accentSoft);
+        badge(logic::plural(t.points, "point"), col.x + col.w - pointsW, col.y + 6.0f, p.accent, p.accentSoft);
         if (curMark >= 0) badge(resultText, col.x + col.w - pointsW - resultW, col.y + 6.0f, curMark == 1 ? p.success : p.danger, curMark == 1 ? p.successSoft : p.dangerSoft);
         col.space(44.0f);
         CodeBoxOpts o;
@@ -249,7 +249,7 @@ private:
         if (panel.run.verdict == logic::Verdict::Finished) {
             const int solved = static_cast<int>(std::count(panel.check.marks.begin(), panel.check.marks.end(), static_cast<signed char>(1)));
             const int checked = static_cast<int>(std::count(panel.check.inScope.begin(), panel.check.inScope.end(), static_cast<char>(1)));
-            Context::get().toast("Checked: " + std::to_string(solved) + " of " + std::to_string(checked) + " functions passed");
+            Context::get().toast("Checked: " + std::to_string(solved) + " of " + logic::plural(checked, "function") + " passed");
         } else if (panel.check.testsStopped) {
             Context::get().toast("The tests could not run: see the note below");
         }
@@ -321,7 +321,7 @@ private:
         // Called every frame so the tween follows the condition: it glides in when the last mark is set.
         const float t = Context::get().tween(Context::get().makeId("finish-hint"), all ? 1.0f : 0.0f);
         if (!all) return;
-        const std::string text = logic::allPassed(exam) ? "All " + std::to_string(taskCount) + " functions passed. Ready to finish?"
+        const std::string text = logic::allPassed(exam) ? (taskCount == 1 ? std::string("The function passed. Ready to finish?") : "All " + std::to_string(taskCount) + " functions passed. Ready to finish?")
                                                         : "All functions are checked. Ready to finish?";
         const float btnW = 170.0f;
         const bool stacked = col.w < 640.0f;  // narrow window: the button goes under the text

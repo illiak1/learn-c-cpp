@@ -6,6 +6,7 @@
 
 #include "app/app.h"
 #include "content/types.h"
+#include "logic/plural.h"
 #include "logic/progress.h"
 
 namespace app {

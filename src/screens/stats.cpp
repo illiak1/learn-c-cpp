@@ -13,8 +13,9 @@ using namespace ui;
 namespace {
 
 // One big number (counting up when the page opens) with a caption inside a card; shown as "-" when `have` is false.
+// `singular` replaces `suffix` while the shown number is 1 (" day" / " days").
 void statCard(Rect r, int index, Icon icon, Color accent, const char* id, float number, const char* suffix, bool have,
-              const std::string& title, const std::string& sub) {
+              const std::string& title, const std::string& sub, const char* singular = nullptr) {
     const Palette& p = Theme::get().colors();
     Appear appear(index, r);
     card(r);
@@ -22,7 +23,8 @@ void statCard(Rect r, int index, Icon icon, Color accent, const char* id, float 
     fillRound(ic, radius::kMd, withAlpha(accent, 0.14f));
     drawIcon(icon, ic.x + 19.0f, ic.y + 19.0f, 19.0f, accent);
     drawText(Face::Bold, size::kLabel, title, r.x + 68.0f, r.y + 28.0f, p.textMuted);
-    const std::string value = have ? std::to_string(static_cast<int>(std::lround(countUp(id, number)))) + suffix : "-";
+    const int shown = static_cast<int>(std::lround(countUp(id, number)));
+    const std::string value = have ? std::to_string(shown) + (shown == 1 && singular ? singular : suffix) : "-";
     drawText(Face::Bold, size::kStat, value, r.x + 18.0f, r.y + 64.0f, p.text);
     drawText(Face::Regular, size::kLabel, ellipsize(Face::Regular, size::kLabel, sub, r.width - 36.0f), r.x + 18.0f, r.y + 112.0f, p.textMuted);
 }
@@ -43,7 +45,7 @@ public:
     void draw(App& app, Rect area) override {
         const Palette& p = Theme::get().colors();
         Column col = begin(area);
-        pageHeader(col, app, "Statistics", "Your progress in this track.");
+        pageHeader(col, app, "Statistics", "Your progress in this track");
         const logic::Stats st = logic::computeStats(app.progress(), app.content(), logic::todayString());
 
         // Top cards
@@ -57,10 +59,10 @@ public:
             return grid ? Rect{col.x + static_cast<float>(n % 2) * (cw + gap), col.y + static_cast<float>(n / 2) * (ch + gap), cw, ch}
                         : Rect{col.x + static_cast<float>(n) * (cw + gap), col.y, cw, ch};
         };
-        statCard(cell(0), 0, Icon::Flame, p.warning, "st-streak", static_cast<float>(st.streak), st.streak == 1 ? " day" : " days", true, "STREAK", "Best: " + std::to_string(st.bestStreak) + " days");
-        statCard(cell(1), 1, Icon::Pencil, p.accent, "st-answers", static_cast<float>(st.attempts), "", true, "ANSWERS", std::to_string(st.seen) + " of " + std::to_string(st.exercises) + " questions seen");
+        statCard(cell(0), 0, Icon::Flame, p.warning, "st-streak", static_cast<float>(st.streak), " days", true, "STREAK", "Best: " + logic::plural(st.bestStreak, "day"), " day");
+        statCard(cell(1), 1, Icon::Pencil, p.accent, "st-answers", static_cast<float>(st.attempts), "", true, "ANSWERS", std::to_string(st.seen) + " of " + std::to_string(st.exercises) + " questions answered");
         statCard(cell(2), 2, Icon::Check, p.success, "st-acc", static_cast<float>(pct), "%", st.attempts > 0, "ACCURACY", std::to_string(st.correct) + " of " + std::to_string(st.attempts) + " correct");
-        statCard(cell(3), 3, Icon::Cross, p.danger, "st-review", static_cast<float>(st.mistakes + st.failedTasks), "", true, "TO REVIEW", std::to_string(st.mistakes) + " questions, " + std::to_string(st.failedTasks) + " functions");
+        statCard(cell(3), 3, Icon::Cross, p.danger, "st-review", static_cast<float>(st.mistakes + st.failedTasks), "", true, "TO REVIEW", logic::plural(st.mistakes, "question") + ", " + logic::plural(st.failedTasks, "function"));
         col.space((grid ? 2.0f * ch + gap : ch) + 24.0f);
 
         drawActivity(col, st);
@@ -76,7 +78,7 @@ private:
     // Red-bordered panel that holds the destructive "Reset progress" action (confirmed in a dialog).
     void drawDangerZone(Column& col, App& app) {
         const Palette& p = Theme::get().colors();
-        const std::string note = "Erases all answers, the streak, lesson progress and the exam history of both tracks.";
+        const std::string note = "Erases all answers, the streak, lesson progress and the exam history of both tracks";
         const float btnW = 190.0f;
         const float textW = col.w - 44.0f - btnW - 20.0f;
         const float noteH = textHeight(Face::Regular, size::kBodySm, note, textW);
@@ -97,13 +99,13 @@ private:
         Rect r = col.take(260.0f);
         Appear appear(4, r);
         card(r);
-        drawText(Face::Bold, size::kH3, "Last " + std::to_string(st.lastDays.size()) + " days", r.x + 22.0f, r.y + 18.0f, p.text);
+        drawText(Face::Bold, size::kH3, "Last " + logic::plural(static_cast<long>(st.lastDays.size()), "day"), r.x + 22.0f, r.y + 18.0f, p.text);
         // legend
         const float lx = r.x + r.width - 190.0f;
         fillRound(Rect{lx, r.y + 24.0f, 10.0f, 10.0f}, 3.0f, p.success);
-        drawText(Face::Regular, size::kLabel, "correct", lx + 16.0f, r.y + 21.0f, p.textMuted);
+        drawText(Face::Regular, size::kLabel, "Correct", lx + 16.0f, r.y + 21.0f, p.textMuted);
         fillRound(Rect{lx + 88.0f, r.y + 24.0f, 10.0f, 10.0f}, 3.0f, p.danger);
-        drawText(Face::Regular, size::kLabel, "wrong", lx + 104.0f, r.y + 21.0f, p.textMuted);
+        drawText(Face::Regular, size::kLabel, "Wrong", lx + 104.0f, r.y + 21.0f, p.textMuted);
 
         int maxV = 5;
         for (const auto& d : st.lastDays) maxV = std::max(maxV, d.answered);
@@ -156,9 +158,11 @@ private:
             drawText(Face::Regular, size::kBodySm, content::typeName(static_cast<content::ExType>(i)), r.x + 22.0f, y, p.text);
             const float frac = t.attempts ? static_cast<float>(t.correct) / static_cast<float>(t.attempts) : 0.0f;
             progressBar(Rect{r.x + 220.0f, y + 6.0f, r.width - 520.0f, 10.0f}, frac, frac >= 0.7f ? p.success : frac >= 0.4f ? p.warning : p.danger, "type-" + std::to_string(i));
-            const std::string label = t.attempts ? std::to_string(static_cast<int>(std::lround(frac * 100.0f))) + "%  (" + std::to_string(t.correct) + "/" + std::to_string(t.attempts) + ")" : "no answers yet";
+            const std::string label = t.attempts ? std::to_string(static_cast<int>(std::lround(frac * 100.0f))) + "%  (" + std::to_string(t.correct) + " of " + std::to_string(t.attempts) + ")" : "No answers yet";
             drawText(Face::Bold, size::kSmall, label, r.x + r.width - 290.0f, y + 1.0f, t.attempts ? p.text : p.textMuted);
-            drawText(Face::Regular, size::kLabel, std::to_string(t.seen) + "/" + std::to_string(t.exercises) + " seen", r.x + r.width - 110.0f, y + 2.0f, p.textMuted);
+            // Right-aligned so the longer "N of M answered" wording stays inside the card.
+            const std::string answeredText = std::to_string(t.seen) + " of " + std::to_string(t.exercises) + " answered";
+            drawText(Face::Regular, size::kLabel, answeredText, r.x + r.width - 22.0f - Theme::get().textWidth(Face::Regular, size::kLabel, answeredText), y + 2.0f, p.textMuted);
         }
         col.space(16.0f);
     }
@@ -178,10 +182,10 @@ private:
             const float rf = l.sections ? static_cast<float>(l.sectionsRead) / static_cast<float>(l.sections) : 0.0f;
             const float mf = l.exercises ? static_cast<float>(l.mastered) / static_cast<float>(l.exercises) : 0.0f;
             const float x0 = r.x + 22.0f, x1 = x0 + half + 28.0f, y2 = y + 28.0f;
-            drawText(Face::Regular, size::kLabel, "Read " + std::to_string(l.sectionsRead) + "/" + std::to_string(l.sections), x0, y2 - 2.0f, p.textMuted);
+            drawText(Face::Regular, size::kLabel, "Read " + std::to_string(l.sectionsRead) + " of " + std::to_string(l.sections), x0, y2 - 2.0f, p.textMuted);
             progressBar(Rect{x0 + 100.0f, y2 + 3.0f, half - 100.0f, 9.0f}, rf, p.accent, "read-" + l.title);
             if (l.exercises > 0) {
-                drawText(Face::Regular, size::kLabel, "Mastered " + std::to_string(l.mastered) + "/" + std::to_string(l.exercises), x1, y2 - 2.0f, p.textMuted);
+                drawText(Face::Regular, size::kLabel, "Mastered " + std::to_string(l.mastered) + " of " + std::to_string(l.exercises), x1, y2 - 2.0f, p.textMuted);
                 progressBar(Rect{x1 + 126.0f, y2 + 3.0f, half - 126.0f, 9.0f}, mf, p.success, "mast-" + l.title);
             } else {
                 drawText(Face::Regular, size::kLabel, "No questions yet", x1, y2 - 2.0f, p.textMuted);
@@ -208,7 +212,7 @@ private:
         float y0 = r.y + 58.0f;
         if (trend) {
             // Score trend: one bar per exam, oldest on the left (the list below is newest first).
-            drawText(Face::Regular, size::kLabel, "Score trend (last " + std::to_string(shown) + " exams, percent of the maximum)", r.x + 22.0f, y0 - 4.0f, p.textMuted);
+            drawText(Face::Regular, size::kLabel, "Score trend (last " + logic::plural(shown, "exam") + ", percent of the maximum)", r.x + 22.0f, y0 - 4.0f, p.textMuted);
             const Rect plot{r.x + 56.0f, y0 + 22.0f, r.width - 90.0f, 80.0f};
             for (int i = 0; i <= 2; ++i) {
                 const float gy = plot.y + plot.height - plot.height * static_cast<float>(i) / 2.0f;

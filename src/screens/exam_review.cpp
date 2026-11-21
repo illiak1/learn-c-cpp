@@ -54,7 +54,7 @@ public:
         progressRing(hero.x + 82.0f, hero.y + 72.0f, 50.0f, 11.0f, pct, scoreColor, "review-ring");
         drawCentered(Face::Bold, size::kH3, std::to_string(static_cast<int>(pct * 100.0f + 0.5f)) + "%", Rect{hero.x + 32.0f, hero.y + 22.0f, 100.0f, 100.0f}, scoreColor);
         drawText(Face::Bold, size::kDisplay, std::to_string(sc.earned) + " / " + std::to_string(sc.total), hero.x + 160.0f, hero.y + 26.0f, scoreColor);
-        drawText(Face::Regular, size::kBody, std::to_string(sc.passed) + " of " + std::to_string(sc.tasks) + " functions solved",
+        drawText(Face::Regular, size::kBody, std::to_string(sc.passed) + " of " + logic::plural(sc.tasks, "function") + " solved",
                  hero.x + 160.0f, hero.y + 88.0f, p.textMuted);
         if (unmarked > 0) {
             col.space(4.0f);
@@ -78,7 +78,7 @@ public:
             const float rightW = locked ? 152.0f : 388.0f;
             drawText(Face::Bold, size::kH3, ellipsize(Face::Bold, size::kH3, std::to_string(i + 1) + ".  " + t.title, head.width - 22.0f - rightW), head.x + 22.0f, head.y + 12.0f, p.text);
             float bx = head.x + 22.0f;
-            bx += badge(std::to_string(t.points) + " points", bx, head.y + 42.0f, p.textMuted, p.surfaceAlt) + 8.0f;
+            bx += badge(logic::plural(t.points, "point"), bx, head.y + 42.0f, p.textMuted, p.surfaceAlt) + 8.0f;
             // Unchecked and unmarked functions count as Failed.
             if (m == 1) bx += badge("Solved", bx, head.y + 42.0f, p.success, p.successSoft) + 8.0f;
             else bx += badge("Failed", bx, head.y + 42.0f, p.danger, p.dangerSoft) + 8.0f;

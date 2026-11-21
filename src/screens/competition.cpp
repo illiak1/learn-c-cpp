@@ -116,7 +116,7 @@ void CompetitionScreen::drawSoloStart(App& app, Column& col, bool hasQuestions) 
     const bool enter = textInput("blitz-name", Rect{start.x + 26.0f, start.y + 118.0f, inputW, 48.0f}, name_, o);
     const bool ready = hasQuestions && !logic::sanitizeName(name_).empty();
     const bool go = arcadeButton("Start", Rect{start.x + start.width - 26.0f - btnW, start.y + 114.0f, btnW, 56.0f}, Icon::Play, ready);
-    drawText(Face::Regular, size::kSmall, hasQuestions ? "English letters, digits and spaces, up to 16 characters." : "This track has no questions for the blitz yet.",
+    drawText(Face::Regular, size::kSmall, hasQuestions ? "English letters, digits and spaces, up to 16 characters" : "This track has no questions for the blitz yet",
              start.x + 26.0f, start.y + 174.0f, muted);
     if (ready && (go || enter)) {
         player_ = logic::sanitizeName(name_);
@@ -154,7 +154,7 @@ void CompetitionScreen::drawDuelStart(App& app, Column& col, bool hasQuestions) 
     const bool same = !a.empty() && logic::sameName(a, b);
     const bool ready = hasQuestions && !a.empty() && !b.empty() && !same;
     const bool go = arcadeButton("Start duel", Rect{start.x + start.width - 26.0f - 200.0f, start.y + 180.0f, 200.0f, 56.0f}, Icon::Play, ready);
-    const char* hint = !hasQuestions ? "This track has no questions for the blitz yet." : same ? "The players need different names." : "English letters, digits and spaces, up to 16 characters.";
+    const char* hint = !hasQuestions ? "This track has no questions for the blitz yet" : same ? "The players need different names" : "English letters, digits and spaces, up to 16 characters";
     drawText(Face::Regular, size::kSmall, hint, start.x + 26.0f, start.y + 200.0f, same ? arcade::kCoral : muted);
     if (ready && (go || enter2)) startDuel(app, a, b);
 }
@@ -178,7 +178,7 @@ void CompetitionScreen::drawRulesTiles(Column& col) {
         const char* caption;
         Color colour;
     };
-    const Tile tiles[] = {{"+10", "per correct answer", p.accent}, {"x2", "after 3 in a row", p.warning}, {"x3", "after 6 in a row", p.hot}, {"-3 s", "for a wrong answer", p.danger}};
+    const Tile tiles[] = {{"+10", "Per correct answer", p.accent}, {"x2", "After 3 in a row", p.warning}, {"x3", "After 6 in a row", p.hot}, {"-3 s", "For a wrong answer", p.danger}};
     const float tw = (r.width - 44.0f) / 4.0f;
     for (int i = 0; i < 4; ++i) {
         const float x = r.x + 22.0f + static_cast<float>(i) * tw;
@@ -229,7 +229,7 @@ void CompetitionScreen::drawCountdown(App& app, Column& col) {
     DrawCircleGradient(c, 190.0f, withAlpha(tint, 0.22f * fadeIn * fadeOut), withAlpha(tint, 0.0f));
     DrawRing(c, 80.0f + 170.0f * easeOutCubic(u) - 4.0f, 80.0f + 170.0f * easeOutCubic(u), 0.0f, 360.0f, 64, withAlpha(tint, 0.55f * (1.0f - u)));
     drawTextPop(Face::Bold, size::kCountdown, labels[step], c.x, c.y, popScale(tau, step < 3 ? 0.7f : 0.9f, 0.38f), withAlpha(tint, fadeIn * fadeOut));
-    drawCentered(Face::Regular, size::kBodySm, "x2 after 3 in a row  -  x3 after 6  -  a wrong answer costs 3 s", Rect{r.x, r.y + r.height - 70.0f, r.width, 24.0f}, muted);
+    drawCentered(Face::Regular, size::kBodySm, "Combo: x2 after 3 in a row  -  x3 after 6  -  a wrong answer costs 3 s", Rect{r.x, r.y + r.height - 70.0f, r.width, 24.0f}, muted);
     drawCentered(Face::Regular, size::kSmall, "Esc to cancel", Rect{r.x, r.y + r.height - 40.0f, r.width, 22.0f}, withAlpha(arcade::kWhite, 0.6f));
 }
 
@@ -271,7 +271,7 @@ void CompetitionScreen::drawPass(App& app, Column& col) {
     drawTextPop(Face::Bold, size::kH1, to.c_str(), r.x + r.width / 2.0f, r.y + r.height * 0.52f + 62.0f, popScale(static_cast<float>(t - 0.1), 0.25f, 0.4f), withAlpha(arcade::kAmber, a));
     const float bw = 240.0f;
     const bool go = arcadeButton("I'm ready", Rect{r.x + (r.width - bw) / 2.0f, r.y + r.height - 100.0f, bw, 56.0f}, Icon::Play);
-    drawCentered(Face::Regular, size::kSmall, "or press Enter or Space  -  the score stays hidden until both have played", Rect{r.x, r.y + r.height - 38.0f, r.width, 24.0f}, withAlpha(arcade::kWhite, 0.7f));
+    drawCentered(Face::Regular, size::kSmall, "Or press Enter or Space  -  the score stays hidden until both have played", Rect{r.x, r.y + r.height - 38.0f, r.width, 24.0f}, withAlpha(arcade::kWhite, 0.7f));
     const bool key = t > 0.6 && !cx.modalBlocks && (IsKeyPressed(KEY_ENTER) || IsKeyPressed(KEY_KP_ENTER) || IsKeyPressed(KEY_SPACE));
     if (go || key) startCountdown(app);
     (void)app;

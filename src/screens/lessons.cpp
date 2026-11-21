@@ -30,7 +30,7 @@ public:
         if (lessons.empty()) {
             Rect r = col.take(100.0f);
             card(r);
-            drawCentered(Face::Regular, size::kBody, "No lessons found for this track.", r, p.textMuted);
+            drawCentered(Face::Regular, size::kBody, "No lessons found for this track", r, p.textMuted);
         }
         // Card layout: number tile, then a text column (title, wrapped summary, progress bar below the text)
         // and a fixed right column for the "read" badge, the chevron and the Reset button. The card grows with the summary.
@@ -53,7 +53,7 @@ public:
             const int read = app.progress().sectionsRead(app.trackKey(), l.id);
             progressBar(Rect{r.x + textX, r.y + std::max(barY, r.height - 24.0f), textW, 6.0f},
                         l.sections.empty() ? 0.0f : static_cast<float>(read) / static_cast<float>(l.sections.size()), p.accent, "bar");
-            const std::string count = std::to_string(read) + " / " + std::to_string(l.sections.size()) + " read";
+            const std::string count = std::to_string(read) + " of " + std::to_string(l.sections.size()) + " read";
             badge(count, r.x + r.width - badgeWidth(count) - 56.0f, read > 0 ? midY - 29.0f : midY - 12.0f, read == static_cast<int>(l.sections.size()) && read > 0 ? p.success : p.textMuted, read == static_cast<int>(l.sections.size()) && read > 0 ? p.successSoft : p.surfaceAlt);
             drawIcon(Icon::ChevronRight, r.x + r.width - 30.0f, midY, 18.0f, p.textMuted);
             // Per-topic reset (only when there is something to reset). Drawn after the card, so a click
