@@ -18,6 +18,23 @@ inline constexpr int kBlitzPoints = 10;        // base score of a correct answer
 // x1 for 0-2, x2 for 3-5, x3 from 6.
 int comboMultiplier(int streak);
 
+// Rank titles earned by the score of one round, lowest first.
+struct RankTier {
+    const char* name;
+    int minScore;
+};
+inline constexpr RankTier kRanks[] = {{"Rookie", 0}, {"Coder", 80}, {"Pro", 180}, {"Legend", 320}};
+inline constexpr int kRankCount = static_cast<int>(sizeof(kRanks) / sizeof(kRanks[0]));
+// Index into kRanks for a score.
+int rankIndex(int score);
+// Title for a score ("Rookie" ... "Legend").
+const char* rankTitle(int score);
+// Points missing for the next title (0 at the top rank); nextRankTitle is nullptr there.
+int pointsToNextRank(int score);
+const char* nextRankTitle(int score);
+// Short cheer for the answer that brought the streak to `combo` (3, 6, 9, then every 3); nullptr for other values.
+const char* comboMessage(int combo);
+
 // State of one round: clock, score and combo. The caller feeds it frame times and answers.
 struct BlitzRound {
     double timeLeft = kBlitzSeconds;

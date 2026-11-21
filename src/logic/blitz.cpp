@@ -8,6 +8,33 @@ namespace logic {
 // x1 below 3 in a row, x2 from 3, x3 from 6.
 int comboMultiplier(int streak) { return streak >= 6 ? 3 : streak >= 3 ? 2 : 1; }
 
+// Highest tier whose threshold the score reaches.
+int rankIndex(int score) {
+    int idx = 0;
+    for (int i = 0; i < kRankCount; ++i)
+        if (score >= kRanks[i].minScore) idx = i;
+    return idx;
+}
+
+const char* rankTitle(int score) { return kRanks[rankIndex(score)].name; }
+
+// Distance to the next threshold.
+int pointsToNextRank(int score) {
+    const int i = rankIndex(score);
+    return i + 1 < kRankCount ? kRanks[i + 1].minScore - score : 0;
+}
+
+const char* nextRankTitle(int score) {
+    const int i = rankIndex(score);
+    return i + 1 < kRankCount ? kRanks[i + 1].name : nullptr;
+}
+
+// Cheers at the multiplier steps and every third answer after that.
+const char* comboMessage(int combo) {
+    if (combo < 3 || combo % 3 != 0) return nullptr;
+    return combo == 3 ? "Nice!" : combo == 6 ? "On fire!" : combo == 9 ? "Unstoppable!" : "Legendary!";
+}
+
 // Scores one answer.
 int BlitzRound::answer(bool isCorrect) {
     if (over()) return 0;
