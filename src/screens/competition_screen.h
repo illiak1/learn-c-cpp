@@ -71,6 +71,9 @@ private:
     void drawDuelResult(App& app, ui::Column& col);
     void drawTable(App& app, ui::Column& col, int highlightRank, double slideStart);
 
+    // competition_duels.cpp: the "Recent duels" card with the head-to-head line
+    void drawDuelTable(App& app, ui::Column& col, const std::string& nameA, const std::string& nameB, bool glowNewest, double slideStart);
+
     Phase phase_ = Phase::Lobby;
     double phaseSince_ = 0.0;  // clock time the current phase began
     std::string name_;         // text in the name field
@@ -89,6 +92,9 @@ private:
     std::string bestText_;     // "+40 vs your best (320)" under the result score
     int bestTone_ = 0;         // 1 better than before, -1 worse, 0 neutral
     std::string rankGapText_;  // "34 points to Pro"
+    std::string h2hA_, h2hB_;  // names the cached head-to-head text was built for
+    size_t h2hCount_ = 0;      // ... and how many duels of the track existed then
+    std::string h2hText_;      // "Illia 3 - 2 Mantas, 1 draw" (empty: no duels between the two)
     std::string clearTrack_;   // track key the open "Clear table" dialog refers to
     int celebration_ = 0;      // confetti waves already fired on the result page
     logic::BlitzRound round_;

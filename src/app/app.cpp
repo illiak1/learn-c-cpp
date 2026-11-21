@@ -231,7 +231,7 @@ void App::requestFinishExam() {
 
 // Asks for confirmation before erasing answers, streak and exam history.
 void App::requestResetProgress() {
-    openModal("reset-progress", ModalOpts{"Reset progress", "Erase all answers, the streak, the exam history and the Competition tables? This cannot be undone.",
+    openModal("reset-progress", ModalOpts{"Reset progress", "Erase all answers, the streak, the exam history, the Competition tables and the duel history? This cannot be undone.",
                                           "Reset progress", "Keep progress", true});
 }
 

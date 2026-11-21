@@ -254,6 +254,7 @@ void CompetitionScreen::drawDuelResult(App& app, Column& col) {
     }
     if (button("Back", Rect{col.x + 192.0f, col.y, 120.0f, 44.0f}, ButtonStyle::Secondary, Icon::ChevronLeft)) app.go(Page::Home);
     col.space(60.0f);
+    drawDuelTable(app, col, d.names[0], d.names[1], true, phaseSince_ + 1.0);
 }
 
 // Top 10 of this track: rows slide in one after another, the top three wear medal colours and the run just played pulses.

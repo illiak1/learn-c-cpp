@@ -28,7 +28,7 @@ void CompetitionScreen::loadNext() {
 
 // Stores the finished round in the Top 10 and shows the result.
 void CompetitionScreen::finishRound(App& app) {
-    if (duel_) {  // duels never touch the Top 10 or the progress file
+    if (duel_) {  // a duel is saved only in the duel history: no Top 10 entry, no answers, mistakes or statistics
         duel_->rounds[turn_] = round_;
         confetti_.clear();
         floats_.clear();
@@ -46,6 +46,8 @@ void CompetitionScreen::finishRound(App& app) {
             const bool draw = duel_->outcome() == logic::DuelOutcome::Draw;
             headlineText_ = draw ? "It's a draw!" : duel_->winnerName() + " wins!";
             marginText_ = draw ? "Both scored " + std::to_string(duel_->rounds[0].score) : "by " + std::to_string(duel_->margin()) + (duel_->margin() == 1 ? " point" : " points");
+            app.progress().recordDuel(app.trackKey(), duel_->record(logic::todayString()));
+            app.saveProgress();
             phase_ = Phase::DuelResult;
         }
         return;

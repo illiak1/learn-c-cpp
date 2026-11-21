@@ -37,6 +37,10 @@ void CompetitionScreen::draw(App& app, Rect area) {
         highlight_ = 0;
         Context::get().toast("Top 10 cleared");
     }
+    if (takeModalResult("duel-clear") == ModalResult::Confirm && app.progress().clearDuels(clearTrack_)) {
+        app.saveProgress();
+        Context::get().toast("Duels cleared");
+    }
     arcadeBackdrop(area);
     Column col = begin(area);
     switch (phase_) {
@@ -73,7 +77,6 @@ void CompetitionScreen::drawEffects(Rect area) {
 
 // Header, the Solo/Duel switch, the hero start card, the scoring tiles and the Top 10 table (solo) or a note (duel).
 void CompetitionScreen::drawLobby(App& app, Column& col) {
-    const Palette& p = Theme::get().colors();
     pageHeader(col, app, "Competition",
                "A 60-second blitz on multiple choice, predict-the-output and find-the-bug questions. Answer as many as you can.");
     const bool hasQuestions = !logic::blitzPool(app.content()).empty();
@@ -86,14 +89,8 @@ void CompetitionScreen::drawLobby(App& app, Column& col) {
     if (mode_ == 0) drawSoloStart(app, col, hasQuestions);
     else drawDuelStart(app, col, hasQuestions);
     drawRulesTiles(col);
-    if (mode_ == 0) {
-        drawTable(app, col, highlight_, phaseSince_ + 0.2);
-    } else {
-        Rect note = col.take(64.0f);
-        card(note);
-        drawIcon(Icon::Flag, note.x + 34.0f, note.y + note.height / 2.0f, 20.0f, p.accent);
-        drawText(Face::Regular, size::kBodySm, "Duel results are not saved: no Top 10 entry and no change to your progress or mistakes.", note.x + 58.0f, note.y + 20.0f, p.textMuted);
-    }
+    if (mode_ == 0) drawTable(app, col, highlight_, phaseSince_ + 0.2);
+    else drawDuelTable(app, col, logic::sanitizeName(name_), logic::sanitizeName(name2_), false, phaseSince_ + 0.2);
 }
 
 // Start card of a solo run: one name, one Start button.
