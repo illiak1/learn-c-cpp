@@ -59,7 +59,7 @@ test: $(TESTBIN)
 
 $(TESTBIN): $(OBJ_TEST)
 	@mkdir -p $(dir $@)
-	$(CXX) $(OBJ_TEST) -o $@
+	$(CXX) $(OBJ_TEST) -lpthread -o $@
 
 # Content verification helper: make export-content OUT=/some/dir [RANDOM=n] dumps every runnable snippet
 # (and n random exams built from the reference solutions).
@@ -69,7 +69,7 @@ OBJ_EXPORT := $(patsubst %.cpp,$(BUILD)/obj/%.o,$(SRC_CORE) tools/export_content
 
 $(EXPORT): $(OBJ_EXPORT)
 	@mkdir -p $(dir $@)
-	$(CXX) $(OBJ_EXPORT) -o $@
+	$(CXX) $(OBJ_EXPORT) -lpthread -o $@
 
 export-content: $(EXPORT)
 	./$(EXPORT) content $(OUT) $(RANDOM_EXAMS)

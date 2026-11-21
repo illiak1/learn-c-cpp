@@ -21,11 +21,13 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(raylib)
 
+find_package(Threads REQUIRED)
+
 file(GLOB_RECURSE APP_SOURCES CONFIGURE_DEPENDS src/*.cpp)
 
 add_executable(learn-c-cpp ${APP_SOURCES})
 target_include_directories(learn-c-cpp PRIVATE src)
-target_link_libraries(learn-c-cpp PRIVATE raylib)
+target_link_libraries(learn-c-cpp PRIVATE raylib Threads::Threads)
 if(MSVC)
   target_compile_options(learn-c-cpp PRIVATE /W4 /utf-8)
   set_target_properties(learn-c-cpp PROPERTIES WIN32_EXECUTABLE FALSE)
@@ -46,5 +48,6 @@ if(TEST_SOURCES)
   enable_testing()
   add_executable(unit-tests ${CORE_SOURCES} ${TEST_SOURCES})
   target_include_directories(unit-tests PRIVATE src)
+  target_link_libraries(unit-tests PRIVATE Threads::Threads)
   add_test(NAME unit-tests COMMAND unit-tests WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
 endif()
