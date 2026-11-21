@@ -148,6 +148,7 @@ std::string formatTaskScores(const std::vector<TaskScore>& tasks) {
 //   ex <track> <id> <attempts> <correct> <lastCorrect 0/1> <date>
 //   task <track> <id> <passed 0/1> <date>
 //   exam <date> <track> <title> <earned> <total> <seconds> <fileRan 0/1> [<HH:MM> <id:earned/max;...>]
+//   blitz <track> <name> <score> <date> <correct> <best combo>
 //   day <date> <answered> <correct>
 //   section <track> <lesson> <section>
 //   last <track> <lesson> <section index>
@@ -201,6 +202,15 @@ bool Progress::parseLine(const std::string& line) {
         exams_.push_back(std::move(e));
         return true;
     }
+    if (f[0] == "blitz" && f.size() >= 7) {
+        BlitzEntry e{sanitizeName(f[2]), std::max(0, toInt(f[3])), f[4], std::max(0, toInt(f[5])), std::max(0, toInt(f[6]))};
+        if ((f[1] != "c" && f[1] != "cpp") || e.name.empty() || e.score <= 0 || dayNumber(e.date) < 0) return false;
+        std::vector<BlitzEntry>& table = blitz_[f[1]];
+        // Re-sort on load so a hand-edited file still shows a correct table (stable: file order breaks ties).
+        table.insert(std::upper_bound(table.begin(), table.end(), e, [](const BlitzEntry& a, const BlitzEntry& b) { return a.score > b.score; }), e);
+        if (table.size() > kLeaderboardSize) table.resize(kLeaderboardSize);
+        return true;
+    }
     if (f[0] == "day" && f.size() >= 4) {
         if (dayNumber(f[1]) < 0) return false;
         days_[f[1]] = DayRecord{std::max(0, toInt(f[2])), std::max(0, toInt(f[3]))};
@@ -234,6 +244,9 @@ bool Progress::save() const {
         for (const ExamRecord& e : exams_)
             out << "exam\t" << e.date << "\t" << e.track << "\t" << clean(e.title) << "\t" << e.earned << "\t" << e.total << "\t"
                 << e.seconds << "\t" << (e.fileRan ? 1 : 0) << "\t" << clean(e.time) << "\t" << formatTaskScores(e.tasks) << "\n";
+        for (const auto& [t, table] : blitz_)
+            for (const BlitzEntry& e : table)
+                out << "blitz\t" << t << "\t" << clean(e.name) << "\t" << e.score << "\t" << clean(e.date) << "\t" << e.correct << "\t" << e.bestCombo << "\n";
         for (const auto& [date, d] : days_) out << "day\t" << date << "\t" << d.answered << "\t" << d.correct << "\n";
         for (const std::string& s : sections_) out << "section\t" << s << "\n";
         for (const auto& [t, l] : lastLesson_) out << "last\t" << t << "\t" << l.first << "\t" << l.second << "\n";
@@ -307,6 +320,20 @@ bool Progress::taskResult(const std::string& tr, const std::string& id, bool& pa
     if (it == tasks_.end()) return false;
     passed = it->second.first;
     return true;
+}
+
+// Top 10 of one track (empty when nobody has played).
+const std::vector<BlitzEntry>& Progress::blitzTable(const std::string& tr) const {
+    static const std::vector<BlitzEntry> none;
+    const auto it = blitz_.find(tr);
+    return it == blitz_.end() ? none : it->second;
+}
+
+// Adds a finished Competition round to the track's table.
+Placement Progress::recordBlitz(const std::string& tr, const BlitzEntry& entry) {
+    const Placement p = submitScore(blitz_[tr], entry);
+    if (p.rank > 0) dirty_ = true;
+    return p;
 }
 
 // Appends a finished exam to the history and returns its index.
@@ -422,6 +449,7 @@ void Progress::reset() {
     exercises_.clear();
     tasks_.clear();
     exams_.clear();
+    blitz_.clear();
     days_.clear();
     sections_.clear();
     lastLesson_.clear();

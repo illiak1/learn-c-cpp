@@ -8,6 +8,8 @@
 #include <string>
 #include <vector>
 
+#include "logic/leaderboard.h"
+
 namespace logic {
 
 // Result history of one exercise.
@@ -81,6 +83,10 @@ public:
     int bestExamPercent(const std::string& track) const;
     const std::vector<ExamRecord>& exams() const { return exams_; }
 
+    // Competition: the Top 10 table of a track (best first) and a new run. A run with score 0 is not stored.
+    const std::vector<BlitzEntry>& blitzTable(const std::string& track) const;
+    Placement recordBlitz(const std::string& track, const BlitzEntry& entry);
+
     // Lessons: sections the student has opened.
     void markSectionRead(const std::string& track, const std::string& lesson, const std::string& section);
     int sectionsRead(const std::string& track, const std::string& lesson) const;
@@ -115,6 +121,7 @@ private:
     std::map<std::string, ExerciseRecord> exercises_;   // "track\tid"
     std::map<std::string, std::pair<bool, std::string>> tasks_;  // "track\tid" -> (passed, date)
     std::vector<ExamRecord> exams_;
+    std::map<std::string, std::vector<BlitzEntry>> blitz_;  // track -> Top 10
     std::map<std::string, DayRecord> days_;
     std::set<std::string> sections_;                    // "track\tlesson\tsection"
     std::map<std::string, std::pair<std::string, int>> lastLesson_;  // track -> (lesson, section)
