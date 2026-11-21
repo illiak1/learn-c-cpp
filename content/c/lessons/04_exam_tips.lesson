@@ -6,11 +6,11 @@
 @section 4.1 How the exam works
 @points
 - The exam is one source file with about 5 functions to write. The tests are in main() at the bottom of the file.
-- You write and test the code in Visual Studio (or your usual IDE). This app never compiles your code.
+- You write and test the code in Visual Studio (or your usual IDE). The app can also check a pasted file with the system compiler (Check from clipboard) when one is installed.
 - Each function is marked on its own: a function that returns a wrong result fails only that function.
 - Read each task carefully: the function name, the parameters and the return type must match the description exactly.
 @note
-A compile error, an infinite loop or a crash gives 0 for the whole exam. A wrong result fails only that function. Everything below is about keeping the file building, finishing and never crashing.
+Tip: compile your code before you submit and avoid infinite loops, so every function can be tested. A wrong result only affects that function. Everything below is about keeping the file building, finishing and not crashing.
 
 @section 4.2 While you write
 @points
@@ -22,9 +22,9 @@ A compile error, an infinite loop or a crash gives 0 for the whole exam. A wrong
 - Use the examples in the task as your first test: run them by hand in main().
 - Remember the rules of the task (for example "use only 2 for loops" or "no shift operator"): the mark depends on them.
 
-@section 4.3 The ways to lose everything
+@section 4.3 Common ways to break the build or the run
 @mistakes
-- A missing return in a function that must return a value, or a missing semicolon or brace: compile error, 0 for the exam.
+- A missing return in a function that must return a value, or a missing semicolon or brace: compile error, so the tests cannot run.
 - A loop that never ends: i-- instead of i++, a while loop whose condition never changes, forgetting to update the loop variable.
 - Reading or writing outside an array: arr[n] when the last index is n-1, or a negative index. Check the loop bounds twice.
 - Using a variable before giving it a value, or dividing by zero.

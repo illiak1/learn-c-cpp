@@ -5,14 +5,14 @@
 @lesson 07_exam_tips
 @difficulty 1
 @prompt
-Four of your five functions are correct, but the file has a compile error. What is the result?
+Your file has a compile error, so the tests cannot run. What is the best thing to do?
 @choices
-- 80 percent
-- 4 out of 5 functions are marked
-* 0 for the whole exam
-- Only the broken function gets 0
+- Submit it anyway and hope for the best
+- Delete the tests at the bottom
+* Fix the compile errors and compile again before submitting
+- Rewrite every function from scratch
 @explain
-A compile error, an infinite loop or a crash gives 0 for the whole exam.
+Tests can only run on a file that builds. Compile before you submit, read the first error message, fix it and compile again. A wrong result, by contrast, affects only that function.
 
 @exercise cpp-exam-choice-wrong
 @type choice
@@ -22,7 +22,7 @@ A compile error, an infinite loop or a crash gives 0 for the whole exam.
 One function compiles and finishes but returns a wrong result. What happens?
 @choices
 * Only that function fails
-- The whole exam gets 0
+- Every function in the file fails
 - The file is not marked
 - All functions after it fail
 @explain
@@ -40,21 +40,21 @@ You cannot finish a function in time. What is the safest thing to do?
 * Make it compile and terminate with a placeholder return value
 - Comment out the tests at the bottom
 @explain
-A function that compiles and ends can at worst fail by itself. Half a loop can break the build or never end, and then the whole exam is 0.
+A function that compiles and ends can at worst fail by itself. Half a loop can break the build or never end, and then the other functions cannot be tested.
 
 @exercise cpp-exam-choice-not-fatal
 @type choice
 @lesson 07_exam_tips
 @difficulty 1
 @prompt
-Which of these costs you the whole exam?
+Which of these can keep your other functions from being tested?
 @choices
 - One function returns a wrong result
 - Two functions return wrong results
 * A program that crashes because a pointer is dereferenced while it is nullptr
 - A function that is correct but written in a different style
 @explain
-A wrong result fails only that function. A compile error, an infinite loop or a crash gives 0 for the whole exam.
+A wrong result fails only that function. A crash stops the whole program, so the tests after it cannot run. Test a pointer before you use it.
 
 @exercise cpp-exam-theory-semicolon
 @type theory
@@ -65,7 +65,7 @@ Which character must follow the closing brace of a class definition?
 @answer
 ; | a semicolon | semicolon | a ;
 @explain
-A missing semicolon after a class is one of the classic compile errors, and a compile error gives 0 for the whole exam.
+A missing semicolon after a class is one of the classic compile errors, and then the tests cannot run.
 
 @exercise cpp-exam-theory-nullptr
 @type theory
@@ -111,7 +111,7 @@ bool isEmpty() {
 @answer
 return
 @explain
-A function that compiles and ends can at worst fail by itself. Half a loop can break the build or never end, and that costs the whole exam.
+A function that compiles and ends can at worst fail by itself. Half a loop can break the build or never end, and the other functions then cannot be tested.
 
 @exercise cpp-exam-bug-list-loop
 @type bug
@@ -143,7 +143,7 @@ int main() {
 }
 @bugline 14 15
 @explain
-cur is never moved to the next node, so cur != nullptr stays true forever. Add cur = cur->next; inside the loop. An infinite loop gives 0 for the whole exam.
+cur is never moved to the next node, so cur != nullptr stays true forever. Add cur = cur->next; inside the loop. Without it the program never ends and the tests cannot finish.
 
 @exercise cpp-exam-bug-array-bounds
 @type bug

@@ -147,7 +147,7 @@ trailing spaces are ignored). C tasks print a header line that starts with `---`
 followed by `yes`/`no` lines or other expected text; C++ tasks print bare `yes`/`no` lines. A function passes when its
 lines equal `@expect`: a header is looked up anywhere in the output, headerless blocks follow each other in task order.
 Sets with a verbatim `@main` print their own text; their yes/no tasks cannot be compared and are left for the student to
-mark, other tasks are searched for as a block of lines. A compile error, timeout (3 s) or crash fails every function.
+mark, other tasks are searched for as a block of lines. A compile error, timeout (3 s) or crash means the tests could not run, so every function of the pasted file is marked Failed (other functions are not touched).
 
 ## Progress file (`progress.txt`)
 

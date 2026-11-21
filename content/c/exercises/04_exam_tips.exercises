@@ -5,14 +5,14 @@
 @lesson 04_exam_tips
 @difficulty 1
 @prompt
-Four of your five functions are correct, but the file has a compile error. What is the result?
+Your file has a compile error, so the tests cannot run. What is the best thing to do?
 @choices
-- 80 percent
-- 4 out of 5 functions are marked
-* 0 for the whole exam
-- Only the broken function gets 0
+- Submit it anyway and hope for the best
+- Delete the tests at the bottom
+* Fix the compile errors and compile again before submitting
+- Rewrite every function from scratch
 @explain
-A compile error, an infinite loop or a crash gives 0 for the whole exam.
+Tests can only run on a file that builds. Compile before you submit, read the first error message, fix it and compile again. A wrong result, by contrast, affects only that function.
 
 @exercise c-exam-choice-wrong
 @type choice
@@ -22,7 +22,7 @@ A compile error, an infinite loop or a crash gives 0 for the whole exam.
 One function compiles and finishes but returns a wrong result. What happens?
 @choices
 * Only that function fails
-- The whole exam gets 0
+- Every function in the file fails
 - The file is not marked
 - All functions after it fail
 @explain
@@ -40,21 +40,21 @@ You cannot finish a function in time. What is the safest thing to do?
 * Make it compile and terminate with a placeholder return value
 - Comment out the tests at the bottom
 @explain
-A function that compiles and ends can at worst fail by itself. Half a loop can break the build or never end, and then the whole exam is 0.
+A function that compiles and ends can at worst fail by itself. Half a loop can break the build or never end, and then the other functions cannot be tested.
 
 @exercise c-exam-choice-not-fatal
 @type choice
 @lesson 04_exam_tips
 @difficulty 1
 @prompt
-Which of these costs you the whole exam?
+Which of these keeps your other functions from being tested?
 @choices
 - One function returns a wrong result
 - Two functions return wrong results
 * A loop in one function that never ends
 - A function that returns the right value but is slow to write
 @explain
-A wrong result fails only that function. A compile error, an infinite loop or a crash gives 0 for the whole exam, whichever function it is in.
+A wrong result fails only that function. A loop that never ends stops the whole program, so the functions after it cannot be tested. Make sure every loop reaches its exit.
 
 @exercise c-exam-theory-return
 @type theory
@@ -78,7 +78,7 @@ A for loop is written as  for (int i = 0; i < 5; i--)  . What kind of error is t
 @answer
 infinite loop | an infinite loop | endless loop | an endless loop | infinite | endless | never ends | loop never ends | never-ending loop
 @explain
-i starts at 0 and gets smaller, so i < 5 stays true forever. An infinite loop gives 0 for the whole exam.
+i starts at 0 and gets smaller, so i < 5 stays true forever. An infinite loop keeps the tests from finishing, so check every loop before you submit.
 
 @exercise c-exam-predict-countdown
 @type predict
@@ -112,7 +112,7 @@ int sumTo(int n) {
 @answer
 return
 @explain
-A function that compiles and ends can at worst fail by itself. A half-written body can break the build or never end, and that costs the whole exam.
+A function that compiles and ends can at worst fail by itself. A half-written body can break the build or never end, and the other functions then cannot be tested.
 
 @exercise c-exam-bug-loop
 @type bug
@@ -133,7 +133,7 @@ int main() {
 @answer
 for (int i = 0; i < 5; i++) {
 @explain
-i-- moves away from the exit condition, so the loop never ends. In the exam this would give 0 for everything.
+i-- moves away from the exit condition, so the loop never ends. The tests never finish, so no function can be checked.
 
 @exercise c-exam-bug-semicolon
 @type bug
@@ -157,4 +157,4 @@ int main() {
 @answer
 int result = x * x;
 @explain
-A missing semicolon is a compile error, and a compile error gives 0 for the whole exam. Compile after every function.
+A missing semicolon is a compile error, so the tests cannot run. Compile after every function.

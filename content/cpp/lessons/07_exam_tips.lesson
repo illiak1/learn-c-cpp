@@ -6,11 +6,11 @@
 @section 7.1 How the exam works
 @points
 - The exam is one source file with about 5 functions (or classes) to write. The tests are in main() at the bottom of the file.
-- You write and test the code in Visual Studio (or your usual IDE). This app never compiles your code.
+- You write and test the code in Visual Studio (or your usual IDE). The app can also check a pasted file with the system compiler (Check from clipboard) when one is installed.
 - Each function is marked on its own: a function that returns a wrong result fails only that function.
 - Read each task carefully: names, parameters, return types and the rules of the task (for example "no array indexing") must match exactly.
 @note
-A compile error, an infinite loop or a crash gives 0 for the whole exam. A wrong result fails only that function. Everything below is about keeping the file building, finishing and never crashing.
+Tip: compile your code before you submit and avoid infinite loops, so every function can be tested. A wrong result only affects that function. Everything below is about keeping the file building, finishing and not crashing.
 
 @section 7.2 While you write
 @points
@@ -22,7 +22,7 @@ A compile error, an infinite loop or a crash gives 0 for the whole exam. A wrong
 - Trace your code on the example from the task before you run it.
 - For classes: write the constructor and destructor first, then one method at a time.
 
-@section 7.3 The ways to lose everything
+@section 7.3 Common ways to break the build or the run
 @mistakes
 - A missing return, semicolon or brace; a missing semicolon after a class } is a classic.
 - A loop that never ends: p++ forgotten in a pointer loop, i-- instead of i++, a condition that never becomes false.

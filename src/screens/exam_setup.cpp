@@ -38,7 +38,7 @@ public:
 
         // How it works + the exam rule
         const std::string rule =
-            "A wrong result fails only that function. A compile error, an infinite loop or a crash gives 0 for the whole exam.";
+            "Tip: make sure your code compiles and has no infinite loops, so every function can be tested. A wrong result fails only that function.";
         static const char* steps[] = {"1  Start an exam and copy the whole file into Visual Studio.",
                                       "2  Complete the functions and run the tests at the bottom: every correct function prints yes.",
                                       "3  Come back, mark each function as solved or not solved and finish the exam. The review shows the reference solutions."};

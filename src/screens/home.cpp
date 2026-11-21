@@ -136,9 +136,8 @@ public:
 
         // Exam tips
         const std::string tips =
-            "A wrong result fails only that function. But a compile error, an infinite loop or a crash gives 0 for "
-            "the whole exam - so make sure the file always builds and every loop ends, even if a function is only "
-            "half done.";
+            "Tip: compile your code before you submit and avoid infinite loops, so every function can be tested. "
+            "A wrong result fails only that function.";
         const float th = textHeight(Face::Regular, size::kBody, tips, col.w - 86.0f);
         Rect tipR = col.take(th + 78.0f);
         Appear apTip(7, tipR);
