@@ -336,6 +336,15 @@ Placement Progress::recordBlitz(const std::string& tr, const BlitzEntry& entry) 
     return p;
 }
 
+// Removes every run of one track from the Top 10.
+bool Progress::clearBlitz(const std::string& tr) {
+    const auto it = blitz_.find(tr);
+    if (it == blitz_.end() || it->second.empty()) return false;
+    blitz_.erase(it);
+    dirty_ = true;
+    return true;
+}
+
 // Appends a finished exam to the history and returns its index.
 int Progress::recordExam(const ExamRecord& record) {
     exams_.push_back(record);

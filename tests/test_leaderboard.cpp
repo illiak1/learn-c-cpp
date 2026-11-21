@@ -138,3 +138,42 @@ TEST(reset_clears_the_leaderboards_but_keeps_settings) {
     CHECK(p.dark);
     CHECK(p.dirty());
 }
+
+TEST(personal_best_is_the_highest_score_of_the_name_or_minus_one) {
+    std::vector<BlitzEntry> t;
+    CHECK_EQ(personalBest(t, "Ann"), -1);
+    submitScore(t, run("Ann", 40));
+    submitScore(t, run("Bob", 90));
+    submitScore(t, run("ann", 70));
+    CHECK_EQ(personalBest(t, "ANN"), 70);
+    CHECK_EQ(personalBest(t, "Bob"), 90);
+    CHECK_EQ(personalBest(t, "Cy"), -1);
+}
+
+TEST(clearing_a_table_empties_only_that_track_and_survives_a_save) {
+    const fs::path f = scratch("clear.txt");
+    fs::remove(f);
+    Progress p;
+    p.setPath(f);
+    p.dark = true;
+    p.recordBlitz("c", run("Ann", 120));
+    p.recordBlitz("c", run("Bob", 80));
+    p.recordBlitz("cpp", run("Cy", 30));
+    CHECK(p.save());
+    CHECK(!p.dirty());
+    CHECK(p.clearBlitz("c"));
+    CHECK(p.dirty());
+    CHECK(p.blitzTable("c").empty());
+    CHECK_EQ(p.blitzTable("cpp").size(), 1u);
+    CHECK(p.save());
+    Progress q;
+    CHECK(q.load(f));
+    CHECK(q.blitzTable("c").empty());
+    CHECK_EQ(q.blitzTable("cpp").size(), 1u);
+    CHECK(q.dark);
+    CHECK(!q.clearBlitz("c"));  // already empty: nothing to do, nothing to save
+    CHECK(!q.dirty());
+    CHECK(!q.clearBlitz("java"));
+    CHECK_EQ(q.recordBlitz("c", run("New", 10)).rank, 1);  // a cleared table accepts runs again
+    fs::remove(f);
+}

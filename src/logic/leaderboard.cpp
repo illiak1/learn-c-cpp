@@ -23,14 +23,17 @@ std::string sanitizeName(const std::string& raw) {
     return out;
 }
 
-namespace {
-
-// Case-insensitive name comparison ("Ann" and "ann" are the same player).
+// Case-insensitive comparison of two names.
 bool sameName(const std::string& a, const std::string& b) {
     return a.size() == b.size() && std::equal(a.begin(), a.end(), b.begin(), [](char x, char y) { return std::tolower(static_cast<unsigned char>(x)) == std::tolower(static_cast<unsigned char>(y)); });
 }
 
-}  // namespace
+// Highest score of this player in the table (the table is sorted, so the first match is the best).
+int personalBest(const std::vector<BlitzEntry>& table, const std::string& name) {
+    for (const BlitzEntry& e : table)
+        if (sameName(e.name, name)) return e.score;
+    return -1;
+}
 
 // Inserts after every entry with an equal or higher score and keeps the best ten.
 Placement submitScore(std::vector<BlitzEntry>& table, const BlitzEntry& entry) {

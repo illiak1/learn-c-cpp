@@ -86,6 +86,8 @@ public:
     // Competition: the Top 10 table of a track (best first) and a new run. A run with score 0 is not stored.
     const std::vector<BlitzEntry>& blitzTable(const std::string& track) const;
     Placement recordBlitz(const std::string& track, const BlitzEntry& entry);
+    // Empties the Top 10 of one track (other tracks and all other progress stay). False when it was already empty.
+    bool clearBlitz(const std::string& track);
 
     // Lessons: sections the student has opened.
     void markSectionRead(const std::string& track, const std::string& lesson, const std::string& section);
