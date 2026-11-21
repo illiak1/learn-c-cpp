@@ -1,8 +1,12 @@
-// exam_run.cpp - the running exam: countdown, task statements and copy-to-IDE buttons.
+// exam_run.cpp - the running exam: countdown, task statements, copy-to-IDE buttons and the clipboard check.
 #include <algorithm>
+#include <optional>
 
 #include "app/screens.h"
 #include "logic/exam.h"
+#include "logic/exam_check.h"
+#include "logic/runner.h"
+#include "screens/check_panel.h"
 #include "screens/common.h"
 
 namespace app {
@@ -16,9 +20,15 @@ public:
     // Resets scroll; a new exam starts at task 1, a resumed one keeps its task.
     void onEnter(App& app) override {
         scroll_ = {};
-        // A new exam starts at task 1; resuming the same exam keeps the task that was open.
-        if (app.exam().startedAt != startedAt_) current_ = 0;
+        // A new exam starts at task 1; resuming the same exam keeps the task that was open. The clipboard check of
+        // another exam is dropped (a run still in progress is cancelled and its result ignored).
+        if (app.exam().startedAt != startedAt_) {
+            current_ = 0;
+            panel_.reset();
+            runner_.cancel();
+        }
         startedAt_ = app.exam().startedAt;
+        detectCompiler(app);
     }
 
     // Draws the running exam: clock, task statement, copy buttons and navigation.
@@ -35,6 +45,7 @@ public:
         }
         current_ = std::clamp(current_, 0, static_cast<int>(tasks.size()) - 1);
         exam.marks.resize(tasks.size(), -1);
+        collectCheck(exam, tasks);
 
         // Clock
         const double elapsed = GetTime() - exam.startedAt;
@@ -117,23 +128,29 @@ public:
         codeBox("statement", Rect{col.x, col.y, col.w, h}, t.statement, o);
         col.space(h + 18.0f);
 
-        // Copy buttons
+        // Copy buttons and the clipboard check (a third row when the window is narrow)
         const bool cpp = app.track() == Track::Cpp;
-        (void)cpp;
-        if (button("Copy this task to IDE", Rect{col.x, col.y, 210.0f, 42.0f}, ButtonStyle::Secondary, Icon::Copy)) {
+        const float copyW = 210.0f, fullW = 180.0f, checkW = 230.0f;
+        const bool wrap = col.w < copyW + fullW + checkW + 24.0f;
+        if (button("Copy this task to IDE", Rect{col.x, col.y, copyW, 42.0f}, ButtonStyle::Secondary, Icon::Copy)) {
             SetClipboardText(logic::buildTaskFile(t, false).c_str());
             cx.toast("Task copied - paste it into your IDE");
         }
-        if (button("Copy full exam", Rect{col.x + 222.0f, col.y, 180.0f, 42.0f}, ButtonStyle::Primary, Icon::Copy)) {
+        if (button("Copy full exam", Rect{col.x + copyW + 12.0f, col.y, fullW, 42.0f}, ButtonStyle::Primary, Icon::Copy)) {
             SetClipboardText(logic::buildExamFile(tasks, exam.mainOverride, false).c_str());
             cx.toast("Full exam copied - paste it into your IDE");
         }
-        col.space(60.0f);
+        const Rect checkR = wrap ? Rect{col.x, col.y + 54.0f, checkW, 42.0f} : Rect{col.x + copyW + fullW + 24.0f, col.y, checkW, 42.0f};
+        if (button("Check from clipboard", checkR, ButtonStyle::Secondary, Icon::Play, compiler_.found && !runner_.busy()))
+            startCheck(app, exam);
+        col.space(wrap ? 114.0f : 60.0f);
         const float hint = drawParagraph(Face::Regular, size::kBodySm,
                                          "The file has all " + std::to_string(tasks.size()) + " functions with empty bodies and the tests at the bottom. "
-                                         "Run it in your IDE: a correct function prints yes.",
+                                         "Run it in your IDE: a correct function prints yes. Or paste your finished file and press Check from clipboard.",
                                          col.x, col.y, col.w, p.textMuted);
         col.space(hint + 18.0f);
+
+        drawCheck(col, app, tasks, cpp);
 
         drawSelfCheck(col, exam, static_cast<size_t>(current_));
 
@@ -152,6 +169,88 @@ public:
     }
 
 private:
+    // Looks for the compiler of the current track (on entering the page and on "Detect again").
+    void detectCompiler(App& app) {
+        compiler_ = logic::detectCompiler(language(app), runnerConfig(app));
+    }
+
+    static logic::Language language(const App& app) { return app.track() == Track::Cpp ? logic::Language::Cpp : logic::Language::C; }
+
+    // Compiler path overrides from the settings file.
+    static logic::RunnerConfig runnerConfig(App& app) {
+        logic::RunnerConfig cfg;
+        cfg.cCompiler = app.progress().compilerC;
+        cfg.cppCompiler = app.progress().compilerCpp;
+        return cfg;
+    }
+
+    // Takes the clipboard text and hands it to the runner thread.
+    void startCheck(App& app, const logic::Exam& exam) {
+        const char* clip = GetClipboardText();
+        const std::string text = clip ? clip : "";
+        if (text.find_first_not_of(" \t\r\n") == std::string::npos) {
+            Context::get().toast("The clipboard is empty - copy your file first");
+            return;
+        }
+        if (text.size() > 1024 * 1024) {
+            Context::get().toast("The clipboard text is too large (over 1 MB)");
+            return;
+        }
+        panel_.reset();
+        runExamStart_ = exam.startedAt;
+        runner_.start(language(app), text, runnerConfig(app));
+    }
+
+    // Takes a finished run: judges it per function and applies the marks (the student can still change them).
+    void collectCheck(logic::Exam& exam, const std::vector<const content::Task*>& tasks) {
+        logic::RunResult run;
+        if (!runner_.poll(run)) return;
+        if (runExamStart_ != exam.startedAt) return;  // the exam changed while the file was running
+        CheckPanel panel;
+        panel.check = logic::checkExamRun(tasks, run, !exam.mainOverride.empty());
+        panel.run = std::move(run);
+        for (size_t i = 0; i < tasks.size() && i < panel.check.marks.size(); ++i)
+            if (panel.check.marks[i] >= 0) exam.marks[i] = panel.check.marks[i];
+        if (panel.check.wholeExamZero) {
+            exam.fileRan = false;
+            exam.fileAnswered = true;
+        } else if (panel.run.verdict == logic::Verdict::Finished) {
+            exam.fileRan = true;
+            exam.fileAnswered = true;
+        }
+        if (panel.run.verdict == logic::Verdict::Finished) {
+            const int solved = static_cast<int>(std::count(panel.check.marks.begin(), panel.check.marks.end(), static_cast<signed char>(1)));
+            Context::get().toast("Checked: " + std::to_string(solved) + " of " + std::to_string(tasks.size()) + " functions solved");
+        } else if (panel.check.wholeExamZero) {
+            Context::get().toast("In the real exam this gives 0 for the whole exam");
+        }
+        panel_ = std::move(panel);
+    }
+
+    // Progress card, the "no compiler" notice or the result of the last check.
+    void drawCheck(Column& col, App& app, const std::vector<const content::Task*>& tasks, bool cpp) {
+        const Palette& p = Theme::get().colors();
+        if (runner_.busy()) {
+            if (drawCheckProgress(col, runner_.phase())) runner_.cancel();
+            col.space(6.0f);
+        } else if (!compiler_.found) {
+            const std::string hint = compilerInstallHint(cpp);
+            const float btnW = 150.0f, textW = col.w - 80.0f - btnW - 20.0f;
+            const float textH = textHeight(Face::Regular, size::kSmall, hint, textW);
+            Rect r = col.take(std::max(60.0f, textH + 26.0f));
+            callout(r, p.warning, p.warningSoft);
+            drawIcon(Icon::Warning, r.x + 30.0f, r.y + r.height / 2.0f, 18.0f, p.warning);
+            drawParagraph(Face::Regular, size::kSmall, hint, r.x + 54.0f, r.y + (r.height - textH) / 2.0f, textW, p.text);
+            if (button("Detect again", Rect{r.x + r.width - 18.0f - btnW, r.y + (r.height - 40.0f) / 2.0f, btnW, 40.0f}, ButtonStyle::Secondary, Icon::Refresh))
+                detectCompiler(app);
+            col.space(6.0f);
+        }
+        if (panel_ && !runner_.busy()) {
+            drawCheckPanel(col, *panel_, tasks);
+            col.space(6.0f);
+        }
+    }
+
     // Self-check of one task: the student ran the tests in the IDE and records the result here.
     // The marks are the same ones the review page shows; clicking the chosen answer again clears it.
     void drawSelfCheck(Column& col, logic::Exam& exam, size_t index) {
@@ -180,6 +279,10 @@ private:
 
     int current_ = 0;
     double startedAt_ = -1.0;
+    logic::Runner runner_;                 // compiles and runs the pasted file on a worker thread
+    logic::CompilerInfo compiler_;         // compiler of the current track (not found = the check button is disabled)
+    std::optional<CheckPanel> panel_;      // result of the last check
+    double runExamStart_ = -1.0;           // exam the running check belongs to
 };
 
 }  // namespace

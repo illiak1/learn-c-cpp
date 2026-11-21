@@ -136,12 +136,26 @@ int main() { ... }
 
 Exam mode builds one source file: all `@includes` (deduplicated), every task's `@stub`, then `main()` - the set's
 `@main` if present, otherwise one `{ ... }` block per task holding its `@tests`. The student pastes that file into
-Visual Studio, completes the functions and runs the tests. The app never compiles or runs code; the student marks
-each task in the review.
+an IDE, completes the functions and runs the tests. Back in the app, "Check from clipboard" compiles and runs the
+finished file with the system compiler and judges every function from its output; the student marks each task in the
+review either way.
+
+### Test output format (what the clipboard check reads)
+
+Every task's `@tests` print their results, and `@expect` holds the exact output of a correct solution (blank lines and
+trailing spaces are ignored). C tasks print a header line that starts with `---` (for example `--- Q1: Leap Year Test ---`)
+followed by `yes`/`no` lines or other expected text; C++ tasks print bare `yes`/`no` lines. A function passes when its
+lines equal `@expect`: a header is looked up anywhere in the output, headerless blocks follow each other in task order.
+Sets with a verbatim `@main` print their own text; their yes/no tasks cannot be compared and are left for the student to
+mark, other tasks are searched for as a block of lines. A compile error, timeout (3 s) or crash fails every function.
 
 ## Progress file (`progress.txt`)
 
 Not content, but stored next to the user's data: a tab-separated text file, one record per line. Exam results are
 `exam<TAB>date<TAB>track<TAB>title<TAB>earned<TAB>total<TAB>seconds<TAB>fileRan[<TAB>HH:MM<TAB>id:earned/max;...]`.
-The last two fields (time of day and per-task scores) were added later; files without them still load. Unreadable
+The last two fields (time of day and per-task scores) were added later; files without them still load.
+
+Settings are `setting<TAB>dark<TAB>0|1`, `setting<TAB>track<TAB>c|cpp` and, optionally, `setting<TAB>compiler_c<TAB><full path>`
+and `setting<TAB>compiler_cpp<TAB><full path>`: the compiler the clipboard check uses instead of the one found in PATH
+(edit the file by hand while the app is closed). Unreadable
 lines are skipped (the app keeps a `progress.txt.bak` copy of a damaged file) and never stop the app from starting.
