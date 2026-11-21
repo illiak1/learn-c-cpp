@@ -5,6 +5,7 @@
 #include "logic/answer.h"
 #include "logic/snippet.h"
 #include "screens/common.h"
+#include "screens/question_widgets.h"
 
 namespace app {
 
@@ -112,16 +113,13 @@ private:
                 col.space(60.0f);
                 break;
             }
-            case ExType::Choice:
-                drawChoices(col, ex);
+            case ExType::Choice: {
+                const int clicked = drawChoiceCards(col, ex, a.choice, a.checked);
+                if (clicked >= 0) a.choice = clicked;
                 break;
+            }
             case ExType::Predict: {
-                CodeBoxOpts co;
-                co.cpp = cpp;
-                co.title = cpp ? "C++" : "C";
-                const float h = codeBoxHeight(ex.code, co);
-                codeBox("ex-code", Rect{col.x, col.y, col.w, h}, ex.code, co);
-                col.space(h + 18.0f);
+                drawPredictCode(col, ex, cpp);
                 drawLabel("YOUR ANSWER - WHAT THE PROGRAM PRINTS", col.x, col.y, p.textMuted);
                 col.space(20.0f);
                 TextInputOpts o;
@@ -234,44 +232,6 @@ private:
         Context::get().toast("Copied - paste it into your IDE");
     }
 
-    // Option cards for multiple choice.
-    void drawChoices(Column& col, const content::Exercise& ex) {
-        const Palette& p = Theme::get().colors();
-        Attempt& a = attempt_;
-        for (size_t i = 0; i < ex.choices.size(); ++i) {
-            const content::Choice& c = ex.choices[i];
-            const float textW = col.w - 84.0f;
-            const float h = std::max(54.0f, textHeight(Face::Regular, size::kBody, c.text, textW) + 26.0f);
-            Rect r{col.x, col.y, col.w, h};
-            const bool sel = a.choice == static_cast<int>(i);
-            Color fill = p.surface, border = p.border;
-            if (a.checked && c.correct) { fill = p.successSoft; border = p.success; }
-            else if (a.checked && sel) { fill = p.dangerSoft; border = p.danger; }
-            else if (sel) { fill = p.accentSoft; border = p.accent; }
-            Context& cx = Context::get();
-            const bool hov = !a.checked && cx.hovered(r);
-            if (hov) {
-                cx.cursor = MOUSE_CURSOR_POINTING_HAND;
-                if (cx.pressed) a.choice = static_cast<int>(i);
-            }
-            cx.pushId(static_cast<int>(i));
-            const float hv = cx.anim(cx.makeId("choice"), hov ? 1.0f : 0.0f);
-            cx.popId();
-            const float rad = radius::kMd + 1.0f;
-            if (!a.checked) shadowRound(r, rad, shadow::kCard, 0.5f + 0.7f * hv);
-            fillRound(r, rad, hov && !sel ? mix(p.surface, p.surfaceAlt, hv) : fill);
-            strokeRound(r, rad, sel || (a.checked && c.correct) ? 2.0f : 1.0f, sel || a.checked ? border : mix(p.border, p.accent, hv * 0.5f));
-            const Vector2 ctr{r.x + 30.0f, r.y + h / 2.0f};
-            DrawCircleLinesV(ctr, 10.0f, a.checked && c.correct ? p.success : sel ? (a.checked ? p.danger : p.accent) : p.borderStrong);
-            if (a.checked && c.correct) drawIcon(Icon::Check, ctr.x, ctr.y, 13.0f, p.success);
-            else if (a.checked && sel) drawIcon(Icon::Cross, ctr.x, ctr.y, 12.0f, p.danger);
-            else if (sel) DrawCircleV(ctr, 5.0f, p.accent);
-            drawParagraph(Face::Regular, size::kBody, c.text, r.x + 56.0f, r.y + (h - textHeight(Face::Regular, size::kBody, c.text, textW)) / 2.0f, textW, p.text);
-            col.space(h + 10.0f);
-        }
-        col.space(6.0f);
-    }
-
     // Code with an input box drawn in place of every ___ blank.
     void drawFill(Column& col, const content::Exercise& ex, bool cpp) {
         Attempt& a = attempt_;
@@ -328,16 +288,8 @@ private:
     void drawBug(Column& col, const content::Exercise& ex, bool cpp) {
         const Palette& p = Theme::get().colors();
         Attempt& a = attempt_;
-        CodeBoxOpts co;
-        co.cpp = cpp;
-        co.title = cpp ? "C++" : "C";
-        co.clickableLines = !a.checked;
-        co.selectedLine = a.bugLine - 1;
-        co.highlightLine = a.checked ? ex.bugLines.front() - 1 : -1;
-        const float h = codeBoxHeight(ex.code, co);
-        const int clicked = codeBox("ex-code", Rect{col.x, col.y, col.w, h}, ex.code, co);
-        if (clicked >= 0 && !a.checked) a.bugLine = clicked + 1;
-        col.space(h + 10.0f);
+        const int clicked = drawBugCode(col, ex, cpp, a.bugLine, a.checked);
+        if (clicked > 0) a.bugLine = clicked;
         drawText(Face::Regular, size::kBodySm, a.bugLine > 0 ? "Selected line " + std::to_string(a.bugLine) : "Click the line that contains the bug.",
                  col.x, col.y, a.bugLine > 0 ? p.danger : p.textMuted);
         col.space(28.0f);
