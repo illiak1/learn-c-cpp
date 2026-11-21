@@ -144,7 +144,7 @@ std::string formatTaskScores(const std::vector<TaskScore>& tasks) {
 
 // Format (one record per line, tab separated):
 //   progress 1
-//   setting <dark|track> <value>
+//   setting <dark|track|compiler_c|compiler_cpp> <value>   (compiler_*: optional full path of the compiler to use)
 //   ex <track> <id> <attempts> <correct> <lastCorrect 0/1> <date>
 //   task <track> <id> <passed 0/1> <date>
 //   exam <date> <track> <title> <earned> <total> <seconds> <fileRan 0/1> [<HH:MM> <id:earned/max;...>]
@@ -178,6 +178,8 @@ bool Progress::parseLine(const std::string& line) {
     if (f[0] == "setting" && f.size() >= 3) {
         if (f[1] == "dark") dark = f[2] == "1";
         else if (f[1] == "track") track = f[2] == "cpp" ? "cpp" : "c";
+        else if (f[1] == "compiler_c") compilerC = f[2];
+        else if (f[1] == "compiler_cpp") compilerCpp = f[2];
         else return false;
         return true;
     }
@@ -250,6 +252,8 @@ bool Progress::save() const {
         out << "progress\t1\n";
         out << "setting\tdark\t" << (dark ? 1 : 0) << "\n";
         out << "setting\ttrack\t" << track << "\n";
+        if (!compilerC.empty()) out << "setting\tcompiler_c\t" << clean(compilerC) << "\n";
+        if (!compilerCpp.empty()) out << "setting\tcompiler_cpp\t" << clean(compilerCpp) << "\n";
         for (const auto& [key, r] : exercises_)
             out << "ex\t" << key << "\t" << r.attempts << "\t" << r.correct << "\t" << (r.lastCorrect ? 1 : 0) << "\t" << r.lastDate << "\n";
         for (const auto& [key, t] : tasks_) out << "task\t" << key << "\t" << (t.first ? 1 : 0) << "\t" << t.second << "\n";

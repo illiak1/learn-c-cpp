@@ -113,6 +113,8 @@ public:
     // Settings
     bool dark = false;
     std::string track = "c";
+    std::string compilerC;    // optional compiler path overrides (edited by hand in the progress file); "" = auto-detect
+    std::string compilerCpp;
 
     // Wipes all progress (settings are kept).
     void reset();

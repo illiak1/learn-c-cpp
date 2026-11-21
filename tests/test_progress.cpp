@@ -281,3 +281,28 @@ TEST(reset_lesson_clears_only_that_lesson) {
     p.resetLesson("c", "09_missing");
     CHECK_EQ(p.sectionsRead("c", "02_pointers"), 1);
 }
+
+TEST(compiler_path_settings_roundtrip_and_survive_reset) {
+    const fs::path file = fs::temp_directory_path() / "learn_c_cpp_compiler_setting_test.txt";
+    fs::remove(file);
+    {
+        Progress p;
+        p.setPath(file);
+        p.compilerC = "/opt/gcc/bin/gcc";
+        p.compilerCpp = "C:\\msys64\\ucrt64\\bin\\g++.exe";
+        p.reset();  // settings are kept
+        CHECK(p.save());
+    }
+    Progress q;
+    CHECK(q.load(file));
+    CHECK_EQ(q.compilerC, std::string("/opt/gcc/bin/gcc"));
+    CHECK_EQ(q.compilerCpp, std::string("C:\\msys64\\ucrt64\\bin\\g++.exe"));
+    fs::remove(file);
+    Progress none;
+    none.setPath(file);
+    CHECK(none.save());
+    Progress r;
+    CHECK(r.load(file));
+    CHECK(r.compilerC.empty());
+    fs::remove(file);
+}
