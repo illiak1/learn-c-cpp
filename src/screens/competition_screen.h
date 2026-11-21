@@ -74,6 +74,7 @@ private:
     std::string bestText_;     // "+40 vs your best (320)" under the result score
     int bestTone_ = 0;         // 1 better than before, -1 worse, 0 neutral
     std::string rankGapText_;  // "34 points to Pro"
+    std::string clearTrack_;   // track key the open "Clear table" dialog refers to
     int celebration_ = 0;      // confetti waves already fired on the result page
     logic::BlitzRound round_;
     std::unique_ptr<logic::QuestionQueue> queue_;

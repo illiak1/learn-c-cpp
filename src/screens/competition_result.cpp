@@ -188,6 +188,14 @@ void CompetitionScreen::drawTable(App& app, Column& col, int highlightRank, doub
     card(r);
     drawIcon(Icon::Trophy, r.x + 34.0f, r.y + 29.0f, 22.0f, p.gold);
     drawText(Face::Bold, size::kH3, std::string("Top 10 - ") + trackName(app.track()), r.x + 54.0f, r.y + 16.0f, p.text);
+    // Small red button: wipes the table of this track after a confirmation.
+    if (button("Clear table", Rect{r.x + r.width - 22.0f - 124.0f, r.y + 14.0f, 124.0f, 34.0f}, ButtonStyle::Danger, Icon::None, !table.empty())) {
+        clearTrack_ = app.trackKey();
+        openModal("blitz-clear", ModalOpts{std::string("Clear the Top 10 for ") + trackName(app.track()) + "?",
+                                           "This removes all " + std::to_string(table.size()) + " scores of the " + trackName(app.track()) +
+                                               " table. The other track and your learning progress are not touched. This cannot be undone.",
+                                           "Clear table", "Cancel", true});
+    }
     const float headY = r.y + 56.0f;
     drawLabel("RANK", r.x + 22.0f, headY, p.textMuted);
     drawLabel("PLAYER", r.x + 96.0f, headY, p.textMuted);

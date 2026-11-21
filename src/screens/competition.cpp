@@ -30,6 +30,11 @@ void CompetitionScreen::backToLobby() {
 
 // Draws the backdrop, the page for the current phase and the effects on top of it.
 void CompetitionScreen::draw(App& app, Rect area) {
+    if (takeModalResult("blitz-clear") == ModalResult::Confirm && app.progress().clearBlitz(clearTrack_)) {
+        app.saveProgress();
+        highlight_ = 0;
+        Context::get().toast("Top 10 cleared");
+    }
     arcadeBackdrop(area);
     Column col = begin(area);
     switch (phase_) {
