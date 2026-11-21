@@ -373,6 +373,11 @@ Appear::Appear(int index, Rect bounds) : bounds_(bounds) {
     if (t_ < 1.0f) pushOffset(0.0f, (1.0f - t_) * 14.0f);
 }
 
+// Fade-in/slide-up driven by a caller-supplied progress (0..1).
+Appear::Appear(Rect bounds, float progress) : t_(std::clamp(progress, 0.0f, 1.0f)), bounds_(bounds) {
+    if (t_ < 1.0f) pushOffset(0.0f, (1.0f - t_) * 14.0f);
+}
+
 // Ends it: restores the transform and veils the element with the page background while it fades in.
 Appear::~Appear() {
     if (t_ >= 1.0f) return;

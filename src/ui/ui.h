@@ -165,6 +165,8 @@ void pushScale(float s, float cx, float cy);
 class Appear {
 public:
     Appear(int index, Rect bounds);
+    // Same effect driven by a 0..1 progress of the caller (an element that shows up in the middle of a page).
+    Appear(Rect bounds, float progress);
     ~Appear();
     Appear(const Appear&) = delete;
     Appear& operator=(const Appear&) = delete;
