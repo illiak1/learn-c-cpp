@@ -8,6 +8,7 @@
 #include <string>
 #include <vector>
 
+#include "logic/duel.h"
 #include "logic/leaderboard.h"
 
 namespace logic {
@@ -89,6 +90,12 @@ public:
     // Empties the Top 10 of one track (other tracks and all other progress stay). False when it was already empty.
     bool clearBlitz(const std::string& track);
 
+    // Duels: finished duels of a track, oldest first (the newest `kDuelHistoryMax` are kept). Adding one marks the file dirty.
+    const std::vector<DuelRecord>& duels(const std::string& track) const;
+    void recordDuel(const std::string& track, const DuelRecord& record);
+    // Empties the duel history of one track (the other track and everything else stay). False when it was already empty.
+    bool clearDuels(const std::string& track);
+
     // Lessons: sections the student has opened.
     void markSectionRead(const std::string& track, const std::string& lesson, const std::string& section);
     int sectionsRead(const std::string& track, const std::string& lesson) const;
@@ -124,6 +131,7 @@ private:
     std::map<std::string, std::pair<bool, std::string>> tasks_;  // "track\tid" -> (passed, date)
     std::vector<ExamRecord> exams_;
     std::map<std::string, std::vector<BlitzEntry>> blitz_;  // track -> Top 10
+    std::map<std::string, std::vector<DuelRecord>> duels_;  // track -> finished duels, oldest first
     std::map<std::string, DayRecord> days_;
     std::set<std::string> sections_;                    // "track\tlesson\tsection"
     std::map<std::string, std::pair<std::string, int>> lastLesson_;  // track -> (lesson, section)

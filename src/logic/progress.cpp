@@ -149,6 +149,7 @@ std::string formatTaskScores(const std::vector<TaskScore>& tasks) {
 //   task <track> <id> <passed 0/1> <date>
 //   exam <date> <track> <title> <earned> <total> <seconds> <fileRan 0/1> [<HH:MM> <id:earned/max;...>]
 //   blitz <track> <name> <score> <date> <correct> <best combo>
+//   duel <track> <date> <name A> <score A> <name B> <score B> <a|b|draw>
 //   day <date> <answered> <correct>
 //   section <track> <lesson> <section>
 //   last <track> <lesson> <section index>
@@ -211,6 +212,17 @@ bool Progress::parseLine(const std::string& line) {
         if (table.size() > kLeaderboardSize) table.resize(kLeaderboardSize);
         return true;
     }
+    if (f[0] == "duel" && f.size() >= 8) {
+        // The result field is for people reading the file; the winner is always worked out from the scores.
+        const auto digits = [](const std::string& v) { return !v.empty() && v.size() < 9 && std::all_of(v.begin(), v.end(), [](char c) { return c >= '0' && c <= '9'; }); };
+        if (!digits(f[4]) || !digits(f[6])) return false;  // 0 is a valid duel score, so a non-number must be caught here
+        DuelRecord d{f[2], sanitizeName(f[3]), sanitizeName(f[5]), toInt(f[4]), toInt(f[6])};
+        if ((f[1] != "c" && f[1] != "cpp") || d.nameA.empty() || d.nameB.empty() || d.scoreA < 0 || d.scoreB < 0 || dayNumber(d.date) < 0) return false;
+        std::vector<DuelRecord>& list = duels_[f[1]];
+        list.push_back(std::move(d));
+        if (list.size() > kDuelHistoryMax) list.erase(list.begin());
+        return true;
+    }
     if (f[0] == "day" && f.size() >= 4) {
         if (dayNumber(f[1]) < 0) return false;
         days_[f[1]] = DayRecord{std::max(0, toInt(f[2])), std::max(0, toInt(f[3]))};
@@ -247,6 +259,12 @@ bool Progress::save() const {
         for (const auto& [t, table] : blitz_)
             for (const BlitzEntry& e : table)
                 out << "blitz\t" << t << "\t" << clean(e.name) << "\t" << e.score << "\t" << clean(e.date) << "\t" << e.correct << "\t" << e.bestCombo << "\n";
+        for (const auto& [t, list] : duels_)
+            for (const DuelRecord& d : list) {
+                const DuelOutcome o = d.outcome();
+                out << "duel\t" << t << "\t" << clean(d.date) << "\t" << clean(d.nameA) << "\t" << d.scoreA << "\t" << clean(d.nameB) << "\t" << d.scoreB << "\t"
+                    << (o == DuelOutcome::Draw ? "draw" : o == DuelOutcome::First ? "a" : "b") << "\n";
+            }
         for (const auto& [date, d] : days_) out << "day\t" << date << "\t" << d.answered << "\t" << d.correct << "\n";
         for (const std::string& s : sections_) out << "section\t" << s << "\n";
         for (const auto& [t, l] : lastLesson_) out << "last\t" << t << "\t" << l.first << "\t" << l.second << "\n";
@@ -341,6 +359,30 @@ bool Progress::clearBlitz(const std::string& tr) {
     const auto it = blitz_.find(tr);
     if (it == blitz_.end() || it->second.empty()) return false;
     blitz_.erase(it);
+    dirty_ = true;
+    return true;
+}
+
+// Finished duels of one track, oldest first.
+const std::vector<DuelRecord>& Progress::duels(const std::string& tr) const {
+    static const std::vector<DuelRecord> none;
+    const auto it = duels_.find(tr);
+    return it == duels_.end() ? none : it->second;
+}
+
+// Adds a finished duel and drops the oldest ones beyond the cap.
+void Progress::recordDuel(const std::string& tr, const DuelRecord& record) {
+    std::vector<DuelRecord>& list = duels_[tr];
+    list.push_back(record);
+    if (list.size() > kDuelHistoryMax) list.erase(list.begin());
+    dirty_ = true;
+}
+
+// Removes the duel history of one track.
+bool Progress::clearDuels(const std::string& tr) {
+    const auto it = duels_.find(tr);
+    if (it == duels_.end() || it->second.empty()) return false;
+    duels_.erase(it);
     dirty_ = true;
     return true;
 }
@@ -459,6 +501,7 @@ void Progress::reset() {
     tasks_.clear();
     exams_.clear();
     blitz_.clear();
+    duels_.clear();
     days_.clear();
     sections_.clear();
     lastLesson_.clear();
