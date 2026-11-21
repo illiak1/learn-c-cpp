@@ -1,4 +1,4 @@
-// exam_review.cpp - end-of-exam review: did the file run, per-function marks, score and reference solutions.
+// exam_review.cpp - end-of-exam review: score, per-function marks (checked by the app or self-checked) and solutions.
 #include <algorithm>
 #include <set>
 
@@ -20,7 +20,7 @@ public:
         open_.clear();
     }
 
-    // Draws the review: score, file-ran gate, per-function marks and solutions.
+    // Draws the review: score, per-function marks and solutions.
     void draw(App& app, Rect area) override {
         const Palette& p = Theme::get().colors();
         Context& cx = Context::get();
@@ -33,7 +33,7 @@ public:
             end(col);
             return;
         }
-        exam.marks.resize(tasks.size(), -1);
+        logic::fitMarks(exam, tasks.size());
         app.commitExam();  // keeps the saved record in step with the marks of the previous frame
 
         pageHeader(col, app, "Exam review");
@@ -43,44 +43,28 @@ public:
         drawText(Face::Regular, size::kBody, exam.title + "  -  " + timeText, col.x, col.y - 8.0f, p.textMuted);
         col.space(26.0f);
 
-        // Score
+        // Score: the sum of the solved functions
         const logic::Score sc = logic::scoreExam(tc, exam);
-        const bool zero = !exam.fileRan;
+        const int unmarked = logic::unmarkedCount(exam);
         Rect hero = col.take(144.0f);
         Appear apHero(0, hero);
         cardRaised(hero);
         const float pct = sc.total > 0 ? static_cast<float>(sc.earned) / static_cast<float>(sc.total) : 0.0f;
-        const Color scoreColor = zero ? p.danger : pct >= 0.7f ? p.success : pct >= 0.4f ? p.warning : p.danger;
+        const Color scoreColor = pct >= 0.7f ? p.success : pct >= 0.4f ? p.warning : p.danger;
         progressRing(hero.x + 82.0f, hero.y + 72.0f, 50.0f, 11.0f, pct, scoreColor, "review-ring");
         drawCentered(Face::Bold, size::kH3, std::to_string(static_cast<int>(pct * 100.0f + 0.5f)) + "%", Rect{hero.x + 32.0f, hero.y + 22.0f, 100.0f, 100.0f}, scoreColor);
         drawText(Face::Bold, size::kDisplay, std::to_string(sc.earned) + " / " + std::to_string(sc.total), hero.x + 160.0f, hero.y + 26.0f, scoreColor);
-        const int marked = static_cast<int>(std::count_if(exam.marks.begin(), exam.marks.end(), [](signed char m) { return m >= 0; }));
-        drawText(Face::Regular, size::kBody, std::to_string(sc.passed) + " of " + std::to_string(sc.tasks) + " functions passed  -  " +
-                 std::to_string(marked) + " marked", hero.x + 160.0f, hero.y + 88.0f, p.textMuted);
-
-        // Step 1: did the file run? (the card height follows the wrapped explanation)
-        const std::string gateNote = "Be honest: a compile error, an infinite loop or a crash gives 0 for the whole exam, even if some functions were right.";
-        const float gateNoteH = textHeight(Face::Regular, size::kBodySm, gateNote, col.w - 44.0f);
-        const float by0 = 54.0f + gateNoteH + 14.0f;  // top of the buttons inside the card
-        Rect gate = col.take(by0 + 40.0f + (exam.fileRan ? 20.0f : 54.0f));
-        if (exam.fileRan) card(gate);
-        else callout(gate, p.danger, p.dangerSoft);
-        drawText(Face::Bold, size::kH3, ellipsize(Face::Bold, size::kH3, "1. Did the whole file compile and run to the end?", gate.width - 44.0f), gate.x + 22.0f, gate.y + 16.0f, p.text);
-        drawParagraph(Face::Regular, size::kBodySm, gateNote, gate.x + 22.0f, gate.y + 54.0f, gate.width - 44.0f, p.textMuted);
-        const float by = gate.y + by0;
-        if (button("Yes, it ran", Rect{gate.x + 22.0f, by, 150.0f, 40.0f}, exam.fileAnswered && exam.fileRan ? ButtonStyle::Success : ButtonStyle::Secondary, Icon::Check)) {
-            exam.fileRan = true;
-            exam.fileAnswered = true;
+        drawText(Face::Regular, size::kBody, std::to_string(sc.passed) + " of " + std::to_string(sc.tasks) + " functions solved",
+                 hero.x + 160.0f, hero.y + 88.0f, p.textMuted);
+        if (unmarked > 0) {
+            col.space(4.0f);
+            col.space(drawParagraph(Face::Regular, size::kSmall, logic::unmarkedNote(unmarked) + " Mark them below if you tested them in your IDE.",
+                                    col.x + 4.0f, col.y, col.w - 8.0f, p.textMuted) + 10.0f);
         }
-        if (button("No - error, loop or crash", Rect{gate.x + 184.0f, by, 260.0f, 40.0f}, exam.fileAnswered && !exam.fileRan ? ButtonStyle::Danger : ButtonStyle::Secondary, Icon::Cross)) {
-            exam.fileRan = false;
-            exam.fileAnswered = true;
-        }
-        if (!exam.fileRan) drawText(Face::Bold, size::kBodySm, "Result: 0 for the whole exam.", gate.x + 22.0f, by + 52.0f, p.danger);
 
-        // Step 2: functions
+        // Functions
         col.space(4.0f);
-        drawText(Face::Bold, size::kH3, "2. Mark every function", col.x, col.y, p.text);
+        drawText(Face::Bold, size::kH3, "Mark every function", col.x, col.y, p.text);
         col.space(32.0f);
         for (size_t i = 0; i < tasks.size(); ++i) {
             const content::Task& t = *tasks[i];
@@ -90,13 +74,22 @@ public:
             Appear apHead(static_cast<int>(i) + 1, head);
             card(head);
             const signed char m = exam.marks[i];
-            drawText(Face::Bold, size::kH3, ellipsize(Face::Bold, size::kH3, std::to_string(i + 1) + ".  " + t.title, head.width - 22.0f - 388.0f), head.x + 22.0f, head.y + 12.0f, p.text);
+            const bool locked = exam.checked[i] != 0;
+            const float rightW = locked ? 152.0f : 388.0f;
+            drawText(Face::Bold, size::kH3, ellipsize(Face::Bold, size::kH3, std::to_string(i + 1) + ".  " + t.title, head.width - 22.0f - rightW), head.x + 22.0f, head.y + 12.0f, p.text);
             float bx = head.x + 22.0f;
             bx += badge(std::to_string(t.points) + " points", bx, head.y + 42.0f, p.textMuted, p.surfaceAlt) + 8.0f;
-            if (m == 1) badge("Passed", bx, head.y + 42.0f, p.success, p.successSoft);
-            else if (m == 0) badge("Failed", bx, head.y + 42.0f, p.danger, p.dangerSoft);
-            if (button("Passed", Rect{head.x + head.width - 372.0f, head.y + 14.0f, 112.0f, 42.0f}, m == 1 ? ButtonStyle::Success : ButtonStyle::Secondary, Icon::Check)) exam.marks[i] = 1;
-            if (button("Failed", Rect{head.x + head.width - 252.0f, head.y + 14.0f, 112.0f, 42.0f}, m == 0 ? ButtonStyle::Danger : ButtonStyle::Secondary, Icon::Cross)) exam.marks[i] = 0;
+            // Unchecked and unmarked functions count as Failed.
+            if (m == 1) bx += badge("Solved", bx, head.y + 42.0f, p.success, p.successSoft) + 8.0f;
+            else bx += badge("Failed", bx, head.y + 42.0f, p.danger, p.dangerSoft) + 8.0f;
+            if (locked || m >= 0) {
+                const std::string source = locked ? "Checked by the app" : "Self-checked";
+                drawText(Face::Regular, size::kSmall, source, bx, head.y + 48.0f - Theme::get().textMidline(Face::Regular, size::kSmall), p.textMuted);
+            }
+            if (!locked) {  // a result of the app cannot be changed by hand
+                if (button("Solved", Rect{head.x + head.width - 372.0f, head.y + 14.0f, 112.0f, 42.0f}, m == 1 ? ButtonStyle::Success : ButtonStyle::Secondary, Icon::Check)) logic::setManualMark(exam, i, 1);
+                if (button("Failed", Rect{head.x + head.width - 252.0f, head.y + 14.0f, 112.0f, 42.0f}, m == 0 ? ButtonStyle::Danger : ButtonStyle::Secondary, Icon::Cross)) logic::setManualMark(exam, i, 0);
+            }
             if (button(open ? "Hide" : "Solution", Rect{head.x + head.width - 132.0f, head.y + 14.0f, 112.0f, 42.0f}, ButtonStyle::Secondary, Icon::Eye)) {
                 if (open) open_.erase(static_cast<int>(i));
                 else open_.insert(static_cast<int>(i));

@@ -173,26 +173,12 @@ int App::mistakeCount() {
 void App::commitExam() {
     if (!exam_.finished) return;
     const auto tasks = logic::examTasks(content(), exam_);
-    const logic::Score sc = logic::scoreExam(content(), exam_);
-    logic::ExamRecord r;
-    r.date = exam_.finishDate;
-    r.time = exam_.finishTime;
-    r.track = trackKey();
-    r.title = exam_.title;
-    r.earned = sc.earned;
-    r.total = sc.total;
-    r.seconds = static_cast<int>(exam_.finishedAt - exam_.startedAt);
-    r.fileRan = exam_.fileRan;
-    std::string sig = std::to_string(sc.earned) + (exam_.fileRan ? "y" : "n");
-    for (size_t i = 0; i < tasks.size(); ++i) {
-        const signed char mark = i < exam_.marks.size() ? exam_.marks[i] : -1;
-        // Unmarked tasks score 0; so does everything when the file did not compile, loop forever or crash.
-        r.tasks.push_back({tasks[i]->id, exam_.fileRan && mark == 1 ? tasks[i]->points : 0, tasks[i]->points});
-        sig += std::to_string(mark);
-    }
+    const logic::ExamRecord r = logic::makeExamRecord(content(), exam_, trackKey());
+    std::string sig = std::to_string(r.earned);
+    for (size_t i = 0; i < tasks.size(); ++i) sig += std::to_string(i < exam_.marks.size() ? exam_.marks[i] : -1);
     if (exam_.recordIndex >= 0 && sig == exam_.recordSig) return;
-    for (size_t i = 0; i < tasks.size() && i < exam_.marks.size(); ++i)
-        if (exam_.marks[i] >= 0) progress_.recordTask(trackKey(), tasks[i]->id, exam_.marks[i] == 1, r.date);
+    for (size_t i = 0; i < tasks.size(); ++i)
+        progress_.recordTask(trackKey(), tasks[i]->id, i < exam_.marks.size() && exam_.marks[i] == 1, r.date);
     if (exam_.recordIndex < 0) exam_.recordIndex = progress_.recordExam(r);
     else progress_.updateExam(exam_.recordIndex, r);
     exam_.recordSig = sig;
@@ -221,12 +207,11 @@ void App::beginExam(logic::Exam exam) {
 }
 
 // Asks for confirmation before ending the running exam; the clock keeps running meanwhile.
-// The code is written and tested in the student's IDE, so the text only talks about the self-check marks.
+// Mentions the functions that are neither checked nor marked (they count as Failed).
 void App::requestFinishExam() {
-    const bool anySolved = std::count(exam_.marks.begin(), exam_.marks.end(), static_cast<signed char>(1)) > 0;
-    const std::string message = anySolved ? "Finish the exam now? Tasks not marked as solved will not count."
-                                          : "Finish the exam now? No tasks are marked as solved yet.";
-    openModal("finish-exam", ModalOpts{"Finish exam", message + " You can still change the marks in the review.", "Finish exam", "Keep working", true});
+    const std::string note = logic::unmarkedNote(logic::unmarkedCount(exam_));
+    const std::string message = "Finish the exam now? " + (note.empty() ? std::string() : note + " ") + "You can still mark functions in the review.";
+    openModal("finish-exam", ModalOpts{"Finish exam", message, "Finish exam", "Keep working", true});
 }
 
 // Asks for confirmation before erasing answers, streak and exam history.

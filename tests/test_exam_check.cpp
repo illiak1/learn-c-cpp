@@ -92,14 +92,14 @@ TEST(exam_check_verbatim_main_cannot_check_yes_no_tasks) {
     CHECK(checkTaskOutputs({&list}, "1 <-> 3 <-> null\n", true)[0].status == TaskCheck::Failed);
 }
 
-TEST(exam_check_whole_exam_failures_fail_every_function) {
+TEST(exam_check_stopped_tests_fail_every_function_in_scope) {
     const content::Task a = makeTask("a", "yes"), b = makeTask("b", "yes");
     for (Verdict v : {Verdict::CompileError, Verdict::Timeout, Verdict::Crash}) {
         RunResult run;
         run.verdict = v;
         run.output = "yes\nyes\n";  // output before the crash does not count
         const ExamCheck c = checkExamRun({&a, &b}, run, false);
-        CHECK(c.wholeExamZero);
+        CHECK(c.testsStopped);
         CHECK_EQ(c.marks.size(), static_cast<size_t>(2));
         CHECK_EQ(static_cast<int>(c.marks[0]), 0);
         CHECK_EQ(static_cast<int>(c.marks[1]), 0);
@@ -110,7 +110,7 @@ TEST(exam_check_whole_exam_failures_fail_every_function) {
 TEST(exam_check_marks_follow_the_output) {
     const content::Task a = makeTask("a", "yes"), b = makeTask("b", "yes"), c = makeTask("c", "");
     const ExamCheck r = checkExamRun({&a, &b, &c}, finished("yes\nno\n"), false);
-    CHECK(!r.wholeExamZero);
+    CHECK(!r.testsStopped);
     CHECK_EQ(static_cast<int>(r.marks[0]), 1);
     CHECK_EQ(static_cast<int>(r.marks[1]), 0);
     CHECK_EQ(static_cast<int>(r.marks[2]), -1);
@@ -122,7 +122,7 @@ TEST(exam_check_leaves_marks_alone_without_a_result) {
         RunResult run;
         run.verdict = v;
         const ExamCheck c = checkExamRun({&a}, run, false);
-        CHECK(!c.wholeExamZero);
+        CHECK(!c.testsStopped);
         CHECK_EQ(static_cast<int>(c.marks[0]), -1);
     }
 }
@@ -298,7 +298,7 @@ TEST(scope_compile_error_with_a_single_task_file_fails_only_that_task) {
         RunResult run;
         run.verdict = v;
         const ExamCheck c = checkClipboardRun(t.all(), "", buildTaskFile(t.b, false), run);
-        CHECK(c.wholeExamZero);
+        CHECK(c.testsStopped);
         CHECK_EQ(static_cast<int>(c.marks[0]), -1);
         CHECK_EQ(static_cast<int>(c.marks[1]), 0);
         CHECK_EQ(static_cast<int>(c.marks[2]), -1);

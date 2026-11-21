@@ -198,12 +198,12 @@ TEST(runner_parses_gcc_style_messages) {
 }
 
 TEST(runner_verdict_helpers) {
-    CHECK(failsWholeExam(Verdict::CompileError));
-    CHECK(failsWholeExam(Verdict::Timeout));
-    CHECK(failsWholeExam(Verdict::Crash));
-    CHECK(!failsWholeExam(Verdict::Finished));
-    CHECK(!failsWholeExam(Verdict::CompilerMissing));
-    CHECK(!failsWholeExam(Verdict::Cancelled));
+    CHECK(stopsTests(Verdict::CompileError));
+    CHECK(stopsTests(Verdict::Timeout));
+    CHECK(stopsTests(Verdict::Crash));
+    CHECK(!stopsTests(Verdict::Finished));
+    CHECK(!stopsTests(Verdict::CompilerMissing));
+    CHECK(!stopsTests(Verdict::Cancelled));
     CHECK_EQ(std::string(verdictName(Verdict::CompileError)), std::string("Compile error"));
 }
 

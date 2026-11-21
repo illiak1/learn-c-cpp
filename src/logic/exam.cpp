@@ -108,6 +108,7 @@ Exam makeSetExam(const content::ExamSet& set) {
     e.mainOverride = set.mainOverride;
     e.minutes = set.minutes;
     e.marks.assign(e.taskIds.size(), -1);
+    e.checked.assign(e.taskIds.size(), 0);
     return e;
 }
 
@@ -118,6 +119,7 @@ Exam makeTaskListExam(const std::string& title, const std::vector<std::string>& 
     e.taskIds = taskIds;
     e.minutes = minutes;
     e.marks.assign(taskIds.size(), -1);
+    e.checked.assign(taskIds.size(), 0);
     return e;
 }
 
@@ -136,10 +138,11 @@ Exam makeRandomExam(const content::TrackContent& track, int count, int minutes, 
     e.taskIds = ordered;
     e.minutes = minutes;
     e.marks.assign(e.taskIds.size(), -1);
+    e.checked.assign(e.taskIds.size(), 0);
     return e;
 }
 
-// Earned points; everything is 0 when the file did not compile, loop forever or crash.
+// Earned points: the sum of the passed functions.
 Score scoreExam(const content::TrackContent& track, const Exam& exam) {
     Score s;
     for (size_t i = 0; i < exam.taskIds.size(); ++i) {
@@ -152,12 +155,64 @@ Score scoreExam(const content::TrackContent& track, const Exam& exam) {
             s.earned += t->points;
         }
     }
-    // A compile error, infinite loop or crash gives 0 for the whole exam.
-    if (!exam.fileRan) {
-        s.earned = 0;
-        s.passed = 0;
-    }
     return s;
+}
+
+// Saved result of the exam (unchecked and unmarked functions score 0).
+ExamRecord makeExamRecord(const content::TrackContent& track, const Exam& exam, const std::string& trackKey) {
+    ExamRecord r;
+    r.date = exam.finishDate;
+    r.time = exam.finishTime;
+    r.track = trackKey;
+    r.title = exam.title;
+    r.seconds = static_cast<int>(exam.finishedAt - exam.startedAt);
+    const std::vector<const content::Task*> tasks = examTasks(track, exam);
+    for (size_t i = 0; i < tasks.size(); ++i) {
+        const int pts = i < exam.marks.size() && exam.marks[i] == 1 ? tasks[i]->points : 0;
+        r.tasks.push_back({tasks[i]->id, pts, tasks[i]->points});
+        r.earned += pts;
+        r.total += tasks[i]->points;
+    }
+    return r;
+}
+
+// Resizes the mark vectors to the number of tasks.
+void fitMarks(Exam& exam, size_t n) {
+    exam.marks.resize(n, -1);
+    exam.checked.resize(n, 0);
+}
+
+// Manual mark of a task that the app has not checked.
+bool setManualMark(Exam& exam, size_t task, signed char mark) {
+    fitMarks(exam, std::max(exam.marks.size(), task + 1));
+    if (exam.checked[task]) return false;
+    exam.marks[task] = mark;
+    return true;
+}
+
+// Tasks without any mark.
+int unmarkedCount(const Exam& exam) {
+    int n = 0;
+    for (size_t i = 0; i < exam.taskIds.size(); ++i)
+        if (i >= exam.marks.size() || exam.marks[i] < 0) ++n;
+    return n;
+}
+
+// Every task has a mark.
+bool allMarked(const Exam& exam) { return !exam.taskIds.empty() && unmarkedCount(exam) == 0; }
+
+// Every task is marked passed.
+bool allPassed(const Exam& exam) {
+    if (!allMarked(exam)) return false;
+    for (size_t i = 0; i < exam.taskIds.size(); ++i)
+        if (exam.marks[i] != 1) return false;
+    return true;
+}
+
+// Sentence for the finish dialog and the review.
+std::string unmarkedNote(int count) {
+    if (count <= 0) return "";
+    return std::to_string(count) + (count == 1 ? " function was" : " functions were") + " not checked or marked and will count as Failed.";
 }
 
 // Formats seconds as m:ss or h:mm:ss.

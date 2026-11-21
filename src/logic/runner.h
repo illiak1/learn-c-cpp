@@ -74,8 +74,8 @@ std::vector<Diagnostic> parseDiagnostics(const std::string& compilerOutput);
 // Human text for a verdict, e.g. "Compile error".
 const char* verdictName(Verdict v);
 
-// True for the verdicts that give 0 for the whole exam in the real exam (compile error, timeout, crash).
-bool failsWholeExam(Verdict v);
+// True for the verdicts after which the tests of the file did not run to the end (compile error, timeout, crash).
+bool stopsTests(Verdict v);
 
 // Compiles and runs `source` in a fresh temporary directory (removed afterwards). Blocks until done.
 // `cancel` (optional) is polled about every 10 ms; `phase` (optional) is set to 1 while compiling and 2 while running.

@@ -317,18 +317,28 @@ std::vector<TaskVerdict> checkTaskOutputs(const std::vector<const content::Task*
     return out;
 }
 
-// Whole-exam failure, or per-function marks from the output; only tasks in scope are judged.
+// Explanation shown when the tests could not run.
+std::string stoppedMessage(const RunResult& run) {
+    switch (run.verdict) {
+        case Verdict::CompileError: return "The file did not compile, so the tests could not run. Fix the errors below and check again.";
+        case Verdict::Timeout: return "The program ran too long (infinite loop?). Check your loops and try again.";
+        case Verdict::Crash: return "The program crashed while running (" + run.signalName + "). Check pointers and array bounds and try again.";
+        default: return "";
+    }
+}
+
+// Failed marks for the tasks in scope when the tests could not run, else per-function marks from the output; only tasks in scope are judged.
 ExamCheck checkExamRun(const std::vector<const content::Task*>& tasks, const RunResult& run, bool customMain, const std::vector<char>& scope) {
     ExamCheck r;
     r.verdict = run.verdict;
-    r.wholeExamZero = failsWholeExam(run.verdict);
+    r.testsStopped = stopsTests(run.verdict);
     r.inScope.assign(tasks.size(), 1);
     if (scope.size() == tasks.size()) r.inScope = scope;
     for (const content::Task* t : tasks) r.names.push_back(t ? taskFunctionName(*t) : std::string());
     r.tasks.assign(tasks.size(), TaskVerdict{});
     r.marks.assign(tasks.size(), -1);
 
-    if (r.wholeExamZero) {
+    if (r.testsStopped) {
         for (size_t i = 0; i < tasks.size(); ++i)
             if (r.inScope[i]) {
                 r.tasks[i].status = TaskCheck::Failed;
@@ -365,6 +375,16 @@ ExamCheck checkClipboardRun(const std::vector<const content::Task*>& tasks, cons
     };
     const bool customMain = !mainOverride.empty() && squeeze(source).find(squeeze(mainOverride)) != std::string::npos;
     return checkExamRun(tasks, run, customMain, tasksInSource(tasks, source));
+}
+
+// Locks the judged functions of a check in the exam.
+void applyCheck(Exam& exam, const ExamCheck& check) {
+    fitMarks(exam, std::max(exam.taskIds.size(), check.marks.size()));
+    for (size_t i = 0; i < check.marks.size(); ++i)
+        if (check.marks[i] >= 0) {
+            exam.marks[i] = check.marks[i];
+            exam.checked[i] = 1;
+        }
 }
 
 }  // namespace logic

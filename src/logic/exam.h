@@ -1,5 +1,5 @@
 // exam.h - exam composition: building the single source file students paste into their IDE,
-// picking random tasks, and scoring with the "whole exam is 0 if the file does not build/run" rule.
+// picking random tasks, marks (checked by the app or set by hand) and scoring.
 #pragma once
 
 #include <random>
@@ -7,6 +7,7 @@
 #include <vector>
 
 #include "content/types.h"
+#include "logic/progress.h"
 
 namespace logic {
 
@@ -24,10 +25,9 @@ struct Exam {
     std::string finishTime;             // HH:MM when the exam ended
     int recordIndex = -1;               // index of this exam's record in the progress file (-1 = not saved yet)
     std::string recordSig;              // what was last written, so unchanged results are not saved again
-    // Review state:
-    bool fileRan = true;                // compiled, finished and did not crash
-    bool fileAnswered = false;          // student answered the "did it run" question
-    std::vector<signed char> marks;     // per task: -1 not marked, 0 failed, 1 passed
+    // Marks, one per task: -1 neither checked nor marked (counts as Failed), 0 failed, 1 passed.
+    std::vector<signed char> marks;
+    std::vector<char> checked;          // 1 = the mark comes from "Check from clipboard" and cannot be changed by hand
 };
 
 // Source file with the task stub (or solution) and its tests in main().
@@ -58,8 +58,29 @@ struct Score {
     int tasks = 0;
 };
 
-// Points earned: 0 for everything when the file did not build/run, otherwise the points of passed tasks.
+// Points earned: the points of the tasks marked passed (unchecked and unmarked tasks count as Failed).
 Score scoreExam(const content::TrackContent& track, const Exam& exam);
+
+// The saved result of an exam: only functions marked passed earn points. Date, time and duration come from the exam.
+ExamRecord makeExamRecord(const content::TrackContent& track, const Exam& exam, const std::string& trackKey);
+
+// Makes marks and checked exactly `n` long (new entries: -1 / 0).
+void fitMarks(Exam& exam, size_t n);
+
+// Sets a mark by hand. Refused (false) when the task was checked by the app. -1 clears a manual mark.
+bool setManualMark(Exam& exam, size_t task, signed char mark);
+
+// Number of tasks that were neither checked by the app nor marked by hand.
+int unmarkedCount(const Exam& exam);
+
+// True when the exam has tasks and every one has a mark (checked by the app or marked by hand).
+bool allMarked(const Exam& exam);
+
+// True when every task is marked passed.
+bool allPassed(const Exam& exam);
+
+// "N functions were not checked or marked and will count as Failed." (empty for 0).
+std::string unmarkedNote(int count);
 
 // Formats seconds as m:ss (or h:mm:ss).
 std::string formatClock(int seconds);

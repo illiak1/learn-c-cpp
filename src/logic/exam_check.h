@@ -7,6 +7,7 @@
 #include <vector>
 
 #include "content/types.h"
+#include "logic/exam.h"
 #include "logic/runner.h"
 
 namespace logic {
@@ -26,7 +27,7 @@ struct TaskVerdict {
 
 struct ExamCheck {
     Verdict verdict = Verdict::Finished;
-    bool wholeExamZero = false;               // compile error, timeout or crash: 0 for the whole exam
+    bool testsStopped = false;                // compile error, timeout or crash: the tests could not run, tasks in scope are Failed
     std::vector<TaskVerdict> tasks;           // one per task, in exam order
     std::vector<signed char> marks;           // suggested Exam::marks: 1 solved, 0 not solved, -1 leave unchanged (always -1 out of scope)
     std::vector<std::string> names;           // function name of every task ("" when it cannot be told)
@@ -51,7 +52,10 @@ std::vector<std::string> missingNames(const content::Task& task, const std::stri
 // 1 for every task whose key names are all defined in `source`, matched by name (never by position).
 std::vector<char> tasksInSource(const std::vector<const content::Task*>& tasks, const std::string& source);
 
-// Full verdict of one run: whole-exam failure for CompileError/Timeout/Crash (every function in scope failed),
+// Friendly one-paragraph explanation for a run whose tests could not run (compile error, timeout, crash); "" otherwise.
+std::string stoppedMessage(const RunResult& run);
+
+// Full verdict of one run: CompileError/Timeout/Crash fail every function in scope (and only those),
 // per-function results for Finished, nothing decided for the other verdicts. `scope` (one flag per task) limits the
 // judgement to the tasks present in the checked file; empty = all tasks. Out-of-scope tasks always get mark -1.
 ExamCheck checkExamRun(const std::vector<const content::Task*>& tasks, const RunResult& run, bool customMain,
@@ -61,5 +65,9 @@ ExamCheck checkExamRun(const std::vector<const content::Task*>& tasks, const Run
 // when the source really contains it (a single-task file brings its own yes/no tests).
 ExamCheck checkClipboardRun(const std::vector<const content::Task*>& tasks, const std::string& mainOverride,
                             const std::string& source, const RunResult& run);
+
+// Writes the marks of a check into the exam: every judged function (mark >= 0) gets the result and is locked as "checked
+// by the app"; the latest check wins. Functions outside the check and "check by eye" ones keep their state.
+void applyCheck(Exam& exam, const ExamCheck& check);
 
 }  // namespace logic

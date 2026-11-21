@@ -44,7 +44,7 @@ public:
             return;
         }
         current_ = std::clamp(current_, 0, static_cast<int>(tasks.size()) - 1);
-        exam.marks.resize(tasks.size(), -1);
+        logic::fitMarks(exam, tasks.size());
         collectCheck(exam, tasks);
 
         // Clock
@@ -52,7 +52,8 @@ public:
         const int remaining = exam.minutes > 0 ? static_cast<int>(exam.minutes * 60 - elapsed) : 0;
         const bool timed = exam.minutes > 0;
         if (timed && remaining <= 0) {
-            cx.toast("Time is up");
+            const std::string note = logic::unmarkedNote(logic::unmarkedCount(exam));
+            cx.toast(note.empty() ? "Time is up" : "Time is up. " + note);
             app.finishExam();
             end(col);
             return;
@@ -83,7 +84,7 @@ public:
         col.space(4.0f);
 
         // Exam rule reminder (wraps in narrow windows instead of being cut off)
-        const std::string rule = "A compile error, an infinite loop or a crash gives 0 for the whole exam. A wrong result fails only that function.";
+        const std::string rule = "Tip: make sure your code compiles and has no infinite loops, so every function can be tested.";
         const float ruleH = textHeight(Face::Regular, size::kSmall, rule, col.w - 80.0f);
         Rect warn = col.take(std::max(48.0f, ruleH + 26.0f));
         callout(warn, p.warning, p.warningSoft);
@@ -104,7 +105,7 @@ public:
                 current_ = static_cast<int>(i);
                 scroll_.offset = 0.0f;
             }
-            // Self-check mark of the task: green dot = solved, red dot = not solved.
+            // Result of the task: no dot = not checked yet, green dot = passed, red dot = failed.
             if (exam.marks[i] >= 0) {
                 DrawCircleV(Vector2{x + w - 5.0f, col.y + 5.0f}, 6.5f, p.bg);
                 DrawCircleV(Vector2{x + w - 5.0f, col.y + 5.0f}, 4.5f, exam.marks[i] == 1 ? p.success : p.danger);
@@ -117,8 +118,12 @@ public:
         // The current task
         const content::Task& t = *tasks[static_cast<size_t>(current_)];
         const float pointsW = badgeWidth(std::to_string(t.points) + " points");
-        drawText(Face::Bold, size::kH2, ellipsize(Face::Bold, size::kH2, t.title, col.w - pointsW - 16.0f), col.x, col.y, p.text);
+        const signed char curMark = exam.marks[static_cast<size_t>(current_)];
+        const std::string resultText = curMark == 1 ? "Passed" : curMark == 0 ? "Failed" : "";
+        const float resultW = resultText.empty() ? 0.0f : badgeWidth(resultText) + 8.0f;
+        drawText(Face::Bold, size::kH2, ellipsize(Face::Bold, size::kH2, t.title, col.w - pointsW - resultW - 16.0f), col.x, col.y, p.text);
         badge(std::to_string(t.points) + " points", col.x + col.w - pointsW, col.y + 6.0f, p.accent, p.accentSoft);
+        if (curMark >= 0) badge(resultText, col.x + col.w - pointsW - resultW, col.y + 6.0f, curMark == 1 ? p.success : p.danger, curMark == 1 ? p.successSoft : p.dangerSoft);
         col.space(44.0f);
         CodeBoxOpts o;
         o.lineNumbers = false;
@@ -128,22 +133,31 @@ public:
         codeBox("statement", Rect{col.x, col.y, col.w, h}, t.statement, o);
         col.space(h + 18.0f);
 
-        // Copy buttons and the clipboard check (a third row when the window is narrow)
+        // Action row: Check from clipboard (primary) first, then the two copy buttons. All 42 px high with a 12 px gap;
+        // the row flows onto the next line when the window is narrow.
         const bool cpp = app.track() == Track::Cpp;
-        const float copyW = 210.0f, fullW = 180.0f, checkW = 230.0f;
-        const bool wrap = col.w < copyW + fullW + checkW + 24.0f;
-        if (button("Copy this task to IDE", Rect{col.x, col.y, copyW, 42.0f}, ButtonStyle::Secondary, Icon::Copy)) {
+        const float btnH = 42.0f, gap = 12.0f;
+        float bx = col.x, by = col.y;
+        auto place = [&](float w) {
+            if (bx > col.x && bx + w > col.x + col.w) {
+                bx = col.x;
+                by += btnH + gap;
+            }
+            const Rect r{bx, by, w, btnH};
+            bx += w + gap;
+            return r;
+        };
+        if (button("Check from clipboard", place(230.0f), ButtonStyle::Primary, Icon::Play, compiler_.found && !runner_.busy()))
+            startCheck(app, exam, tasks);
+        if (button("Copy this task to IDE", place(210.0f), ButtonStyle::Secondary, Icon::Copy)) {
             SetClipboardText(logic::buildTaskFile(t, false).c_str());
             cx.toast("Task copied - paste it into your IDE");
         }
-        if (button("Copy full exam", Rect{col.x + copyW + 12.0f, col.y, fullW, 42.0f}, ButtonStyle::Primary, Icon::Copy)) {
+        if (button("Copy full exam", place(180.0f), ButtonStyle::Secondary, Icon::Copy)) {
             SetClipboardText(logic::buildExamFile(tasks, exam.mainOverride, false).c_str());
             cx.toast("Full exam copied - paste it into your IDE");
         }
-        const Rect checkR = wrap ? Rect{col.x, col.y + 54.0f, checkW, 42.0f} : Rect{col.x + copyW + fullW + 24.0f, col.y, checkW, 42.0f};
-        if (button("Check from clipboard", checkR, ButtonStyle::Secondary, Icon::Play, compiler_.found && !runner_.busy()))
-            startCheck(app, exam, tasks);
-        col.space(wrap ? 114.0f : 60.0f);
+        col.space(by - col.y + btnH + 18.0f);
         const float hint = drawParagraph(Face::Regular, size::kBodySm,
                                          "The file has all " + std::to_string(tasks.size()) + " functions with empty bodies and the tests at the bottom. "
                                          "Run it in your IDE: a correct function prints yes. Or paste your finished file and press Check from clipboard.",
@@ -153,6 +167,8 @@ public:
         drawCheck(col, app, tasks, cpp);
 
         drawSelfCheck(col, exam, static_cast<size_t>(current_));
+
+        drawFinishHint(col, app, exam, tasks.size());
 
         // Previous / next
         if (current_ > 0 && button("Previous task", Rect{col.x, col.y, 160.0f, 40.0f}, ButtonStyle::Secondary, Icon::ChevronLeft)) {
@@ -229,21 +245,13 @@ private:
         panel.check = logic::checkClipboardRun(tasks, exam.mainOverride, runSource_, run);
         panel.originTask = runTask_;
         panel.run = std::move(run);
-        for (size_t i = 0; i < tasks.size() && i < panel.check.marks.size(); ++i)
-            if (panel.check.marks[i] >= 0) exam.marks[i] = panel.check.marks[i];
-        if (panel.check.wholeExamZero) {
-            exam.fileRan = false;
-            exam.fileAnswered = true;
-        } else if (panel.run.verdict == logic::Verdict::Finished) {
-            exam.fileRan = true;
-            exam.fileAnswered = true;
-        }
+        logic::applyCheck(exam, panel.check);
         if (panel.run.verdict == logic::Verdict::Finished) {
             const int solved = static_cast<int>(std::count(panel.check.marks.begin(), panel.check.marks.end(), static_cast<signed char>(1)));
             const int checked = static_cast<int>(std::count(panel.check.inScope.begin(), panel.check.inScope.end(), static_cast<char>(1)));
-            Context::get().toast("Checked: " + std::to_string(solved) + " of " + std::to_string(checked) + " functions solved");
-        } else if (panel.check.wholeExamZero) {
-            Context::get().toast("In the real exam this gives 0 for the whole exam");
+            Context::get().toast("Checked: " + std::to_string(solved) + " of " + std::to_string(checked) + " functions passed");
+        } else if (panel.check.testsStopped) {
+            Context::get().toast("The tests could not run: see the note below");
         }
         panel_ = std::move(panel);
     }
@@ -272,30 +280,61 @@ private:
         }
     }
 
-    // Self-check of one task: the student ran the tests in the IDE and records the result here.
-    // The marks are the same ones the review page shows; clicking the chosen answer again clears it.
+    // Mark of one task: a result of "Check from clipboard" is shown and locked; otherwise the student records the
+    // result of the IDE run with Passed / Failed (clicking the chosen button again clears it).
     void drawSelfCheck(Column& col, logic::Exam& exam, size_t index) {
         const Palette& p = Theme::get().colors();
-        const std::string note = "Ran the tests in your IDE? Mark this function. Tasks not marked as solved do not count.";
+        const signed char mark = exam.marks[index];
+        const bool locked = exam.checked[index] != 0;
+        const std::string title = locked ? "Checked by the app" : mark >= 0 ? "Self-checked" : "Mark this function";
+        const std::string note = locked ? "This result comes from Check from clipboard and cannot be changed by hand. A new check replaces it."
+                                        : "Ran the tests in your IDE? Mark this function. A function that is neither checked nor marked counts as Failed.";
         const float btnW = 136.0f, btnGap = 10.0f;
         const bool stacked = col.w < 700.0f;  // narrow window: buttons go under the text
-        const float textW = col.w - 44.0f - (stacked ? 0.0f : 2.0f * btnW + btnGap + 20.0f);
+        const float rightW = locked ? badgeWidth(mark == 1 ? "Passed" : "Failed") : 2.0f * btnW + btnGap;
+        const float textW = col.w - 44.0f - (stacked ? 0.0f : rightW + 20.0f);
         const float noteH = textHeight(Face::Regular, size::kBodySm, note, textW);
         const float bodyH = 52.0f + noteH;
-        Rect r = col.take(stacked ? bodyH + 12.0f + 40.0f + 18.0f : std::max(84.0f, bodyH + 18.0f));
-        signed char& mark = exam.marks[index];
+        Rect r = col.take(stacked && !locked ? bodyH + 12.0f + 40.0f + 18.0f : std::max(84.0f, bodyH + 18.0f));
         if (mark == 1) callout(r, p.success, p.successSoft);
         else if (mark == 0) callout(r, p.danger, p.dangerSoft);
         else card(r);
-        drawText(Face::Bold, size::kH3, "Self-check", r.x + 22.0f, r.y + 16.0f, p.text);
+        drawText(Face::Bold, size::kH3, title, r.x + 22.0f, r.y + 16.0f, p.text);
         drawParagraph(Face::Regular, size::kBodySm, note, r.x + 22.0f, r.y + 50.0f, textW, p.textMuted);
-        const float by = stacked ? r.y + bodyH + 12.0f : r.y + (r.height - 40.0f) / 2.0f;
-        const float bx = stacked ? r.x + 22.0f : r.x + r.width - 22.0f - 2.0f * btnW - btnGap;
-        if (button("Solved", Rect{bx, by, btnW, 40.0f}, mark == 1 ? ButtonStyle::Success : ButtonStyle::Secondary, Icon::Check))
-            mark = mark == 1 ? -1 : 1;
-        if (button("Not solved", Rect{bx + btnW + btnGap, by, btnW, 40.0f}, mark == 0 ? ButtonStyle::Danger : ButtonStyle::Secondary, Icon::Cross))
-            mark = mark == 0 ? -1 : 0;
+        if (locked) {
+            badge(mark == 1 ? "Passed" : "Failed", r.x + r.width - 22.0f - rightW, r.y + 18.0f, mark == 1 ? p.success : p.danger, mark == 1 ? p.successSoft : p.dangerSoft);
+        } else {
+            const float by = stacked ? r.y + bodyH + 12.0f : r.y + (r.height - 40.0f) / 2.0f;
+            const float bx = stacked ? r.x + 22.0f : r.x + r.width - 22.0f - rightW;
+            if (button("Passed", Rect{bx, by, btnW, 40.0f}, mark == 1 ? ButtonStyle::Success : ButtonStyle::Secondary, Icon::Check))
+                logic::setManualMark(exam, index, mark == 1 ? -1 : 1);
+            if (button("Failed", Rect{bx + btnW + btnGap, by, btnW, 40.0f}, mark == 0 ? ButtonStyle::Danger : ButtonStyle::Secondary, Icon::Cross))
+                logic::setManualMark(exam, index, mark == 0 ? -1 : 0);
+        }
         col.space(6.0f);
+    }
+
+    // Shown once every task has a mark: offers to finish (the exam is never finished automatically).
+    void drawFinishHint(Column& col, App& app, const logic::Exam& exam, size_t taskCount) {
+        const Palette& p = Theme::get().colors();
+        const bool all = logic::allMarked(exam);
+        // Called every frame so the tween follows the condition: it glides in when the last mark is set.
+        const float t = Context::get().tween(Context::get().makeId("finish-hint"), all ? 1.0f : 0.0f);
+        if (!all) return;
+        const std::string text = logic::allPassed(exam) ? "All " + std::to_string(taskCount) + " functions passed. Ready to finish?"
+                                                        : "All functions are checked. Ready to finish?";
+        const float btnW = 170.0f;
+        const bool stacked = col.w < 640.0f;  // narrow window: the button goes under the text
+        const float textW = col.w - 44.0f - (stacked ? 0.0f : btnW + 20.0f);
+        const float textH = textHeight(Face::Bold, size::kH3, text, textW);
+        Rect r = col.take(stacked ? textH + 12.0f + 42.0f + 36.0f : std::max(84.0f, textH + 36.0f));
+        Appear ap(r, t);
+        callout(r, p.accent, p.accentSoft);
+        drawParagraph(Face::Bold, size::kH3, text, r.x + 22.0f, stacked ? r.y + 18.0f : r.y + (r.height - textH) / 2.0f, textW, p.text);
+        const Rect b = stacked ? Rect{r.x + 22.0f, r.y + 18.0f + textH + 12.0f, btnW, 42.0f}
+                               : Rect{r.x + r.width - 22.0f - btnW, r.y + (r.height - 42.0f) / 2.0f, btnW, 42.0f};
+        if (button("Finish exam", b, ButtonStyle::Primary, Icon::Flag)) app.requestFinishExam();
+        col.space(18.0f);
     }
 
     int current_ = 0;

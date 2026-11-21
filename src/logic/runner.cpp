@@ -588,8 +588,8 @@ const char* verdictName(Verdict v) {
     return "";
 }
 
-// Compile error, timeout and crash give 0 for the whole exam.
-bool failsWholeExam(Verdict v) { return v == Verdict::CompileError || v == Verdict::Timeout || v == Verdict::Crash; }
+// Compile error, timeout and crash: the tests of the file could not run to the end.
+bool stopsTests(Verdict v) { return v == Verdict::CompileError || v == Verdict::Timeout || v == Verdict::Crash; }
 
 // Compile, then run, in a private temp directory.
 RunResult runSource(Language lang, const std::string& source, const RunnerConfig& cfg, const std::atomic<bool>* cancel,

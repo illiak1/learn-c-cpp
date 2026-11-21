@@ -64,7 +64,7 @@ TEST(random_exam_picks_distinct_tasks) {
     CHECK_EQ(all.marks.size(), 2u);
 }
 
-TEST(score_counts_passed_points_and_zeroes_when_file_failed) {
+TEST(score_is_the_sum_of_the_passed_functions) {
     auto tc = sample();
     Exam e = makeSetExam(tc.sets[0]);
     e.marks = {1, 0};
@@ -74,7 +74,9 @@ TEST(score_counts_passed_points_and_zeroes_when_file_failed) {
     CHECK_EQ(s.passed, 1);
     e.marks = {1, 1};
     CHECK_EQ(scoreExam(tc, e).earned, 30);
-    e.fileRan = false;  // compile error / infinite loop / crash
+    e.marks = {-1, 1};  // unchecked functions count as Failed
+    CHECK_EQ(scoreExam(tc, e).earned, 20);
+    e.marks = {-1, -1};
     CHECK_EQ(scoreExam(tc, e).earned, 0);
     CHECK_EQ(scoreExam(tc, e).total, 30);
 }

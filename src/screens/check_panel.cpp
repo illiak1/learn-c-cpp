@@ -34,7 +34,7 @@ void verdictColors(const Palette& p, const CheckPanel& panel, Color& fg, Color& 
     switch (panel.run.verdict) {
         case Verdict::CompileError:
         case Verdict::Timeout:
-        case Verdict::Crash: fg = p.danger; bg = p.dangerSoft; break;
+        case Verdict::Crash: fg = p.warning; bg = p.warningSoft; break;
         case Verdict::Finished: {
             const bool allYes = std::all_of(panel.check.tasks.begin(), panel.check.tasks.end(),
                                             [](const logic::TaskVerdict& t) { return t.status == logic::TaskCheck::Passed; });
@@ -180,10 +180,10 @@ void drawFunctions(Column& col, const CheckPanel& panel, const std::vector<const
     if (n == 0) return;
     const bool anyUnchecked = std::any_of(rows.begin(), rows.end(), [&](size_t i) { return ck.tasks[i].status == logic::TaskCheck::NotChecked; });
     const bool partial = n < tasks.size();
-    std::string foot = ck.wholeExamZero
-                           ? "Every function in this file is marked Not solved because the whole exam gives 0. Fix the problem and check again."
+    std::string foot = ck.testsStopped
+                           ? "The functions in this file are marked Failed because their tests could not run. Fix the problem and check again."
                            : anyUnchecked ? "The tests of a function marked \"check by eye\" print values instead of yes/no: compare them with the paper and mark it yourself."
-                                          : "The functions were marked automatically. You can still change the marks below.";
+                                          : "The app marked these functions. A new check replaces the marks.";
     if (partial) foot += " Tasks whose function is not in the file were left unchanged.";
     const float footH = textHeight(Face::Regular, size::kSmall, foot, col.w - 2.0f * kPad);
     Rect r = col.take(kPad + 36.0f + 36.0f * static_cast<float>(n) + footH + 20.0f);
@@ -191,7 +191,7 @@ void drawFunctions(Column& col, const CheckPanel& panel, const std::vector<const
     drawText(Face::Bold, size::kH3, "Functions", r.x + kPad, r.y + 16.0f, p.text);
     int solved = 0;
     for (size_t i : rows) solved += ck.marks[i] == 1;
-    if (!ck.wholeExamZero) {
+    if (!ck.testsStopped) {
         const std::string s = std::to_string(solved) + " of " + std::to_string(n) + " yes";
         drawText(Face::Regular, size::kSmall, s, r.x + r.width - kPad - Theme::get().textWidth(Face::Regular, size::kSmall, s), r.y + 22.0f, p.textMuted);
     }
@@ -204,7 +204,7 @@ void drawFunctions(Column& col, const CheckPanel& panel, const std::vector<const
         const float bw = badgeWidth(text);
         badge(text, r.x + r.width - kPad - bw, y + 5.0f, fg, bg);
         float rightEdge = r.x + r.width - kPad - bw - 12.0f;
-        if (v.yes + v.no > 0 && !ck.wholeExamZero) {
+        if (v.yes + v.no > 0 && !ck.testsStopped) {
             const std::string counts = std::to_string(v.yes) + " yes, " + std::to_string(v.no) + " no";
             const float cw = Theme::get().textWidth(Face::Regular, size::kSmall, counts);
             drawText(Face::Regular, size::kSmall, counts, rightEdge - cw, y + 18.0f - Theme::get().textMidline(Face::Regular, size::kSmall), p.textMuted);
@@ -249,12 +249,8 @@ void drawCheckPanel(Column& col, const CheckPanel& panel, const std::vector<cons
              head.x + kPad + bw + 14.0f, head.y + 32.0f - Theme::get().textMidline(Face::Regular, size::kSmall), p.textMuted);
 
     using logic::Verdict;
-    if (panel.check.wholeExamZero) {
-        std::string detail;
-        if (run.verdict == Verdict::CompileError) detail = "The file does not compile. Fix the errors below and check again.";
-        else if (run.verdict == Verdict::Timeout) detail = run.detail;
-        else detail = "The program crashed: " + run.signalName + ".";
-        noteCallout(col, p.danger, p.dangerSoft, Icon::Warning, "In the real exam this gives 0 for the whole exam", detail);
+    if (panel.check.testsStopped) {
+        noteCallout(col, p.warning, p.warningSoft, Icon::Warning, logic::stoppedMessage(run), "");
     } else if (run.verdict == Verdict::CompilerMissing || run.verdict == Verdict::InternalError) {
         noteCallout(col, p.warning, p.warningSoft, Icon::Warning, run.detail, "");
     } else if (run.verdict == Verdict::Cancelled) {
@@ -263,7 +259,7 @@ void drawCheckPanel(Column& col, const CheckPanel& panel, const std::vector<cons
 
     drawMessages(col, run);
     if (run.verdict == Verdict::Finished || run.verdict == Verdict::Timeout || run.verdict == Verdict::Crash) drawProgramOutput(col, run);
-    if (run.verdict == Verdict::Finished || panel.check.wholeExamZero) drawFunctions(col, panel, tasks);
+    if (run.verdict == Verdict::Finished || panel.check.testsStopped) drawFunctions(col, panel, tasks);
 }
 
 // Card shown while the worker compiles or runs the file.
