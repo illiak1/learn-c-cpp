@@ -147,8 +147,24 @@ bool textInput(const std::string& idStr, Rect r, std::string& text, const TextIn
             text.erase(static_cast<size_t>(selMin()), static_cast<size_t>(selMax() - selMin()));
             st.caret = st.anchor = selMin();
         };
-        auto insert = [&](const std::string& s) {
+        auto insert = [&](std::string s) {
             if (o.readOnly) return;
+            if (o.accept) {
+                // Only plain ASCII passes a filter: multi-byte characters are dropped whole.
+                std::string kept;
+                for (char c : s)
+                    if (static_cast<unsigned char>(c) < 128 && o.accept(static_cast<unsigned char>(c))) kept.push_back(c);
+                s = kept;
+            }
+            if (o.maxLength > 0) {
+                const size_t used = text.size() - static_cast<size_t>(selMax() - selMin());
+                const size_t room = used >= o.maxLength ? 0 : o.maxLength - used;
+                if (s.size() > room) {
+                    s.resize(room);
+                    while (!s.empty() && (static_cast<unsigned char>(s.back()) & 0xC0) == 0x80) s.pop_back();  // keep UTF-8 whole
+                }
+            }
+            if (s.empty()) return;
             if (hasSel()) eraseSel();
             text.insert(static_cast<size_t>(st.caret), s);
             st.caret += static_cast<int>(s.size());

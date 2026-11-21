@@ -509,6 +509,17 @@ void drawIcon(Icon icon, float cx, float cy, float size, Color c, Color cutout) 
             DrawTriangle(Vector2{cx - s * 0.6f, cy - s * 0.85f}, Vector2{cx - s * 0.6f, cy + s * 0.1f},
                          Vector2{cx + s * 0.8f, cy - s * 0.37f}, c);
             break;
+        case Icon::Trophy:
+            // Cup (half ring with a rim and two handles), stem and base.
+            DrawRing(Vector2{cx, cy - s * 0.15f}, s * 0.62f, s * 0.62f + t, 0, 180, 20, c);
+            line(-0.62f, -0.8f, 0.62f, -0.8f);
+            line(-0.62f, -0.8f, -0.62f, -0.15f);
+            line(0.62f, -0.8f, 0.62f, -0.15f);
+            DrawRing(Vector2{cx + s * 0.62f, cy - s * 0.42f}, s * 0.3f, s * 0.3f + t, -90, 90, 12, c);
+            DrawRing(Vector2{cx - s * 0.62f, cy - s * 0.42f}, s * 0.3f, s * 0.3f + t, 90, 270, 12, c);
+            line(0.0f, 0.47f, 0.0f, 0.82f);
+            line(-0.5f, 0.9f, 0.5f, 0.9f);
+            break;
     }
 }
 

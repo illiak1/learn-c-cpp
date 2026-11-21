@@ -19,7 +19,7 @@ enum class ButtonStyle { Primary, Secondary, Ghost, Danger, Success };
 // Small vector icons drawn from primitives (no image assets needed).
 enum class Icon {
     None, Home, Book, Pencil, Timer, Cross, Chart, Moon, Sun, Check, Copy,
-    ChevronLeft, ChevronRight, Flame, Bulb, Warning, Play, Refresh, List, Eye, Flag
+    ChevronLeft, ChevronRight, Flame, Bulb, Warning, Play, Refresh, List, Eye, Flag, Trophy
 };
 
 // Editing state kept per text input id.
@@ -284,6 +284,8 @@ struct TextInputOpts {
     int status = 0;  // 0 normal, 1 correct (green), 2 wrong (red)
     float padX = 12.0f;
     float padY = 8.0f;
+    size_t maxLength = 0;                    // longest text in bytes, 0 = no limit (typing and pasting are cut to fit)
+    bool (*accept)(unsigned char) = nullptr;  // when set, typed or pasted bytes it rejects are dropped (ASCII only)
 };
 // Editable text field. Returns true when Enter is pressed (single line) or the text changed (multiline).
 bool textInput(const std::string& id, Rect r, std::string& text, const TextInputOpts& opts = {});
