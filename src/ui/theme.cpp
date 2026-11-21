@@ -184,7 +184,7 @@ void Theme::init(const std::string& assetsDir) { assetsDir_ = assetsDir; }
 void Theme::preload() {
     const int sizes[] = {size::kLabel, size::kLabel + 1, size::kSmall, size::kSmall + 1, size::kBodySm, size::kButton, size::kBody,
                          size::kH3,    size::kH3 + 1,    size::kH2,    size::kH1,        size::kH1 + 6,  size::kValue,
-                         size::kStat,  size::kDisplay,   size::kScore, size::kHuge,    size::kCountdown};
+                         size::kStat,  size::kDisplay,   size::kScore, size::kHuge,      size::kCountdown};
     for (int px : sizes) {
         font(Face::Regular, px);
         font(Face::Bold, px);

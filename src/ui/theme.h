@@ -108,21 +108,21 @@ inline constexpr float kRowSlide = 0.4f;     // slide duration of one row
 
 // Text sizes used across the UI. Nothing is smaller than kLabel; line heights are whole pixels (Theme::lineHeight).
 namespace size {
-inline constexpr int kLabel = 14;    // uppercase labels, badges, axis ticks
-inline constexpr int kSmall = 15;    // captions
-inline constexpr int kBodySm = 16;   // secondary body text
-inline constexpr int kButton = 17;
-inline constexpr int kBody = 18;     // running text
-inline constexpr int kH3 = 22;       // card titles
-inline constexpr int kH2 = 27;       // section headings
-inline constexpr int kH1 = 36;       // page titles
-inline constexpr int kValue = 28;    // numbers on the Home tiles
-inline constexpr int kStat = 32;     // numbers on the Statistics cards
-inline constexpr int kDisplay = 46;  // the big score of the exam review
+inline constexpr int kLabel = 15;    // uppercase labels, badges, axis ticks
+inline constexpr int kSmall = 16;    // captions
+inline constexpr int kBodySm = 18;   // secondary body text
+inline constexpr int kButton = 18;
+inline constexpr int kBody = 20;     // running text
+inline constexpr int kH3 = 24;       // card titles
+inline constexpr int kH2 = 30;       // section headings
+inline constexpr int kH1 = 40;       // page titles
+inline constexpr int kValue = 30;    // numbers on the Home tiles
+inline constexpr int kStat = 34;     // numbers on the Statistics cards
+inline constexpr int kDisplay = 48;  // the big score of the exam review
 inline constexpr int kScore = 64;    // live score of the Competition HUD
 inline constexpr int kHuge = 96;     // result score
 inline constexpr int kCountdown = 150;  // the 3-2-1-GO numbers
-inline constexpr int kCode = 15;
+inline constexpr int kCode = 16;
 }  // namespace size
 
 // Which track's accent colour is active.

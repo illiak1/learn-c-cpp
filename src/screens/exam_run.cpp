@@ -49,12 +49,12 @@ public:
 
         // Header card: exam title and task counter, clock pill, finish button and a bar with the time left
         const content::Task& cur = *tasks[static_cast<size_t>(current_)];
-        const float finishW = 150.0f, pillW = 136.0f;
-        Rect hdr = col.take(timed ? 110.0f : 92.0f);
+        const float finishW = 150.0f, pillW = 148.0f;
+        Rect hdr = col.take(timed ? 120.0f : 98.0f);
         cardRaised(hdr);
         const float titleW = hdr.width - 44.0f - finishW - pillW - 24.0f;
         drawText(Face::Bold, size::kH2, ellipsize(Face::Bold, size::kH2, exam.title, titleW), hdr.x + 22.0f, hdr.y + 14.0f, p.text);
-        drawText(Face::Regular, size::kSmall, "Task " + std::to_string(current_ + 1) + " of " + std::to_string(tasks.size()) + "  \xC2\xB7  " + std::to_string(cur.points) + " points", hdr.x + 22.0f, hdr.y + 54.0f, p.textMuted);
+        drawText(Face::Regular, size::kSmall, "Task " + std::to_string(current_ + 1) + " of " + std::to_string(tasks.size()) + "  \xC2\xB7  " + std::to_string(cur.points) + " points", hdr.x + 22.0f, hdr.y + 58.0f, p.textMuted);
         const std::string clock = timed ? logic::formatClock(remaining) : logic::formatClock(static_cast<int>(elapsed));
         const bool low = timed && remaining < 300;
         const bool critical = timed && remaining < 60;

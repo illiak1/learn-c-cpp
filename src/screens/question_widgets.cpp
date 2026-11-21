@@ -39,7 +39,11 @@ int drawChoiceCards(Column& col, const content::Exercise& ex, int selected, bool
         if (checked && c.correct) drawIcon(Icon::Check, ctr.x, ctr.y, 13.0f, p.success);
         else if (checked && sel) drawIcon(Icon::Cross, ctr.x, ctr.y, 12.0f, p.danger);
         else if (sel) DrawCircleV(ctr, 5.0f, p.accent);
-        drawParagraph(Face::Regular, size::kBody, c.text, r.x + 56.0f, r.y + (h - textHeight(Face::Regular, size::kBody, c.text, textW)) / 2.0f, textW, p.text);
+        // Centre the letters (not the line box) on the marker: shift by half a line minus the optical midline.
+        Theme& th = Theme::get();
+        const float textH = textHeight(Face::Regular, size::kBody, c.text, textW);
+        const float lift = th.lineHeight(size::kBody) / 2.0f - th.textMidline(Face::Regular, size::kBody);
+        drawParagraph(Face::Regular, size::kBody, c.text, r.x + 56.0f, r.y + (h - textH) / 2.0f + lift, textW, p.text);
         col.space(h + 10.0f);
     }
     col.space(6.0f);

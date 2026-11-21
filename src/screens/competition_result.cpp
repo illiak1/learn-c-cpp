@@ -287,7 +287,6 @@ void CompetitionScreen::drawTable(App& app, Column& col, int highlightRank, doub
         drawText(Face::Regular, size::kBodySm, "No scores yet in this track. Play a round to be the first.", r.x + 22.0f, headY + 42.0f, p.textMuted);
         return;
     }
-    const float lh = th.lineHeight(size::kBodySm);
     for (size_t i = 0; i < table.size(); ++i) {
         const logic::BlitzEntry& e = table[i];
         const float a = easeOutCubic(std::clamp(static_cast<float>((cx.now - slideStart - static_cast<double>(i) * arcade::kRowStagger) / arcade::kRowSlide), 0.0f, 1.0f));
@@ -304,7 +303,7 @@ void CompetitionScreen::drawTable(App& app, Column& col, int highlightRank, doub
             glowRound(row, radius::kMd, mine && medal ? mc : p.accent, (0.35f + 0.45f * beat) * a);
             strokeRound(row, radius::kMd, 1.5f, withAlpha(medal ? mc : p.accent, a));
         }
-        const float ty = row.y + (row.height - lh) / 2.0f;
+        const float ty = row.y + row.height / 2.0f - th.textMidline(Face::Regular, size::kBodySm);  // centre the letters, not the line box
         const Rect disc{row.x + 12.0f, row.y + (row.height - 28.0f) / 2.0f, 28.0f, 28.0f};
         char num[24];
         std::snprintf(num, sizeof num, "%zu", i + 1);

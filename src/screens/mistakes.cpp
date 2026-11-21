@@ -78,12 +78,12 @@ public:
             for (const std::string& id : failed) {
                 const content::Task* t = tc.findTask(id);
                 if (!t) continue;
-                Rect r = col.take(62.0f);
+                Rect r = col.take(64.0f);
                 card(r);
                 Context::get().pushId(id);
                 drawIcon(Icon::Cross, r.x + 28.0f, r.y + 30.0f, 16.0f, p.danger);
                 drawText(Face::Bold, size::kButton, ellipsize(Face::Bold, size::kButton, t->title, r.width - 52.0f - 128.0f), r.x + 52.0f, r.y + 8.0f, p.text);
-                drawText(Face::Regular, size::kSmall, std::to_string(t->points) + " points", r.x + 52.0f, r.y + 33.0f, p.textMuted);
+                drawText(Face::Regular, size::kSmall, std::to_string(t->points) + " points", r.x + 52.0f, r.y + 35.0f, p.textMuted);
                 if (button("Redo", Rect{r.x + r.width - 118.0f, r.y + 8.0f, 98.0f, 42.0f}, ButtonStyle::Secondary, Icon::Timer))
                     app.beginExam(logic::makeTaskListExam(t->title, {id}));
                 Context::get().popId();

@@ -270,8 +270,8 @@ void CompetitionScreen::drawPass(App& app, Column& col) {
     const std::string& to = passText_;
     drawTextPop(Face::Bold, size::kH1, to.c_str(), r.x + r.width / 2.0f, r.y + r.height * 0.52f + 62.0f, popScale(static_cast<float>(t - 0.1), 0.25f, 0.4f), withAlpha(arcade::kAmber, a));
     const float bw = 240.0f;
-    const bool go = arcadeButton("I'm ready", Rect{r.x + (r.width - bw) / 2.0f, r.y + r.height - 86.0f, bw, 56.0f}, Icon::Play);
-    drawCentered(Face::Regular, size::kSmall, "or press Enter or Space  -  the score stays hidden until both have played", Rect{r.x, r.y + r.height - 26.0f, r.width, 22.0f}, withAlpha(arcade::kWhite, 0.65f));
+    const bool go = arcadeButton("I'm ready", Rect{r.x + (r.width - bw) / 2.0f, r.y + r.height - 100.0f, bw, 56.0f}, Icon::Play);
+    drawCentered(Face::Regular, size::kSmall, "or press Enter or Space  -  the score stays hidden until both have played", Rect{r.x, r.y + r.height - 38.0f, r.width, 24.0f}, withAlpha(arcade::kWhite, 0.7f));
     const bool key = t > 0.6 && !cx.modalBlocks && (IsKeyPressed(KEY_ENTER) || IsKeyPressed(KEY_KP_ENTER) || IsKeyPressed(KEY_SPACE));
     if (go || key) startCountdown(app);
     (void)app;

@@ -62,7 +62,6 @@ void CompetitionScreen::drawDuelTable(App& app, Column& col, const std::string& 
         drawText(Face::Regular, size::kBodySm, "No duels in this track yet. Play one to start the history.", r.x + 22.0f, headY + 42.0f, p.textMuted);
         return;
     }
-    const float lh = th.lineHeight(size::kBodySm);
     const float nameW = (x1 - x0) / 2.0f - 70.0f;
     for (size_t i = 0; i < shown; ++i) {
         const logic::DuelRecord& d = all[all.size() - 1 - i];  // newest first
@@ -78,7 +77,7 @@ void CompetitionScreen::drawDuelTable(App& app, Column& col, const std::string& 
             glowRound(row, radius::kMd, p.accent, (0.35f + 0.45f * beat) * a);
             strokeRound(row, radius::kMd, 1.5f, withAlpha(p.accent, a));
         }
-        const float ty = row.y + (row.height - lh) / 2.0f;
+        const float ty = row.y + row.height / 2.0f - th.textMidline(Face::Regular, size::kBodySm);  // centre the letters, not the line box
         drawText(Face::Regular, size::kBodySm, d.date, r.x + 22.0f, ty, withAlpha(p.textMuted, a));
         char score[32];
         std::snprintf(score, sizeof score, "%d - %d", d.scoreA, d.scoreB);
