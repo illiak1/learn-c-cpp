@@ -61,7 +61,9 @@ public:
 
         // Header card: exam title and task counter, clock pill, finish button and a bar with the time left
         const content::Task& cur = *tasks[static_cast<size_t>(current_)];
-        const float finishW = 150.0f, pillW = 148.0f;
+        // A function replayed from Mistakes has no finish step: its button is "Back to Mistakes".
+        const bool replay = exam.replay;
+        const float finishW = replay ? 200.0f : 150.0f, pillW = 148.0f;
         Rect hdr = col.take(timed ? 120.0f : 98.0f);
         cardRaised(hdr);
         const float titleW = hdr.width - 44.0f - finishW - pillW - 24.0f;
@@ -76,7 +78,15 @@ public:
         fillRound(pill, pill.height / 2.0f, cbg);
         drawIcon(Icon::Timer, pill.x + 26.0f, pill.y + 21.0f, 19.0f, cfg);
         drawText(Face::Bold, size::kH3 + 1, clock, pill.x + 48.0f, pill.y + pill.height / 2.0f - Theme::get().textMidline(Face::Bold, size::kH3 + 1), cfg);
-        if (button("Finish exam", Rect{hdr.x + hdr.width - 22.0f - finishW, hdr.y + 14.0f, finishW, 42.0f}, ButtonStyle::Secondary, Icon::Flag)) app.requestFinishExam();
+        if (replay) {
+            if (button("Back to Mistakes", Rect{hdr.x + hdr.width - 22.0f - finishW, hdr.y + 14.0f, finishW, 42.0f}, ButtonStyle::Secondary, Icon::ChevronLeft)) {
+                app.leaveReplay();
+                end(col);
+                return;
+            }
+        } else if (button("Finish exam", Rect{hdr.x + hdr.width - 22.0f - finishW, hdr.y + 14.0f, finishW, 42.0f}, ButtonStyle::Secondary, Icon::Flag)) {
+            app.requestFinishExam();
+        }
         if (timed) {
             const float total = static_cast<float>(exam.minutes * 60);
             progressBar(Rect{hdr.x + 22.0f, hdr.y + hdr.height - 28.0f, hdr.width - 44.0f, 8.0f}, std::clamp(static_cast<float>(remaining) / total, 0.0f, 1.0f), cfg, "exam-time");
@@ -169,7 +179,20 @@ public:
 
         drawSelfCheck(col, exam, static_cast<size_t>(current_));
 
-        drawFinishHint(col, app, exam, tasks.size());
+        if (!replay) drawFinishHint(col, app, exam, tasks.size());
+
+        // Replay from Mistakes: the way out sits where the finish card would be
+        if (replay) {
+            cx.pushId("replay-bottom");  // same label as the header button: keep their hover states apart
+            const bool back = button("Back to Mistakes", Rect{col.x, col.y, 200.0f, 42.0f}, ButtonStyle::Secondary, Icon::ChevronLeft);
+            cx.popId();
+            if (back) {
+                app.leaveReplay();
+                end(col);
+                return;
+            }
+            col.space(60.0f);
+        }
 
         // Previous / next
         if (current_ > 0 && button("Previous task", Rect{col.x, col.y, 160.0f, 40.0f}, ButtonStyle::Secondary, Icon::ChevronLeft)) {

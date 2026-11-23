@@ -220,16 +220,29 @@ void App::requestResetProgress() {
                                           "Reset progress", "Keep progress", true});
 }
 
-// Stops the clock and opens the review.
+// Stops the clock, saves the result and opens the review.
 void App::finishExam() {
-    if (!exam_.finished) {
-        exam_.finished = true;
-        exam_.finishedAt = GetTime();
-        exam_.finishDate = logic::todayString();
-        exam_.finishTime = logic::nowTimeString();
-        commitExam();
-    }
+    endExam();
     go(Page::ExamReview);
+}
+
+// Stops the clock and saves the result (once).
+void App::endExam() {
+    if (exam_.finished) return;
+    exam_.finished = true;
+    exam_.finishedAt = GetTime();
+    exam_.finishDate = logic::todayString();
+    exam_.finishTime = logic::nowTimeString();
+    commitExam();
+}
+
+// Leaves a function replayed from Mistakes: a marked result is saved as usual, an unmarked replay is dropped.
+void App::leaveReplay() {
+    if (exam_.replay && !exam_.finished) {
+        if (logic::unmarkedCount(exam_) < static_cast<int>(exam_.taskIds.size())) endExam();
+        else exam_ = logic::Exam{};
+    }
+    go(Page::Mistakes);
 }
 
 // Switches page and notifies the new screen.

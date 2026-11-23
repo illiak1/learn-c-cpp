@@ -21,7 +21,8 @@ struct Exam {
     double startedAt = 0.0;             // seconds (caller's clock)
     double finishedAt = 0.0;
     bool finished = false;
-    std::string finishDate;             // YYYY-MM-DD when the exam ended
+    bool replay = false;                // one function replayed from Mistakes: no finish step, only Back to Mistakes
+    std::string finishDate;            // YYYY-MM-DD when the exam ended
     std::string finishTime;             // HH:MM when the exam ended
     int recordIndex = -1;               // index of this exam's record in the progress file (-1 = not saved yet)
     std::string recordSig;              // what was last written, so unchanged results are not saved again

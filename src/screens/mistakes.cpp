@@ -84,8 +84,11 @@ public:
                 drawIcon(Icon::Cross, r.x + 28.0f, r.y + 30.0f, 16.0f, p.danger);
                 drawText(Face::Bold, size::kButton, ellipsize(Face::Bold, size::kButton, t->title, r.width - 52.0f - 128.0f), r.x + 52.0f, r.y + 8.0f, p.text);
                 drawText(Face::Regular, size::kSmall, logic::plural(t->points, "point"), r.x + 52.0f, r.y + 35.0f, p.textMuted);
-                if (button("Redo", Rect{r.x + r.width - 118.0f, r.y + 8.0f, 98.0f, 42.0f}, ButtonStyle::Secondary, Icon::Timer))
-                    app.beginExam(logic::makeTaskListExam(t->title, {id}));
+                if (button("Redo", Rect{r.x + r.width - 118.0f, r.y + 8.0f, 98.0f, 42.0f}, ButtonStyle::Secondary, Icon::Timer)) {
+                    logic::Exam replay = logic::makeTaskListExam(t->title, {id});
+                    replay.replay = true;
+                    app.beginExam(std::move(replay));
+                }
                 Context::get().popId();
             }
         }

@@ -109,6 +109,8 @@ public:
     logic::Exam& exam() { return exam_; }
     // Ends the timer and opens the review page.
     void finishExam();
+    // Back to the Mistakes page from a replayed function (saves the mark when there is one).
+    void leaveReplay();
     // Writes the finished exam (score, per-task scores) to the progress file; calling it again updates the same record.
     void commitExam();
 
@@ -125,6 +127,8 @@ private:
     void frame();
     void drawSidebar(ui::Rect r);
     void registerScreens();
+    // Stops the clock and saves the result of the running exam (nothing happens when it is already finished).
+    void endExam();
 
     Options options_;
     Track track_ = Track::C;
