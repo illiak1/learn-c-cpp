@@ -200,17 +200,6 @@ int unmarkedCount(const Exam& exam) {
     return n;
 }
 
-// Every task has a mark.
-bool allMarked(const Exam& exam) { return !exam.taskIds.empty() && unmarkedCount(exam) == 0; }
-
-// Every task is marked passed.
-bool allPassed(const Exam& exam) {
-    if (!allMarked(exam)) return false;
-    for (size_t i = 0; i < exam.taskIds.size(); ++i)
-        if (exam.marks[i] != 1) return false;
-    return true;
-}
-
 // Sentence for the finish dialog and the review.
 std::string unmarkedNote(int count) {
     if (count <= 0) return "";

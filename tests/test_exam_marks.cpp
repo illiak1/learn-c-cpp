@@ -180,30 +180,3 @@ TEST(stopped_message_is_friendly_and_names_the_signal) {
         CHECK(stoppedMessage(r).empty());
     }
 }
-
-TEST(marks_all_marked_and_all_passed_drive_the_finish_hint) {
-    auto tc = sample();
-    Exam e = makeSetExam(tc.sets[0]);
-    fitMarks(e, e.taskIds.size());
-    CHECK(!allMarked(e));
-    CHECK(!allPassed(e));
-    CHECK(setManualMark(e, 0, 1));
-    CHECK(setManualMark(e, 1, 1));
-    CHECK(!allMarked(e));  // one task is still open
-    CHECK(setManualMark(e, 2, 0));
-    CHECK(allMarked(e));  // a failed mark counts as marked
-    CHECK(!allPassed(e));
-    CHECK(setManualMark(e, 2, 1));
-    CHECK(allMarked(e));
-    CHECK(allPassed(e));
-    CHECK(setManualMark(e, 1, -1));  // clearing a mark hides the hint again
-    CHECK(!allMarked(e));
-    CHECK(!allPassed(e));
-    // marks that come from the app count too
-    const auto tasks = examTasks(tc, e);
-    applyCheck(e, checkClipboardRun(tasks, "", buildExamFile(tasks, "", false), run(Verdict::Finished, "yes\nno\nyes\n")));
-    CHECK(allMarked(e));
-    CHECK(!allPassed(e));
-    Exam none;
-    CHECK(!allMarked(none));  // an exam without tasks is never "all marked"
-}

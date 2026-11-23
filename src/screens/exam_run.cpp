@@ -179,9 +179,7 @@ public:
 
         drawSelfCheck(col, exam, static_cast<size_t>(current_));
 
-        if (!replay) drawFinishHint(col, app, exam, tasks.size());
-
-        // Replay from Mistakes: the way out sits where the finish card would be
+        // Replay from Mistakes: the way out sits below the mark card
         if (replay) {
             cx.pushId("replay-bottom");  // same label as the header button: keep their hover states apart
             const bool back = button("Back to Mistakes", Rect{col.x, col.y, 200.0f, 42.0f}, ButtonStyle::Secondary, Icon::ChevronLeft);
@@ -336,29 +334,6 @@ private:
                 logic::setManualMark(exam, index, mark == 0 ? -1 : 0);
         }
         col.space(6.0f);
-    }
-
-    // Shown once every task has a mark: offers to finish (the exam is never finished automatically).
-    void drawFinishHint(Column& col, App& app, const logic::Exam& exam, size_t taskCount) {
-        const Palette& p = Theme::get().colors();
-        const bool all = logic::allMarked(exam);
-        // Called every frame so the tween follows the condition: it glides in when the last mark is set.
-        const float t = Context::get().tween(Context::get().makeId("finish-hint"), all ? 1.0f : 0.0f);
-        if (!all) return;
-        const std::string text = logic::allPassed(exam) ? (taskCount == 1 ? std::string("The function passed. Ready to finish?") : "All " + std::to_string(taskCount) + " functions passed. Ready to finish?")
-                                                        : "All functions are checked. Ready to finish?";
-        const float btnW = 170.0f;
-        const bool stacked = col.w < 640.0f;  // narrow window: the button goes under the text
-        const float textW = col.w - 44.0f - (stacked ? 0.0f : btnW + 20.0f);
-        const float textH = textHeight(Face::Bold, size::kH3, text, textW);
-        Rect r = col.take(stacked ? textH + 12.0f + 42.0f + 36.0f : std::max(84.0f, textH + 36.0f));
-        Appear ap(r, t);
-        callout(r, p.accent, p.accentSoft);
-        drawParagraph(Face::Bold, size::kH3, text, r.x + 22.0f, stacked ? r.y + 18.0f : r.y + (r.height - textH) / 2.0f, textW, p.text);
-        const Rect b = stacked ? Rect{r.x + 22.0f, r.y + 18.0f + textH + 12.0f, btnW, 42.0f}
-                               : Rect{r.x + r.width - 22.0f - btnW, r.y + (r.height - 42.0f) / 2.0f, btnW, 42.0f};
-        if (button("Finish exam", b, ButtonStyle::Primary, Icon::Flag)) app.requestFinishExam();
-        col.space(18.0f);
     }
 
     int current_ = 0;

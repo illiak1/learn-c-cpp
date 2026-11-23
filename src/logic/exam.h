@@ -74,12 +74,6 @@ bool setManualMark(Exam& exam, size_t task, signed char mark);
 // Number of tasks that were neither checked by the app nor marked by hand.
 int unmarkedCount(const Exam& exam);
 
-// True when the exam has tasks and every one has a mark (checked by the app or marked by hand).
-bool allMarked(const Exam& exam);
-
-// True when every task is marked passed.
-bool allPassed(const Exam& exam);
-
 // "N functions were not checked or marked and will count as Failed." (empty for 0).
 std::string unmarkedNote(int count);
 
