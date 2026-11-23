@@ -167,7 +167,7 @@ int codeBox(const std::string& idStr, Rect r, const std::string& code, const Cod
         const bool hot = li == o.highlightLine || li == o.selectedLine;
         if (hot) {
             DrawRectangleRec(Rect{row.x + gutter, row.y, row.width - gutter, lh}, p.codeLineHot);
-            if (li == o.selectedLine || li == o.highlightLine) DrawRectangleRec(Rect{row.x + gutter, row.y, 3.0f, lh}, p.danger);
+            if (li == o.selectedLine || li == o.highlightLine) DrawRectangleRec(Rect{row.x + gutter, row.y, 3.0f, lh}, o.lineOk ? p.success : p.danger);
         } else if (hov) {
             DrawRectangleRec(Rect{row.x + gutter, row.y, row.width - gutter, lh}, withAlpha(p.accent, 0.09f));
         }

@@ -231,7 +231,7 @@ void CompetitionScreen::drawQuestion(App& app, Column& col, const content::Exerc
             break;
         }
         case ExType::Bug: {
-            const int clicked = drawBugCode(col, ex, cpp, cur_.bugLine, cur_.answered);
+            const int clicked = drawBugCode(col, ex, cpp, cur_.bugLine, cur_.answered, cur_.correct);
             if (clicked > 0) {
                 cur_.bugLine = clicked;
                 answer(app, ex, logic::checkBug(ex, clicked, "").lineOk, where);

@@ -61,12 +61,13 @@ void drawPredictCode(Column& col, const content::Exercise& ex, bool cpp) {
 }
 
 // Code with clickable lines; the student picks the faulty one.
-int drawBugCode(Column& col, const content::Exercise& ex, bool cpp, int selectedLine, bool checked) {
+int drawBugCode(Column& col, const content::Exercise& ex, bool cpp, int selectedLine, bool checked, bool lineOk) {
     CodeBoxOpts co;
     co.cpp = cpp;
     co.title = cpp ? "C++" : "C";
     co.clickableLines = !checked;
     co.selectedLine = selectedLine - 1;
+    co.lineOk = checked && lineOk;
     co.highlightLine = checked ? ex.bugLines.front() - 1 : -1;
     const float h = codeBoxHeight(ex.code, co);
     const int clicked = codeBox("ex-code", Rect{col.x, col.y, col.w, h}, ex.code, co);

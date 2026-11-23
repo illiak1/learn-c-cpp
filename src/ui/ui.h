@@ -305,6 +305,7 @@ struct CodeBoxOpts {
     int highlightLine = -1;      // 0-based line drawn with a tinted background
     bool clickableLines = false; // lines react to hover/click (find-the-bug)
     int selectedLine = -1;       // persistent selection (find-the-bug)
+    bool lineOk = false;         // the marked lines are right (green bar) instead of wrong (red bar)
 };
 // Rectangle covering `cols` monospace cells starting at (line, col) inside a code box drawn at `box`.
 Rect codeBoxCell(Rect box, const std::string& code, const CodeBoxOpts& opts, int line, int col, int cols);

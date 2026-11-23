@@ -288,10 +288,10 @@ private:
     void drawBug(Column& col, const content::Exercise& ex, bool cpp) {
         const Palette& p = Theme::get().colors();
         Attempt& a = attempt_;
-        const int clicked = drawBugCode(col, ex, cpp, a.bugLine, a.checked);
+        const int clicked = drawBugCode(col, ex, cpp, a.bugLine, a.checked, a.result.lineOk);
         if (clicked > 0) a.bugLine = clicked;
         drawText(Face::Regular, size::kBodySm, a.bugLine > 0 ? "Selected line " + std::to_string(a.bugLine) : "Click the line that contains the bug",
-                 col.x, col.y, a.bugLine > 0 ? p.danger : p.textMuted);
+                 col.x, col.y, a.bugLine <= 0 ? p.textMuted : a.checked && a.result.lineOk ? p.success : p.danger);
         col.space(28.0f);
         if (!ex.answers.empty()) {
             drawLabel("TYPE THE CORRECTED LINE", col.x, col.y, p.textMuted);
