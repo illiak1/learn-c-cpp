@@ -159,7 +159,8 @@ public:
         }
         col.space(by - col.y + btnH + 18.0f);
         const float hint = drawParagraph(Face::Regular, size::kBodySm,
-                                         "The file has all " + std::to_string(tasks.size()) + " functions with empty bodies and the tests at the bottom. "
+                                         "The file has " + (tasks.size() == 1 ? std::string("1 function") : "all " + std::to_string(tasks.size()) + " functions") +
+                                         " with empty " + (tasks.size() == 1 ? "body" : "bodies") + " and the tests at the bottom. "
                                          "Run it in your IDE: a correct function prints yes. Or paste your finished file and press Check from clipboard.",
                                          col.x, col.y, col.w, p.textMuted);
         col.space(hint + 18.0f);
