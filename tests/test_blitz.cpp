@@ -53,6 +53,18 @@ TEST(blitz_clock_never_goes_negative_and_stops_scoring) {
     CHECK_EQ(r.timeLeft, 0.0);
 }
 
+TEST(blitz_clock_follows_wall_time_not_frame_count) {
+    BlitzRound r;
+    r.tickTo(100.0);  // first call only sets the start
+    CHECK_EQ(r.timeLeft, kBlitzSeconds);
+    for (int i = 1; i <= 6; ++i) r.tickTo(100.0 + i * 5.0);  // six slow "frames" of 5 s
+    CHECK_EQ(r.timeLeft, kBlitzSeconds - 30.0);
+    r.tickTo(90.0);  // a clock that goes backwards never adds time
+    CHECK_EQ(r.timeLeft, kBlitzSeconds - 30.0);
+    r.tickTo(200.0);
+    CHECK(r.over());
+}
+
 // A small track with every exercise type for the pool tests.
 static content::TrackContent sampleTrack() {
     content::TrackContent tc;

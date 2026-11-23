@@ -16,7 +16,6 @@
 namespace app {
 
 constexpr double kFeedbackSeconds = 0.8;  // how long the green/red feedback stays before the next question
-constexpr double kMaxFrameStep = 0.25;    // a stalled frame (window drag) never eats more than this from the clock
 constexpr double kCountdownSeconds = 3.0 * ui::arcade::kCountStep + ui::arcade::kGoSeconds;
 
 // Lobby -> Countdown -> Playing -> Result (solo), or for a duel: ... Playing -> Pass -> Countdown -> Playing -> DuelResult.

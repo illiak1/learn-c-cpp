@@ -43,12 +43,16 @@ struct BlitzRound {
     int bestCombo = 0;  // longest such run in this round
     int correct = 0;
     int wrong = 0;
+    double clockAt = -1.0;  // wall-clock time of the last tickTo (< 0 = not started yet)
 
     // Counts an answer and returns the points it earned (0 when wrong or when the round is already over).
     // A correct answer adds 10 x multiplier; a wrong one resets the combo and takes 3 s off the clock.
     int answer(bool isCorrect);
     // Runs the clock down (never below zero).
     void tick(double seconds);
+    // Runs the clock by the real time since the previous call (the first call only sets the start), so a round lasts
+    // kBlitzSeconds of wall-clock time whatever the frame rate. `now` is a monotonic time in seconds.
+    void tickTo(double now);
     bool over() const { return timeLeft <= 0.0; }
     int answered() const { return correct + wrong; }
 };

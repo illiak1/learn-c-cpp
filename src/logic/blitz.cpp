@@ -55,6 +55,12 @@ int BlitzRound::answer(bool isCorrect) {
 // Subtracts elapsed time, clamped at zero.
 void BlitzRound::tick(double seconds) { timeLeft = std::max(0.0, timeLeft - std::max(0.0, seconds)); }
 
+// Wall-clock based clock: subtracts the time elapsed since the previous call.
+void BlitzRound::tickTo(double now) {
+    if (clockAt >= 0.0) tick(now - clockAt);
+    clockAt = now;
+}
+
 // Choice, predict and bug exercises that can be answered with one click or one line of text.
 std::vector<std::string> blitzPool(const content::TrackContent& tc) {
     std::vector<std::string> ids;

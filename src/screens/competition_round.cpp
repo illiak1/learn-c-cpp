@@ -87,7 +87,7 @@ void CompetitionScreen::buildResultTexts() {
 // HUD, the question and the feedback; advances the clock and the question.
 void CompetitionScreen::drawRound(App& app, Column& col) {
     Context& cx = Context::get();
-    round_.tick(std::min(static_cast<double>(cx.dt), kMaxFrameStep));
+    round_.tickTo(cx.now);
     if (cur_.answered && cx.now - cur_.answeredAt >= kFeedbackSeconds) loadNext();
     if (round_.over()) {
         finishRound(app);
