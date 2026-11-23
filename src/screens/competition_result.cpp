@@ -81,6 +81,7 @@ void CompetitionScreen::drawResult(App& app, Column& col) {
         char label[40];
         if (best) std::snprintf(label, sizeof label, "NEW BEST!");
         else if (placed) std::snprintf(label, sizeof label, "#%d in the Top 10", placement_.rank);
+        else if (round_.score <= 0) std::snprintf(label, sizeof label, "Score a point to enter the Top 10");
         else std::snprintf(label, sizeof label, "Not in the Top 10");
         const float w = th.textWidth(Face::Bold, size::kBody, label) + 44.0f;
         const Rect pill{r.x + r.width - 26.0f - w, r.y + 26.0f, w, 36.0f};
